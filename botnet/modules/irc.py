@@ -18,6 +18,7 @@ class IRC(BaseModule):
         self._partial_data = None
 
     def on_message_out(self, *args, **kwargs):
+        """Handler for the message_out signal."""
         self.logger.debug('on_message_out %s %s', args, kwargs)
         self.send(kwargs['msg'].to_string())
 
@@ -63,8 +64,8 @@ class IRC(BaseModule):
         message_in.send(self, msg=msg)
 
         # Dispatch the message to the right handler
+        # If command is a numeric code convert it to a string
         code = msg.command_code()
-        # If command is a numerical code convert it to a string
         if code is not None:
             handler_name = 'handler_%s' % code.name.lower()
         else:
@@ -81,6 +82,7 @@ class IRC(BaseModule):
         self.send('PONG :ping')
 
     def send(self, text):
+        """Sends a text to the socket."""
         if len(text) > 0:
             self.logger.debug('Sending:  %s', text)
             text = '%s\r\n' % text
@@ -88,14 +90,17 @@ class IRC(BaseModule):
             self.soc.send(text)
 
     def connect(self):
+        """Initiates the connection."""
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc.connect((self.config['server'], self.config['port']))
 
     def identify(self):
+        """Identifies with a server."""
         self.send('NICK ' + self.config['nick'])
         self.send('USER bot bot bot :Python bot')
 
     def join(self):
+        """Joins all channels defined in the config."""
         for channel in self.config['channels']:
             msg = 'JOIN ' + channel['name']
             if channel['password'] is not None:
@@ -108,7 +113,7 @@ class IRC(BaseModule):
         self.connect()
         self.identify()
 
-        while True:
+        while not self.stop_event.is_set():
             data = self.soc.recv(4096)
             if not data:
                 break

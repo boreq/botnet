@@ -11,6 +11,7 @@ class Manager(object):
     crashed.
     """
 
+    # Class used for config
     config_class = Config
 
     def __init__(self, config_path=None):
@@ -35,7 +36,6 @@ class Manager(object):
             self.config.from_json_file(config_path)
         for module_name in self.config.get('modules', []):
             self.load_module_by_name(module_name)
-
 
     def stop(self):
         """Stops the entire program."""

@@ -4,6 +4,9 @@ from .logging import get_logger
 
 
 class ModuleWrapper(object):
+    """Wraps a module. If a module inherits from BaseModule it runs that
+    module's run method in a separate thread.
+    """
 
     def __init__(self, module):
         self.module = module

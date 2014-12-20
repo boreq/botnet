@@ -3,6 +3,7 @@ from enum import Enum, unique
 
 @unique
 class Code(Enum):
+    """Enum with all numeric replies defined in RFC 2812."""
 
     # Welcome to the Internet Relay Network <nick>!<user>@<host>
     RPL_WELCOME = 1

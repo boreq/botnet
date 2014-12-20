@@ -2,7 +2,7 @@ from .codes import Code
 
 
 class Message(object):
-    """Parses the server message and allows easy access to its properties.
+    """Parses the server message and allows to access to its properties.
 
     http://tools.ietf.org/html/rfc2812#section-2.3
     http://tools.ietf.org/html/rfc2812#section-2.3.1
@@ -23,6 +23,9 @@ class Message(object):
         self.params = params or []
 
     def analyze_prefix(self, prefix):
+        """Analyze the message prefix which is a server name or data about the
+        user.
+        """
         servername = None
         nickname = None
         if prefix is not None:
@@ -82,6 +85,9 @@ class Message(object):
         return ' '.join(tmp)
 
     def command_code(self):
+        """Returns an enum which matches a numeric reply code or None if there
+        is no such enum or the message is not numeric.
+        """
         try:
             return Code(int(self.command))
         except ValueError:

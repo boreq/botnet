@@ -1,3 +1,9 @@
+"""
+    Command line interface, `cli` group serves as an entry point for the script
+    called `botnet`.
+"""
+
+
 import click
 import logging
 from .manager import Manager
