@@ -1,4 +1,7 @@
 import threading
+from ..codes import Code
+from ..message import Message
+from ..signals import message_in, message_out
 
 
 def import_by_name(name):
@@ -60,3 +63,82 @@ class BaseModule(BaseIdleModule):
     def update(self):
         """This is executed every time deltatime passes."""
         pass
+
+
+class BaseResponder(BaseIdleModule):
+    """Inherit from this class to quickly create a module which reacts to users'
+    messages. Each incomming PRIVMSG is dispatched to the `handle_message`
+    method. If a message starts with a command_prefix defined in config it will
+    be also sent to a proper handler, for example `handler_help`.
+    """
+
+    # Prefix for command handlers. For example `command_help` is a handler for
+    # messages starting with .help
+    handler_prefix = 'command_'
+
+    def __init__(self, *args, **kwargs):
+        super(BaseResponder, self).__init__(*args, **kwargs)
+        message_in.connect(self.on_message_in)
+        self.base_config = args[0]['module_config']['base_responder']
+        self._commands = self._get_commands_from_handlers()
+
+    def _get_commands_from_handlers(self):
+        """Generates a list of supported commands from defined handlers."""
+        commands = []
+        for name in dir(self):
+            if name.startswith(self.handler_prefix):
+                attr = getattr(self, name)
+                if hasattr(attr, '__call__'):
+                    commands.append(name[len(self.handler_prefix):])
+        return commands
+
+    def command_help(self, msg):
+        """Handler for the help command."""
+        text = 'Module %s, commands: %s' % (self.__class__.__name__, self._commands)
+        self.respond(msg, text, pm=True)
+
+    def on_message_in(self, sender, **kwargs):
+        """Handler for a message_in signal. Dispatches the message to the 
+        handlers.
+        """
+        if kwargs['msg'].command == 'PRIVMSG':
+            # Main handler
+            self.handle_message(kwargs['msg'])
+            # Command-specific handler
+            if self.is_command(kwargs['msg']):
+                # First word of the last parameter:
+                cmd_name = kwargs['msg'].params[-1].split(' ')[0]
+                cmd_name = cmd_name.strip('.')
+                handler_name = self.handler_prefix + cmd_name
+                func = getattr(self, handler_name, None)
+                if func is not None:
+                    func(kwargs['msg'])
+
+    def handle_message(self, msg):
+        """General handler for called if a message is a PRIVMSG."""
+        pass
+
+    def is_command(self, priv_msg, command_name=None):
+        """Returns True if the message text starts with a command_name and a
+        prefix. If command_name is None this function will simply check if the
+        message is prefixed with a command prefix.
+        """
+        cmd = self.base_config['command_prefix']
+        if command_name:
+            cmd += command_name
+        return priv_msg.params[-1].startswith(cmd)
+
+    def respond(self, priv_msg, text, pm=False):
+        """Send a text in response to a message. Text will be automatically
+        sent to a proper channel or user.
+
+        priv_msg: Message object to which we are responding.
+        text: Response text.
+        pm: If True response will be a private message.
+        """
+        if not pm:
+            target = priv_msg.params[0]
+        else:
+            target = priv_msg.nickname
+        response = Message(command='PRIVMSG', params=[target, text])
+        message_out.send(self, msg=response)

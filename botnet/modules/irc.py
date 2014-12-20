@@ -19,6 +19,7 @@ class IRC(BaseModule):
 
     def on_message_out(self, *args, **kwargs):
         self.logger.debug('on_message_out %s %s', args, kwargs)
+        self.send(kwargs['msg'].to_string())
 
     def process_data(self, data):
         """Process the data received from the socket.
@@ -63,14 +64,21 @@ class IRC(BaseModule):
 
         # Dispatch the message to the right handler
         code = msg.command_code()
+        # If command is a numerical code convert it to a string
         if code is not None:
             handler_name = 'handler_%s' % code.name.lower()
-            func = getattr(self, handler_name, None)
-            if func is not None:
-                func(msg)
+        else:
+            handler_name = 'handler_%s' % msg.command.lower()
+        func = getattr(self, handler_name, None)
+        if func is not None:
+            self.logger.debug('Dispatching to %s', handler_name)
+            func(msg)
 
     def handler_rpl_endofmotd(self, msg):
         self.join()
+
+    def handler_ping(self, msg):
+        self.send('PONG :ping')
 
     def send(self, text):
         if len(text) > 0:

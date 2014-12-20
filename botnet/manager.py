@@ -90,7 +90,6 @@ class Manager(object):
 
     def update(self):
         """(Re)starts modules which aren't running."""
-        self.logger.debug('Update')
         with self.wrappers_lock:
             if not self.stop_event.is_set():
                 for wrapper in self.module_wrappers:
