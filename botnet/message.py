@@ -7,7 +7,8 @@ class Message(object):
     http://tools.ietf.org/html/rfc2812#section-2.3
     http://tools.ietf.org/html/rfc2812#section-2.3.1
 
-    Properties you can access are the same as constructor parameters.
+    Properties you can access are constructor parameters, servername and
+    nickname. The two last properties are automatically generated from a prefix.
 
     prefix: message prefix. Prefix is None if not present in the message.
     command: message command (string with a word or 3 digit number),
