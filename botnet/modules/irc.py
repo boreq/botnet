@@ -6,7 +6,24 @@ from ..signals import message_in, message_out
 
 
 class IRC(BaseModule):
-    """Connects to an IRC server, sends and receives commands."""
+    """Connects to an IRC server, sends and receives commands.
+    
+    Example config:
+
+        "irc": {
+            "server": "irc.example.com",
+            "port": 6667,
+            "ssl": false,
+            "nick": "my_bot",
+            "channels": [
+                {
+                    "name": "#my-channel",
+                    "password": null
+                }
+            ]
+        }
+
+    """
 
     def __init__(self, *args, **kwargs):
         super(IRC, self).__init__(*args, **kwargs)

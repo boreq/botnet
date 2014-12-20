@@ -24,15 +24,14 @@ def get_module_class(module_name):
     for an external module class instead.
     """
     if not module_name.startswith('botnet_'):
-        try:
-            import_name = 'botnet.modules.%s.mod' % module_name
-            return import_by_name(import_name)
-        except ImportError as e:
-            pass
+        import_name = 'botnet.modules.%s.mod' % module_name
     else:
-        # TODO: try to load an external module
-        pass
-    return None
+        import_name = '%s.mod' % module_name
+
+    try:
+        return import_by_name(import_name)
+    except ImportError as e:
+        return None
 
 
 class BaseIdleModule(object):
@@ -70,6 +69,12 @@ class BaseResponder(BaseIdleModule):
     messages. Each incomming PRIVMSG is dispatched to the `handle_message`
     method. If a message starts with a command_prefix defined in config it will
     be also sent to a proper handler, for example `handler_help`.
+
+    Example config:
+
+        "base_responder": {
+            "command_prefix": "."
+        }
     """
 
     # Prefix for command handlers. For example `command_help` is a handler for
