@@ -9,7 +9,6 @@ import logging
 from .manager import Manager
 
 
-logger = logging.getLogger('cli')
 logger_levels = ['warning', 'info', 'debug']
 
 

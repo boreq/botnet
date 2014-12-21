@@ -36,7 +36,7 @@ def get_module_class(module_name):
 
 
 class BaseIdleModule(object):
-    """Base module which does not run anything in a loop."""
+    """Base class for all modules."""
 
     def __init__(self, config):
         self._logger = None
@@ -78,7 +78,7 @@ class BaseResponder(BaseIdleModule):
     """Inherit from this class to quickly create a module which reacts to users'
     messages. Each incomming PRIVMSG is dispatched to the `handle_message`
     method. If a message starts with a command_prefix defined in config it will
-    be also sent to a proper handler, for example `handler_help`.
+    be also sent to a proper handler, for example `command_help`.
 
     Example config:
 
