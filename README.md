@@ -10,7 +10,7 @@ IRC bot written in Python.
 ## Example config
 
     {
-        "modules": ["irc", "meta"],
+        "modules": ["irc", "meta", "tell"],
         "module_config": {
             "irc": {
                 "server": "irc.example.com",
@@ -26,6 +26,9 @@ IRC bot written in Python.
             },
             "base_responder": {
                 "command_prefix": "."
+            },
+            "tell": {
+                "data_file": "/path/to/data_file.json"
             }
         }
     }
