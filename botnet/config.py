@@ -1,4 +1,5 @@
 import json
+from .helpers import load_json
 
 
 class Config(dict):
@@ -11,8 +12,7 @@ class Config(dict):
         dict.__init__(self, defaults or {})
 
     def from_json_file(self, file_path):
-        with open(file_path, 'r') as f:
-            self.update(json.load(f))
+        self.update(load_json(file_path))
 
     def get_for_module(self, module_name):
         return self['module_config'][module_name]

@@ -55,9 +55,10 @@ class Manager(object):
         return None
 
     def load_module_by_name(self, module_name):
-        module_class = get_module_class(module_name)
-        if module_class is None:
-            raise ValueError('Module %s not found.' % module_name)
+        try:
+            module_class = get_module_class(module_name)
+        except ImportError as e:
+            raise ValueError('Could not import module %s.' % module_name) from e
         return self.load_module(module_class)
 
     def load_module(self, module_class):

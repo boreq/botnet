@@ -29,11 +29,7 @@ def get_module_class(module_name):
         import_name = 'botnet.modules.%s.mod' % module_name
     else:
         import_name = '%s.mod' % module_name
-
-    try:
-        return import_by_name(import_name)
-    except ImportError as e:
-        return None
+    return import_by_name(import_name)
 
 
 class BaseIdleModule(object):
