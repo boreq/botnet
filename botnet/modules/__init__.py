@@ -1,5 +1,6 @@
 import threading
 from ..codes import Code
+from ..helpers import is_channel_name
 from ..logging import get_logger
 from ..message import Message
 from ..signals import message_in, message_out, on_exception
@@ -107,22 +108,6 @@ class BaseResponder(BaseIdleModule):
                     commands.append(name[len(self.handler_prefix):])
         return commands
 
-    def command_help(self, msg):
-        """Handler for the help command. Sends a list of commands in a private
-        message.
-        """
-        text = 'Module %s, commands: %s' % (self.__class__.__name__, self._commands)
-        self.respond(msg, text, pm=True)
-
-    def on_message_in(self, sender, **kwargs):
-        """Handler for a message_in signal. Dispatches the message to the
-        per-command handlers and the main handler.
-        """
-        try:
-            self._dispatch_message(kwargs['msg'])
-        except Exception as e:
-            on_exception.send(self, e=e)
-
     def _dispatch_message(self, msg):
         if msg.command == 'PRIVMSG':
             # Main handler
@@ -132,14 +117,23 @@ class BaseResponder(BaseIdleModule):
                 # First word of the last parameter:
                 cmd_name = msg.params[-1].split(' ')[0]
                 cmd_name = cmd_name.strip('.')
-                handler_name = self.handler_prefix + cmd_name
-                func = getattr(self, handler_name, None)
+                func = self._get_command_handler(cmd_name)
                 if func is not None:
                     func(msg)
 
-    def handle_message(self, msg):
-        """Main handler called if a received command is a PRIVMSG."""
-        pass
+    def _get_command_handler(self, cmd_name):
+        """Returns a handler for a command."""
+        handler_name = self.handler_prefix + cmd_name
+        return getattr(self, handler_name, None)
+
+    def on_message_in(self, sender, **kwargs):
+        """Handler for a message_in signal. Dispatches the message to the
+        per-command handlers and the main handler.
+        """
+        try:
+            self._dispatch_message(kwargs['msg'])
+        except Exception as e:
+            on_exception.send(self, e=e)
 
     def is_command(self, priv_msg, command_name=None):
         """Returns True if the message text starts with a prefixed command_name.
@@ -159,9 +153,42 @@ class BaseResponder(BaseIdleModule):
         text: Response text.
         pm: If True response will be a private message.
         """
-        if pm:
+        # If this is supposed to be sent as a private message or was sent in
+        # a private message to the bot respond also in private message.
+        self.logger.debug(priv_msg.params[0][0])
+        if pm or not is_channel_name(priv_msg.params[0]):
             target = priv_msg.nickname
         else:
             target = priv_msg.params[0]
         response = Message(command='PRIVMSG', params=[target, text])
         message_out.send(self, msg=response)
+
+    def command_help(self, msg):
+        """Sends a list of commands in a private message. If COMMAND is
+        specified sends help for a single command.
+
+        help [COMMAND]
+        """
+        text = 'Module %s, ' % self.__class__.__name__
+        msg_parts = msg.params[-1].split(' ')
+        if len(msg_parts) > 1:
+            # Display help for specific command
+            for name in msg_parts[1:]:
+                handler = self._get_command_handler(name)
+                if handler:
+                    res = text + 'help for %s:' % name
+                    self.respond(msg, res, pm=True)
+                    help_text = handler.__doc__
+                    if help_text:
+                        for line in help_text.splitlines():
+                            self.respond(msg, '    ' + line.strip(), pm=True)
+                    else:
+                        self.respond(msg, '    No help available.', pm=True)
+        else:
+            # Display all commands
+            res = text + 'commands: %s' % self._commands
+            self.respond(msg, res, pm=True)
+
+    def handle_message(self, msg):
+        """Main handler called if a received command is a PRIVMSG."""
+        pass
