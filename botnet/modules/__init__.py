@@ -1,3 +1,5 @@
+from functools import wraps
+import argparse
 import threading
 from ..codes import Code
 from ..helpers import is_channel_name
@@ -30,6 +32,37 @@ def get_module_class(module_name):
     else:
         import_name = '%s.mod' % module_name
     return import_by_name(import_name)
+
+
+def parse_command(params=[]):
+    """Decorator. Automatically parses the last argument of PRIVMSG, which is
+    the message itself, using argparse.
+
+        class TestResponder(BaseResponder):
+            @parse_command([('person', '?'), ('colors', '+')])
+            def command_colors(self, msg, args):
+                colors = ' '.join(args.colors)
+                self.respond(msg, '%s likes those colors: %s' % (args.person,
+                                                                 colors))
+
+    """
+    params.insert(0, ('command', '?'))
+    parser = argparse.ArgumentParser()
+    for name, nargs in params:
+        parser.add_argument(name, nargs=nargs)
+
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(self, msg):
+            args = msg.params[-1].split()
+            try:
+                args = parser.parse_args(args)
+            except SystemExit:
+                args = None
+            rv = f(self, msg, args)
+            return rv
+        return decorated_function
+    return decorator
 
 
 class BaseIdleModule(object):
@@ -159,17 +192,17 @@ class BaseResponder(BaseIdleModule):
         response = Message(command='PRIVMSG', params=[target, text])
         message_out.send(self, msg=response)
 
-    def command_help(self, msg):
+    @parse_command([('command_names', '*')])
+    def command_help(self, msg, args):
         """Sends a list of commands in a private message. If COMMAND is
         specified sends help for a single command.
 
         help [COMMAND]
         """
         text = 'Module %s, ' % self.__class__.__name__
-        msg_parts = msg.params[-1].split(' ')
-        if len(msg_parts) > 1:
+        if len(args.command_names) > 0:
             # Display help for specific command
-            for name in msg_parts[1:]:
+            for name in args.command_names:
                 handler = self._get_command_handler(name)
                 if handler:
                     res = text + 'help for %s:' % name
