@@ -7,7 +7,7 @@ from ..signals import message_in, message_out
 
 class IRC(BaseModule):
     """Connects to an IRC server, sends and receives commands.
-    
+
     Example config:
 
         "irc": {
@@ -29,21 +29,25 @@ class IRC(BaseModule):
 
     def __init__(self, config):
         super(IRC, self).__init__(config)
-        # Other modules can send commands by sending this signal
         message_out.connect(self.on_message_out)
-        # Easier way to access a part of the main config
         self.config = config.get_for_module('irc')
         self.soc = None
         self._partial_data = None
 
-    def stop(self, *args, **kwargs):
-        super(IRC, self).stop(*args, **kwargs)
+    def stop(self):
+        """To stop correctly it is necessary to disconnect from the server
+        because blocking sockets are used.
+        """
+        super(IRC, self).stop()
         self.disconnect()
 
-    def on_message_out(self, *args, **kwargs):
-        """Handler for the message_out signal."""
-        self.logger.debug('on_message_out %s %s', args, kwargs)
-        self.send(kwargs['msg'].to_string())
+    def on_message_out(self, sender, msg):
+        """Handler for the message_out signal.
+
+        sender: object sending the signal, most likely an other module.
+        msg: Message object.
+        """
+        self.send(msg.to_string())
 
     def process_data(self, data):
         """Process the data received from the socket.
@@ -55,6 +59,9 @@ class IRC(BaseModule):
 
         data: raw data from the socket.
         """
+        if not data:
+            return []
+
         data = data.decode()
         lines = data.splitlines()
 

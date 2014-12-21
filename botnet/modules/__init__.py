@@ -34,9 +34,10 @@ def get_module_class(module_name):
     return import_by_name(import_name)
 
 
-def parse_command(params=[]):
+def parse_command(params, launch_invalid=True):
     """Decorator. Automatically parses the last argument of PRIVMSG, which is
-    the message itself, using argparse.
+    the message itself, using argparse. If launch_invalid is True the function
+    will be launched if the parameters are invalid.
 
         class TestResponder(BaseResponder):
             @parse_command([('person', '?'), ('colors', '+')])
@@ -46,7 +47,7 @@ def parse_command(params=[]):
                                                                  colors))
 
     """
-    params.insert(0, ('command', '?'))
+    params.insert(0, ('command', 1))
     parser = argparse.ArgumentParser()
     for name, nargs in params:
         parser.add_argument(name, nargs=nargs)
@@ -59,8 +60,9 @@ def parse_command(params=[]):
                 args = parser.parse_args(args)
             except SystemExit:
                 args = None
-            rv = f(self, msg, args)
-            return rv
+            if not launch_invalid and args is None:
+                return
+            f(self, msg, args)
         return decorated_function
     return decorator
 
@@ -155,12 +157,12 @@ class BaseResponder(BaseIdleModule):
         handler_name = self.handler_prefix + cmd_name
         return getattr(self, handler_name, None)
 
-    def on_message_in(self, sender, **kwargs):
+    def on_message_in(self, sender, msg):
         """Handler for a message_in signal. Dispatches the message to the
         per-command handlers and the main handler.
         """
         try:
-            self._dispatch_message(kwargs['msg'])
+            self._dispatch_message(msg)
         except Exception as e:
             on_exception.send(self, e=e)
 
@@ -184,7 +186,6 @@ class BaseResponder(BaseIdleModule):
         """
         # If this is supposed to be sent as a private message or was sent in
         # a private message to the bot respond also in private message.
-        self.logger.debug(priv_msg.params[0][0])
         if pm or not is_channel_name(priv_msg.params[0]):
             target = priv_msg.nickname
         else:
@@ -199,23 +200,29 @@ class BaseResponder(BaseIdleModule):
 
         help [COMMAND]
         """
-        text = 'Module %s, ' % self.__class__.__name__
         if len(args.command_names) > 0:
-            # Display help for specific command
+            # Display help for a specific command
             for name in args.command_names:
+                lines = []
                 handler = self._get_command_handler(name)
                 if handler:
-                    res = text + 'help for %s:' % name
-                    self.respond(msg, res, pm=True)
+                    # Header
+                    res = 'Module %s, help for `%s`:' % (self.__class__.__name__,
+                                                         name)
+                    lines.append(res)
+                    # Docstring
                     help_text = handler.__doc__
                     if help_text:
                         for line in help_text.splitlines():
-                            self.respond(msg, '    ' + line.strip(), pm=True)
+                            lines.append('    ' + line.strip())
                     else:
-                        self.respond(msg, '    No help available.', pm=True)
+                        lines.append( '    No help available.')
+                for line in self._get_command_help(name):
+                    self.respond(msg, line, pm=True)
         else:
             # Display all commands
-            res = text + 'commands: %s' % self._commands
+            res = 'Module %s commands: `%s`:' % (self.__class__.__name__,
+                                                  self._commands)
             self.respond(msg, res, pm=True)
 
     def handle_message(self, msg):

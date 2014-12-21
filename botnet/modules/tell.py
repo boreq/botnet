@@ -69,7 +69,7 @@ class Tell(BaseResponder):
         with self.msg_st.lock:
             self.msg_st.load()
 
-    @parse_command([('recipient', '?'), ('message', '+')])
+    @parse_command([('recipient', 1), ('message', '+')], launch_invalid=False)
     def command_tell(self, msg, args):
         """Sends a message to a RECIPIENT when he is available.
 
@@ -77,7 +77,7 @@ class Tell(BaseResponder):
         """
         text = ' '.join(args.message)
         with self.msg_st.lock:
-            added = self.msg_st.add(args.recipient, msg.nickname, text)
+            added = self.msg_st.add(args.recipient[0], msg.nickname, text)
             if added:
                 self.msg_st.save()
         if added:
