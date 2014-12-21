@@ -1,4 +1,5 @@
 import socket
+import ssl
 from . import BaseModule
 from ..message import Message
 from ..signals import message_in, message_out
@@ -114,6 +115,10 @@ class IRC(BaseModule):
     def connect(self):
         """Initiates the connection."""
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if self.config['ssl']:
+            self.soc = ssl.wrap_socket(self.soc)
+        else:
+            self.logger.warning('SSL disabled')
         self.soc.connect((self.config['server'], self.config['port']))
 
     def disconnect(self):
