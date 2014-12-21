@@ -41,7 +41,7 @@ The easiest way to create a module is to subclass
 External modules must follow a few simple rules:
 
 * Python module name should start with `botnet_`
-* is should be possible to import a variable `mod` from that Python module
+* it should be possible to import a variable `mod` from that Python module
 * variable `mod` should be pointing to a class which is a child of
 `botnet.modules.BaseIdleModule`
 * if a module requires additional configuration it should be stored in
