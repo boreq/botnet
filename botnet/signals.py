@@ -8,3 +8,6 @@ message_in = _signals.signal('message-in')
 
 # kwargs: Message msg
 message_out = _signals.signal('message-out')
+
+# kwargs: Exception e
+on_exception = _signals.signal('on-exception')

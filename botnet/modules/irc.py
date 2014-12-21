@@ -1,6 +1,5 @@
 import socket
 from . import BaseModule
-from ..logging import get_logger
 from ..message import Message
 from ..signals import message_in, message_out
 
@@ -25,14 +24,20 @@ class IRC(BaseModule):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super(IRC, self).__init__(*args, **kwargs)
+    deltatime = 5
+
+    def __init__(self, config):
+        super(IRC, self).__init__(config)
         # Other modules can send commands by sending this signal
         message_out.connect(self.on_message_out)
         # Easier way to access a part of the main config
-        self.config = args[0]['module_config']['irc']
-        self.logger = get_logger(self)
+        self.config = config.get_for_module('irc')
+        self.soc = None
         self._partial_data = None
+
+    def stop(self, *args, **kwargs):
+        super(IRC, self).stop(*args, **kwargs)
+        self.disconnect()
 
     def on_message_out(self, *args, **kwargs):
         """Handler for the message_out signal."""
@@ -100,7 +105,7 @@ class IRC(BaseModule):
 
     def send(self, text):
         """Sends a text to the socket."""
-        if len(text) > 0:
+        if len(text) > 0 and self.soc:
             self.logger.debug('Sending:  %s', text)
             text = '%s\r\n' % text
             text = text.encode('utf-8')
@@ -110,6 +115,9 @@ class IRC(BaseModule):
         """Initiates the connection."""
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc.connect((self.config['server'], self.config['port']))
+
+    def disconnect(self):
+        self.send('QUIT :Disconnecting')
 
     def identify(self):
         """Identifies with a server."""
@@ -127,19 +135,21 @@ class IRC(BaseModule):
     def update(self):
         """Main method which should be called."""
         self.logger.debug('Update')
-        self.connect()
-        self.identify()
-
-        while not self.stop_event.is_set():
-            data = self.soc.recv(4096)
-            if not data:
-                break
-            data = self.process_data(data)
-            for msg in data:
-                msg = self.process_message(msg)
-                self.handle_message(msg)
-
-        self.send('QUIT :Disconnecting')
+        try:
+            self.connect()
+            self.identify()
+            while not self.stop_event.is_set():
+                data = self.soc.recv(4096)
+                if not data:
+                    break
+                data = self.process_data(data)
+                for msg in data:
+                    msg = self.process_message(msg)
+                    self.handle_message(msg)
+            self.disconnect()
+        finally:
+            if self.soc:
+                self.soc.close()
 
 
 mod = IRC

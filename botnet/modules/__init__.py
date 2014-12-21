@@ -1,7 +1,8 @@
 import threading
 from ..codes import Code
+from ..logging import get_logger
 from ..message import Message
-from ..signals import message_in, message_out
+from ..signals import message_in, message_out, on_exception
 
 
 def import_by_name(name):
@@ -17,11 +18,11 @@ def import_by_name(name):
 
 
 def get_module_class(module_name):
-    """Attempts to find a module class by name. This function looks for a
+    """Attempts to find a bot module by name. This function looks for a
     Python module named `module_name` located in `botnet.modules`. A found Python
     module is expected to contain a variable called `mod` pointing to an actual
     module class. If the name is prefixed with `botnet_` this function will look
-    for an external module class instead.
+    for an external module instead.
     """
     if not module_name.startswith('botnet_'):
         import_name = 'botnet.modules.%s.mod' % module_name
@@ -38,7 +39,13 @@ class BaseIdleModule(object):
     """Base module which does not run anything in a loop."""
 
     def __init__(self, config):
-        pass
+        self._logger = None
+
+    @property
+    def logger(self):
+        if not self._logger:
+            self._logger = get_logger(self)
+        return self._logger
 
 
 class BaseModule(BaseIdleModule):
@@ -46,8 +53,8 @@ class BaseModule(BaseIdleModule):
 
     deltatime = .016
 
-    def __init__(self, *args, **kwargs):
-        super(BaseModule, self).__init__(*args, **kwargs)
+    def __init__(self, config):
+        super(BaseModule, self).__init__(config)
         self.stop_event = threading.Event()
 
     def stop(self):
@@ -56,7 +63,10 @@ class BaseModule(BaseIdleModule):
     def run(self):
         self.stop_event.clear()
         while not self.stop_event.is_set():
-            self.update()
+            try:
+                self.update()
+            except Exception as e:
+                on_exception.send(self, e=e)
             self.stop_event.wait(self.deltatime)
 
     def update(self):
@@ -81,11 +91,11 @@ class BaseResponder(BaseIdleModule):
     # messages starting with .help
     handler_prefix = 'command_'
 
-    def __init__(self, *args, **kwargs):
-        super(BaseResponder, self).__init__(*args, **kwargs)
-        message_in.connect(self.on_message_in)
-        self.base_config = args[0]['module_config']['base_responder']
+    def __init__(self, config):
+        super(BaseResponder, self).__init__(config)
+        self.base_config = config.get_for_module('base_responder')
         self._commands = self._get_commands_from_handlers()
+        message_in.connect(self.on_message_in)
 
     def _get_commands_from_handlers(self):
         """Generates a list of supported commands from defined handlers."""
@@ -98,35 +108,43 @@ class BaseResponder(BaseIdleModule):
         return commands
 
     def command_help(self, msg):
-        """Handler for the help command."""
+        """Handler for the help command. Sends a list of commands in a private
+        message.
+        """
         text = 'Module %s, commands: %s' % (self.__class__.__name__, self._commands)
         self.respond(msg, text, pm=True)
 
     def on_message_in(self, sender, **kwargs):
-        """Handler for a message_in signal. Dispatches the message to the 
-        handlers.
+        """Handler for a message_in signal. Dispatches the message to the
+        per-command handlers and the main handler.
         """
-        if kwargs['msg'].command == 'PRIVMSG':
+        try:
+            self._dispatch_message(kwargs['msg'])
+        except Exception as e:
+            on_exception.send(self, e=e)
+
+    def _dispatch_message(self, msg):
+        if msg.command == 'PRIVMSG':
             # Main handler
-            self.handle_message(kwargs['msg'])
+            self.handle_message(msg)
             # Command-specific handler
-            if self.is_command(kwargs['msg']):
+            if self.is_command(msg):
                 # First word of the last parameter:
-                cmd_name = kwargs['msg'].params[-1].split(' ')[0]
+                cmd_name = msg.params[-1].split(' ')[0]
                 cmd_name = cmd_name.strip('.')
                 handler_name = self.handler_prefix + cmd_name
                 func = getattr(self, handler_name, None)
                 if func is not None:
-                    func(kwargs['msg'])
+                    func(msg)
 
     def handle_message(self, msg):
-        """General handler for called if a message is a PRIVMSG."""
+        """Main handler called if a received command is a PRIVMSG."""
         pass
 
     def is_command(self, priv_msg, command_name=None):
-        """Returns True if the message text starts with a command_name and a
-        prefix. If command_name is None this function will simply check if the
-        message is prefixed with a command prefix.
+        """Returns True if the message text starts with a prefixed command_name.
+        If command_name is None this function will simply check if the message
+        is prefixed with a command prefix.
         """
         cmd = self.base_config['command_prefix']
         if command_name:
@@ -141,9 +159,9 @@ class BaseResponder(BaseIdleModule):
         text: Response text.
         pm: If True response will be a private message.
         """
-        if not pm:
-            target = priv_msg.params[0]
-        else:
+        if pm:
             target = priv_msg.nickname
+        else:
+            target = priv_msg.params[0]
         response = Message(command='PRIVMSG', params=[target, text])
         message_out.send(self, msg=response)
