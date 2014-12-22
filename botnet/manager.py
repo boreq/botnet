@@ -1,7 +1,8 @@
 import threading
 from .config import Config
-from .modules import get_module_class
 from .logging import get_logger
+from .modules import get_module_class
+from .signals import module_loaded, module_unloaded, module_load, module_unload
 from .wrappers import ModuleWrapper
 
 
@@ -37,6 +38,9 @@ class Manager(object):
         for module_name in self.config.get('modules', []):
             self.load_module_by_name(module_name)
 
+        module_load.connect(self.on_module_load)
+        module_unload.connect(self.on_module_unload)
+
     def stop(self):
         """Stops the entire program."""
         self.logger.debug('Stop')
@@ -54,12 +58,27 @@ class Manager(object):
                 return wrapper
         return None
 
+    def on_module_load(self, sender, name):
+        """Handler for the module_load signal."""
+        self.load_module_by_name(name)
+
+    def on_module_unload(self, sender, name):
+        """Handler for the module_unload signal."""
+        self.unload_module_by_name(name)
+
     def load_module_by_name(self, module_name):
         try:
             module_class = get_module_class(module_name)
         except ImportError as e:
             raise ValueError('Could not import module %s.' % module_name) from e
         return self.load_module(module_class)
+
+    def unload_module_by_name(self, module_name):
+        try:
+            module_class = get_module_class(module_name)
+        except ImportError as e:
+            raise ValueError('Could not import module %s.' % module_name) from e
+        return self.unload_module(module_class)
 
     def load_module(self, module_class):
         """Loads a module. Returns a wrapper containing a loaded module or None
@@ -71,6 +90,7 @@ class Manager(object):
                 module = module_class(self.config)
                 wrapper = ModuleWrapper(module)
                 self.module_wrappers.append(wrapper)
+                module_loaded.send(self, cls=module_class)
                 return wrapper
             return None
 
@@ -82,6 +102,7 @@ class Manager(object):
             if wrapper is not None:
                 wrapper.stop()
                 self.module_wrappers.remove(wrapper)
+                module_unloaded.send(self, cls=module_class)
 
     def run(self):
         """Periodically calls self.update."""
