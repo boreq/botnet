@@ -36,7 +36,7 @@ class MessageStore(list):
             data = {
                 'sender': sender,
                 'text': text,
-                'time': str(datetime.datetime.utcnow())
+                'time': datetime.datetime.utcnow().isoformat()
             }
             self.messages[recipient].append(data)
             return True
