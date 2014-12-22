@@ -16,8 +16,6 @@ class Manager(object):
     config_class = Config
 
     def __init__(self, config_path=None):
-        super(Manager, self).__init__()
-
         self.logger = get_logger(self)
 
         # List of ModuleWrapper objects, each with one module
@@ -35,6 +33,7 @@ class Manager(object):
         self.config = self.config_class()
         if config_path:
             self.config.from_json_file(config_path)
+
         for module_name in self.config.get('modules', []):
             self.load_module_by_name(module_name)
 
@@ -54,7 +53,7 @@ class Manager(object):
         failure.
         """
         for wrapper in self.module_wrappers:
-            if isinstance(wrapper.module, module_class):
+            if type(wrapper.module) is module_class:
                 return wrapper
         return None
 
