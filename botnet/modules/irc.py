@@ -1,5 +1,6 @@
 import socket
 import ssl
+import time
 from . import BaseModule
 from ..message import Message
 from ..signals import message_in, message_out
@@ -20,6 +21,9 @@ class IRC(BaseModule):
                     "name": "#my-channel",
                     "password": null
                 }
+            ],
+            "autosend": [
+                "PRIVMSG NickServ :IDENTIFY pass"
             ]
         }
 
@@ -106,6 +110,7 @@ class IRC(BaseModule):
             func(msg)
 
     def handler_rpl_endofmotd(self, msg):
+        self.autosend()
         self.join()
 
     def handler_ping(self, msg):
@@ -134,7 +139,7 @@ class IRC(BaseModule):
     def identify(self):
         """Identifies with a server."""
         self.send('NICK ' + self.config['nick'])
-        self.send('USER bot bot bot :Python bot')
+        self.send('USER botnet botnet botnet :Python bot')
 
     def join(self):
         """Joins all channels defined in the config."""
@@ -143,6 +148,14 @@ class IRC(BaseModule):
             if channel['password'] is not None:
                 msg += ' ' + channel['password']
             self.send(msg)
+
+    def autosend(self):
+        """Automatically sends commands to a server before joining channels."""
+        commands = self.config.get('autosend', [])
+        for command in commands:
+            self.send(command)
+        if len(commands) > 0:
+            time.sleep(1)
 
     def update(self):
         """Main method which should be called."""
