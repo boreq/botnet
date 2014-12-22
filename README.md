@@ -22,6 +22,9 @@ IRC bot written in Python.
                         "name": "#my-channel",
                         "password": null
                     }
+                ],
+                "autosend": [
+                    "PRIVMSG your_nick :I connected!"
                 ]
             },
             "base_responder": {
