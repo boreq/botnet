@@ -114,7 +114,8 @@ class IRC(BaseModule):
         self.join()
 
     def handler_ping(self, msg):
-        self.send('PONG :ping')
+        rmsg = Message(command='PONG', params=msg.params)
+        self.send(rmsg.to_string())
 
     def send(self, text):
         """Sends a text to the socket."""
