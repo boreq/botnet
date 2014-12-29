@@ -123,6 +123,16 @@ class BaseResponder(BaseIdleModule):
     # messages starting with .help
     handler_prefix = 'command_'
 
+    # Don't send description of the .help command - normally each module which
+    # is based on this class would respond to such request and flood a user with
+    # messages. This should be set to False only in one module (by default in
+    # module meta). Note that this parameter is a terrible workaround. The
+    # problem is caused by the fact that modules do not have direct access to
+    # each another, so it is not possible to query others modules for commands.
+    # Each module has to report them separately, and in effect the same command
+    # had to be defined in all modules.
+    ignore_help = True
+
     def __init__(self, config):
         super(BaseResponder, self).__init__(config)
         self.base_config = config.get_for_module('base_responder')
@@ -136,7 +146,9 @@ class BaseResponder(BaseIdleModule):
             if name.startswith(self.handler_prefix):
                 attr = getattr(self, name)
                 if hasattr(attr, '__call__'):
-                    commands.append(name[len(self.handler_prefix):])
+                    command_name = name[len(self.handler_prefix):]
+                    if not (self.ignore_help and command_name == 'help'):
+                        commands.append(command_name)
         return commands
 
     def _dispatch_message(self, msg):
@@ -203,6 +215,8 @@ class BaseResponder(BaseIdleModule):
         if len(args.command_names) > 0:
             # Display help for a specific command
             for name in args.command_names:
+                if self.ignore_help and name == 'help':
+                    continue
                 lines = []
                 handler = self._get_command_handler(name)
                 if handler:
@@ -217,12 +231,12 @@ class BaseResponder(BaseIdleModule):
                             lines.append('    ' + line.strip())
                     else:
                         lines.append( '    No help available.')
-                for line in self._get_command_help(name):
+                for line in lines:
                     self.respond(msg, line, pm=True)
         else:
             # Display all commands
-            res = 'Module %s commands: `%s`:' % (self.__class__.__name__,
-                                                  self._commands)
+            res = 'Module %s commands: %s' % (self.__class__.__name__,
+                                              ', '.join(self._commands))
             self.respond(msg, res, pm=True)
 
     def handle_message(self, msg):

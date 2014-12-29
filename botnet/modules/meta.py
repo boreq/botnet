@@ -4,6 +4,8 @@ from . import BaseResponder
 class Meta(BaseResponder):
     """Displays basic info about this bot."""
 
+    ignore_help = False
+
     def command_bots(self, msg):
         """Makes the bot identify itself."""
         self.respond(msg, 'Botnet https://github.com/boreq/botnet')
