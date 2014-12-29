@@ -10,12 +10,12 @@ IRC bot written in Python.
 ## Example config
 
     {
-        "modules": ["irc", "meta", "tell"],
+        "modules": ["irc", "meta"],
         "module_config": {
             "irc": {
                 "server": "irc.example.com",
-                "port": 6667,
-                "ssl": false,
+                "port": 6697,
+                "ssl": true,
                 "nick": "my_bot",
                 "channels": [
                     {
@@ -29,9 +29,6 @@ IRC bot written in Python.
             },
             "base_responder": {
                 "command_prefix": "."
-            },
-            "tell": {
-                "data_file": "/path/to/data_file.json"
             }
         }
     }
@@ -50,7 +47,7 @@ External modules must follow a few simple rules:
 * if a module requires additional configuration it should be stored in
 `module_config->external_module_name`
 
-To load an external module it is necessary it to install and add it to
+To load an external module it is necessary to install it and add it to
 `modules` in the config file. Example:
 
 
