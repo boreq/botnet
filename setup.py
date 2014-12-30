@@ -8,7 +8,7 @@ def read(fname):
 
 setup(
     name='botnet',
-    version='0.0.0',
+    version='0.1.0',
     author='boreq',
     author_email='boreq@sourcedrops.com',
     description = ('IRC bot.'),
