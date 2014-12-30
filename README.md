@@ -33,6 +33,11 @@ IRC bot written in Python.
         }
     }
 
+
+## Modules
+All but core modules are available in a
+[separate repository](https://github.com/boreq/botnet_modules).
+
 ## Creating external modules
 The easiest way to create a module is to subclass
 `botnet.modules.BaseResponder`. For details see a simple built-in module
