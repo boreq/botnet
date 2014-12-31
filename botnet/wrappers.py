@@ -1,4 +1,4 @@
-from threading import Thread
+import threading
 from .modules import BaseModule
 from .logging import get_logger
 
@@ -27,7 +27,7 @@ class ModuleWrapper(object):
     def start(self):
         self.logger.debug('Start')
         if not self.is_alive():
-            self.thread = Thread(target=self.module.run)
+            self.thread = threading.Thread(target=self.module.run)
             self.thread.start()
 
     def stop(self):
