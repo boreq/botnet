@@ -1,15 +1,38 @@
+"""
+    Contains objects related to interpreting messages received from a server.
+
+    http://tools.ietf.org/html/rfc2812#section-2.3
+    http://tools.ietf.org/html/rfc2812#section-2.3.1
+"""
+
+
 from .codes import Code
+
+
+def analyze_prefix(prefix):
+    """Analyze a message prefix which is a server name or data about the user
+    (nickname, user, host). Returns a tuple containing a servername and
+    a nickname (one of those will always be None).
+
+    prefix: message prefix.
+    """
+    servername = None
+    nickname = None
+    if prefix is not None:
+        parts = prefix.split('!')
+        if len(parts) > 1:
+            nickname = parts[0]
+        else:
+            servername = prefix
+    return servername, nickname
 
 
 class Message(object):
     """Parses the server message and provides access to its properties.
 
-    http://tools.ietf.org/html/rfc2812#section-2.3
-    http://tools.ietf.org/html/rfc2812#section-2.3.1
-
     Properties you can access are the same as constructor parameters.
     Additionaly servername and nickname are available to quickly check the
-    source of a message (one of them will always be None).
+    source of a message.
 
     prefix: message prefix. Prefix is None if not present in the message.
     command: message command (string with a word or 3 digit number),
@@ -23,27 +46,15 @@ class Message(object):
         self.command = command.upper() if command is not None else command
         self.params = params or []
 
-    def analyze_prefix(self, prefix):
-        """Analyze the message prefix which is a server name or data about the
-        user.
-        """
-        servername = None
-        nickname = None
-        if prefix is not None:
-            parts = prefix.split('!')
-            if len(parts) > 1:
-                nickname = parts[0]
-            else:
-                servername = prefix
-        return servername, nickname
-
     @property
     def servername(self):
-        return self.analyze_prefix(self.prefix)[0]
+        """Calls analyze_prefix on self.prefix in the background."""
+        return analyze_prefix(self.prefix)[0]
 
     @property
     def nickname(self):
-        return self.analyze_prefix(self.prefix)[1]
+        """Calls analyze_prefix on self.prefix in the background."""
+        return analyze_prefix(self.prefix)[1]
 
     def from_string(self, message):
         """Loads a message from a string.
