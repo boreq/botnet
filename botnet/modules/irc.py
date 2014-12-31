@@ -18,7 +18,7 @@ class InactivityMonitor(object):
     """
 
     ping_timeout = 60
-    abort_timeout = 80
+    abort_timeout = 70
 
     def __init__(self, irc_module):
         self.logger = get_logger(self)
@@ -179,15 +179,16 @@ class IRC(BaseModule):
 
     def send(self, text):
         """Sends a text to the socket."""
-        if len(text) > 0 and self.soc:
-            self.logger.debug('Sending:  %s', text)
-            text = '%s\r\n' % text
-            text = text.encode('utf-8')
-            try:
+        # To be honest I have never seen an exception here
+        try:
+            if len(text) > 0 and self.soc:
+                self.logger.debug('Sending:  %s', text)
+                text = '%s\r\n' % text
+                text = text.encode('utf-8')
                 self.soc.send(text)
                 return True
-            except Exception as e:
-                on_exception(self, e=e)
+        except (OSError, ssl.SSLError) as e:
+            on_exception(self, e=e)
         return False
 
     def connect(self):
@@ -239,9 +240,7 @@ class IRC(BaseModule):
                         msg = self.process_message(line)
                         self.handle_message(msg)
                 except (socket.timeout, ssl.SSLWantReadError) as e:
-                    self.logger.debug('skipping exception')
-                except Exception as e:
-                    on_exception.send(self, e=e)
+                    pass
         finally:
             if self.soc:
                 self.soc.close()
