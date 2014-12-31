@@ -33,12 +33,17 @@ def test_dispatching():
         def handle_message(self, msg):
             self.launched_main = True
 
-    msg = make_message('#channel :.test')
     config = make_config()
 
     re = TestResponder(config)
+    msg = make_message('#channel :.test')
     message_in.send(None, msg=msg)
+    assert re.launched_main
+    assert re.launched_command
 
+    msg = make_message('#channel :.test arg1 arg2')
+    re = TestResponder(config)
+    message_in.send(None, msg=msg)
     assert re.launched_main
     assert re.launched_command
 
@@ -146,3 +151,14 @@ def test_decorator_launch():
     message_in.send(None, msg=msg)
 
     assert re.args is not None
+
+
+def test_is_command():
+    config = make_config()
+    re = BaseResponder(config)
+
+    msg = make_message('#channel :.test')
+    assert re.is_command(msg)
+
+    msg = make_message('#channel :.test arg1 arg2')
+    assert re.is_command(msg)
