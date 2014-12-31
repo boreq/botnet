@@ -6,6 +6,7 @@
 
 import click
 import logging
+import signal
 from .manager import Manager
 
 
@@ -25,5 +26,13 @@ def cli(ctx, verbosity):
 @click.argument('config', type=click.Path(exists=True))
 @click.pass_context
 def run(ctx, config):
+    def signal_handler(signum, frame):
+        manager.stop()
+
+    def attach_signals():
+        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+            signal.signal(sig, signal_handler)
+
     manager = Manager(config_path=config)
+    attach_signals()
     manager.run()
