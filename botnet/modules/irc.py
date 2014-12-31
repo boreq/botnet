@@ -1,9 +1,68 @@
+import datetime
 import socket
 import ssl
+import threading
 import time
 from . import BaseModule
+from ..logging import get_logger
 from ..message import Message
-from ..signals import message_in, message_out
+from ..signals import message_in, message_out, on_exception
+
+
+class InactivityMonitor(object):
+    """Checks if the connection is still alive.
+
+    If no messages are received from a server in a certain amount of time PING
+    command will be sent. If the server will not respond the entire IRC module
+    will be restarted to reestablish the connection.
+    """
+
+    ping_timeout = 60
+    abort_timeout = 80
+
+    def __init__(self, irc_module):
+        self.logger = get_logger(self)
+        self.irc_module = irc_module
+
+        self._timer_ping = None
+        self._timer_abort = None
+
+        message_in.connect(self.on_message_in)
+
+    def clear_timers(self):
+        """Cancel scheduled execution of the timers."""
+        self.logger.debug('clear timers')
+        for timer in [self._timer_ping, self._timer_abort]:
+            if timer is not None:
+                timer.cancel()
+
+    def set_timers(self):
+        self.logger.debug('set timers')
+        """Schedule the execution of the timers."""
+        self._timer_ping = threading.Timer(self.ping_timeout, self.on_timer_ping)
+        self._timer_abort = threading.Timer(self.abort_timeout, self.on_timer_abort)
+        self._timer_ping.start()
+        self._timer_abort.start()
+
+    def reset_timers(self):
+        """Reschedule the execution of the timers."""
+        self.clear_timers()
+        self.set_timers()
+
+    def on_message_in(self, sender, msg):
+        self.reset_timers()
+
+    def on_timer_ping(self):
+        """Launched by _timer_ping."""
+        self.logger.debug('ping the server')
+        timestamp = datetime.datetime.now().timestamp()
+        msg = Message(command='PING', params=[str(timestamp)])
+        message_out.send(self, msg=msg)
+
+    def on_timer_abort(self):
+        """Launched by _timer_abort."""
+        self.logger.debug('stop the module')
+        self.irc_module.stop()
 
 
 class IRC(BaseModule):
@@ -37,6 +96,7 @@ class IRC(BaseModule):
         self.config = config.get_for_module('irc')
         self.soc = None
         self._partial_data = None
+        self.inact_monitor = InactivityMonitor(self)
 
     def stop(self):
         """To stop correctly it is necessary to disconnect from the server
@@ -94,9 +154,6 @@ class IRC(BaseModule):
         """Process the created Message object."""
         self.logger.debug('Received: %s', str(msg))
 
-        # Forward the message to other modules
-        message_in.send(self, msg=msg)
-
         # Dispatch the message to the right handler
         # If command is a numeric code convert it to a string
         code = msg.command_code()
@@ -108,6 +165,9 @@ class IRC(BaseModule):
         if func is not None:
             self.logger.debug('Dispatching to %s', handler_name)
             func(msg)
+
+        # Forward the message to other modules
+        message_in.send(self, msg=msg)
 
     def handler_rpl_endofmotd(self, msg):
         self.autosend()
@@ -123,7 +183,12 @@ class IRC(BaseModule):
             self.logger.debug('Sending:  %s', text)
             text = '%s\r\n' % text
             text = text.encode('utf-8')
-            self.soc.send(text)
+            try:
+                self.soc.send(text)
+                return True
+            except Exception as e:
+                on_exception(self, e=e)
+        return False
 
     def connect(self):
         """Initiates the connection."""
@@ -133,6 +198,7 @@ class IRC(BaseModule):
         else:
             self.logger.warning('SSL disabled')
         self.soc.connect((self.config['server'], self.config['port']))
+        self.soc.settimeout(1)
 
     def disconnect(self):
         self.send('QUIT :Disconnecting')
@@ -165,17 +231,21 @@ class IRC(BaseModule):
             self.connect()
             self.identify()
             while not self.stop_event.is_set():
-                data = self.soc.recv(4096)
-                if not data:
-                    break
-                data = self.process_data(data)
-                for msg in data:
-                    msg = self.process_message(msg)
-                    self.handle_message(msg)
-            self.disconnect()
+                try:
+                    data = self.soc.recv(4096)
+                    if not data:
+                        break
+                    for line in self.process_data(data):
+                        msg = self.process_message(line)
+                        self.handle_message(msg)
+                except (socket.timeout, ssl.SSLWantReadError) as e:
+                    self.logger.debug('skipping exception')
+                except Exception as e:
+                    on_exception.send(self, e=e)
         finally:
             if self.soc:
                 self.soc.close()
+            self.inact_monitor.clear_timers()
 
 
 mod = IRC
