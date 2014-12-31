@@ -2,13 +2,14 @@ from .codes import Code
 
 
 class Message(object):
-    """Parses the server message and allows to access to its properties.
+    """Parses the server message and provides access to its properties.
 
     http://tools.ietf.org/html/rfc2812#section-2.3
     http://tools.ietf.org/html/rfc2812#section-2.3.1
 
-    Properties you can access are constructor parameters, servername and
-    nickname. The two last properties are automatically generated from a prefix.
+    Properties you can access are the same as constructor parameters.
+    Additionaly servername and nickname are available to quickly check the
+    source of a message (one of them will always be None).
 
     prefix: message prefix. Prefix is None if not present in the message.
     command: message command (string with a word or 3 digit number),
@@ -19,7 +20,6 @@ class Message(object):
 
     def __init__(self, prefix=None, command=None, params=None):
         self.prefix = prefix
-        self.servername, self.nickname = self.analyze_prefix(prefix)
         self.command = command.upper() if command is not None else command
         self.params = params or []
 
@@ -37,6 +37,14 @@ class Message(object):
                 servername = prefix
         return servername, nickname
 
+    @property
+    def servername(self):
+        return self.analyze_prefix(self.prefix)[0]
+
+    @property
+    def nickname(self):
+        return self.analyze_prefix(self.prefix)[1]
+
     def from_string(self, message):
         """Loads a message from a string.
 
@@ -53,7 +61,6 @@ class Message(object):
             # Prefix.
             if index == 0 and part[0] == ':':
                 self.prefix = part[1:]
-                self.servername, self.nickname = self.analyze_prefix(self.prefix)
                 continue
             # Command.
             if self.command is None:
