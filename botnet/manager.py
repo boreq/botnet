@@ -63,8 +63,8 @@ class Manager(object):
         """Handler for the _request_list_commands signal."""
         commands = []
         with self.wrappers_lock:
-                for wrapper in self.module_wrappers:
-                    commands.extend(wrapper.module.get_all_commands())
+            for wrapper in self.module_wrappers:
+                commands.extend(wrapper.module.get_all_commands())
         _list_commands.send(self, msg=msg, commands=commands)
 
     def on_module_load(self, sender, name):

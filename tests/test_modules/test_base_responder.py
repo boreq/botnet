@@ -49,14 +49,15 @@ def test_dispatching():
 
 
 def test_help(msg_t):
-    """Test help command."""
+    """Test help command. Only Meta module should respond to that command
+    without any parameters."""
     msg = make_message('#channel :.help')
     config = make_config()
 
     re = BaseResponder(config)
     message_in.send(None, msg=msg)
 
-    assert msg_t.msg
+    assert not msg_t.msg
 
 
 def test_specific(msg_t):
@@ -73,7 +74,7 @@ def test_specific(msg_t):
     re = Responder(config)
     message_in.send(None, msg=msg)
 
-    assert msg_t.msg # probably a bug in command_help
+    assert msg_t.msg
 
 
 def test_respond(msg_t):
