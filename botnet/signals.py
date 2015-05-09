@@ -1,3 +1,10 @@
+"""
+    Since all modules are designed to be standalone and independent, signals are
+    the only way modules can communicate with each other or other components
+    of the bot.
+"""
+
+
 from blinker import Namespace
 
 
@@ -30,3 +37,13 @@ module_loaded = _signals.signal('module-loaded')
 # Sent after a module is unloaded
 # kwargs: type cls
 module_unloaded = _signals.signal('module-unloaded')
+
+# Meta module sends this to request `_list_commands` signal
+# kwargs: Message msg
+# msg: message to which the bot should respond with the list of commands
+_request_list_commands = _signals.signal('_request_list_commands')
+
+# Manager sends this in response to `_request_list_commands` signal
+# kwargs: Message msg, [str,] commands
+# msg: message to which the bot should respond with the list of commands
+_list_commands = _signals.signal('_list_commands')

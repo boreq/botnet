@@ -1,6 +1,7 @@
 from functools import wraps
 import argparse
 import threading
+import re
 from ..codes import Code
 from ..helpers import is_channel_name
 from ..logging import get_logger
@@ -72,6 +73,12 @@ class BaseIdleModule(object):
 
     def __init__(self, config):
         self._logger = None
+
+    def get_all_commands(self):
+        """Should return a list of strings containing all commands supported by
+        this module. Used to generate a help message.
+        """
+        return []
 
     @property
     def logger(self):
@@ -205,12 +212,18 @@ class BaseResponder(BaseIdleModule):
         response = Message(command='PRIVMSG', params=[target, text])
         message_out.send(self, msg=response)
 
+    def get_all_commands(self):
+        """Should return a list of strings containing all commands supported by
+        this module.
+        """
+        return self._commands
+
     @parse_command([('command_names', '*')])
     def command_help(self, msg, args):
-        """Sends a list of commands in a private message. If COMMAND is
-        specified sends help for a single command.
+        """If COMMAND is specified sends detailed help for the commands in a
+        private message.
 
-        help [COMMAND]
+        Syntax: help [COMMAND ...]
         """
         if len(args.command_names) > 0:
             # Display help for a specific command
@@ -221,23 +234,20 @@ class BaseResponder(BaseIdleModule):
                 handler = self._get_command_handler(name)
                 if handler:
                     # Header
-                    res = 'Module %s, help for `%s`:' % (self.__class__.__name__,
-                                                         name)
-                    lines.append(res)
+                    res = 'Module %s, help for `%s`: ' % (self.__class__.__name__,
+                                                          name)
                     # Docstring
                     help_text = handler.__doc__
                     if help_text:
-                        for line in help_text.splitlines():
-                            lines.append('    ' + line.strip())
+                        res += ' '.join(help_text.splitlines())
                     else:
-                        lines.append( '    No help available.')
+                        res += 'No help available.'
+
+                    res = re.sub(' +', ' ', res)
+                    lines.append(res)
+
                 for line in lines:
                     self.respond(msg, line, pm=True)
-        else:
-            # Display all commands
-            res = 'Module %s commands: %s' % (self.__class__.__name__,
-                                              ', '.join(self._commands))
-            self.respond(msg, res, pm=True)
 
     def handle_message(self, msg):
         """Main handler called if a received command is a PRIVMSG."""

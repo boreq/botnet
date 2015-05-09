@@ -17,7 +17,9 @@ class InactivityMonitor(object):
     will be restarted to reestablish the connection.
     """
 
+    # PING command will be sent after that many seconds without communication
     ping_timeout = 60
+    # IRC module will be restarted after that many seconds without communication
     abort_timeout = 70
 
     def __init__(self, irc_module):

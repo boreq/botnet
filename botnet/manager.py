@@ -2,7 +2,8 @@ import threading
 from .config import Config
 from .logging import get_logger
 from .modules import get_module_class
-from .signals import module_loaded, module_unloaded, module_load, module_unload
+from .signals import module_loaded, module_unloaded, module_load, module_unload, \
+    _request_list_commands, _list_commands
 from .wrappers import ModuleWrapper
 
 
@@ -39,6 +40,7 @@ class Manager(object):
 
         module_load.connect(self.on_module_load)
         module_unload.connect(self.on_module_unload)
+        _request_list_commands.connect(self.on_request_list_commands)
 
     def stop(self):
         """Stops the entire program."""
@@ -56,6 +58,14 @@ class Manager(object):
             if type(wrapper.module) is module_class:
                 return wrapper
         return None
+
+    def on_request_list_commands(self, sender, msg):
+        """Handler for the _request_list_commands signal."""
+        commands = []
+        with self.wrappers_lock:
+                for wrapper in self.module_wrappers:
+                    commands.extend(wrapper.module.get_all_commands())
+        _list_commands.send(self, msg=msg, commands=commands)
 
     def on_module_load(self, sender, name):
         """Handler for the module_load signal."""
