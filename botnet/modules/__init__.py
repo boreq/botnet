@@ -185,12 +185,18 @@ class BaseResponder(BaseIdleModule):
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def is_command(self, priv_msg, command_name=None):
+    def is_command(self, priv_msg, command_name=None, command_prefix=None):
         """Returns True if the message text starts with a prefixed command_name.
         If command_name is None this function will simply check if the message
-        is prefixed with a command prefix.
+        is prefixed with a command prefix. By default the command prefix
+        defined in the config is used but you can ovverida it by passing the
+        command_prefox parameter.
         """
-        cmd = self.base_config['command_prefix']
+        if command_prefix is None:
+            cmd = self.base_config['command_prefix']
+        else:
+            cmd = command_prefix
+
         if command_name:
             cmd += command_name
             return priv_msg.params[-1].split()[0] == cmd

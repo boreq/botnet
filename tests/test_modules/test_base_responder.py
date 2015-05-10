@@ -177,3 +177,7 @@ def test_is_command():
 
     msg = make_message('#channel :.')
     assert not re.is_command(msg, 'test')
+
+    msg = make_message('#channel ::test')
+    assert re.is_command(msg, 'test', ':')
+    assert not re.is_command(msg, 'test')
