@@ -163,3 +163,17 @@ def test_is_command():
 
     msg = make_message('#channel :.test arg1 arg2')
     assert re.is_command(msg)
+
+    msg = make_message('#channel :.test arg1 arg2')
+    assert re.is_command(msg, 'test')
+
+    msg = make_message('#channel :.testing arg1 arg2')
+    assert re.is_command(msg, 'testing')
+    assert not re.is_command(msg, 'test')
+
+    msg = make_message('#channel :.testing')
+    assert re.is_command(msg, 'testing')
+    assert not re.is_command(msg, 'test')
+
+    msg = make_message('#channel :.')
+    assert not re.is_command(msg, 'test')

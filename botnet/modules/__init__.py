@@ -193,7 +193,9 @@ class BaseResponder(BaseIdleModule):
         cmd = self.base_config['command_prefix']
         if command_name:
             cmd += command_name
-        return priv_msg.params[-1].startswith(cmd)
+            return priv_msg.params[-1].split()[0] == cmd
+        else:
+            return priv_msg.params[-1].startswith(cmd)
 
     def respond(self, priv_msg, text, pm=False):
         """Send a text in response to a message. Text will be automatically
