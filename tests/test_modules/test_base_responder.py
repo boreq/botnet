@@ -11,8 +11,8 @@ def make_message(text):
     return msg
 
 
-def make_config():
-    config = {'module_config': {'base_responder': {'command_prefix': '.'}}}
+def make_config(command_prefix='.'):
+    config = {'module_config': {'base_responder': {'command_prefix': command_prefix}}}
     config = Config(config)
     return config
 
@@ -42,6 +42,13 @@ def test_dispatching():
     assert re.launched_command
 
     msg = make_message('#channel :.test arg1 arg2')
+    re = TestResponder(config)
+    message_in.send(None, msg=msg)
+    assert re.launched_main
+    assert re.launched_command
+
+    config = make_config(':')
+    msg = make_message('#channel ::test arg1 arg2')
     re = TestResponder(config)
     message_in.send(None, msg=msg)
     assert re.launched_main

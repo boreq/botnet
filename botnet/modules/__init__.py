@@ -166,7 +166,7 @@ class BaseResponder(BaseIdleModule):
             if self.is_command(msg):
                 # First word of the last parameter:
                 cmd_name = msg.params[-1].split(' ')[0]
-                cmd_name = cmd_name.strip('.')
+                cmd_name = cmd_name.strip(self.base_config['command_prefix'])
                 func = self._get_command_handler(cmd_name)
                 if func is not None:
                     func(msg)
