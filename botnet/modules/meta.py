@@ -11,13 +11,9 @@ class Meta(BaseResponder):
         super(Meta, self).__init__(config)
         _list_commands.connect(self.on_list_commands)
 
-    def command_bots(self, msg):
-        """Makes the bot identify itself."""
-        self.respond(msg, 'Botnet https://github.com/boreq/botnet')
-
     def command_git(self, msg):
-        """Alias for `bots`."""
-        self.command_bots(msg)
+        """Alias for the IBIP identification."""
+        self.ibip(msg)
 
     @parse_command([('command_names', '*')])
     def command_help(self, msg, args):
@@ -31,10 +27,22 @@ class Meta(BaseResponder):
         else:
             super(Meta, self).command_help(msg)
 
+    def ibip(self, msg):
+        """Makes the bot identify itself as defined by The IRC Bot
+        Identification Protocol Standard.
+        """
+        self.respond(msg, 'Reporting in! [Python] https://github.com/boreq/botnet')
+
     def on_list_commands(self, sender, msg, commands):
         """Sends a list of commands received from the Manager."""
         text = 'Supported commands: %s' % ', '.join(commands)
         self.respond(msg, text)
 
+
+    def handle_message(self, msg):
+        # Handle IBIP:
+        if self.is_command(msg, 'bots', command_prefix='.'):
+            self.ibip(msg)
+            
 
 mod = Meta
