@@ -115,9 +115,10 @@ class BaseModule(BaseIdleModule):
 
 class BaseResponder(BaseIdleModule):
     """Inherit from this class to quickly create a module which reacts to users'
-    messages. Each incomming PRIVMSG is dispatched to the `handle_message`
-    method. If a message starts with a command_prefix defined in config it will
-    be also sent to a proper handler, for example `command_help`.
+    messages. Each incomming PRIVMSG is dispatched to the `handle_privmsg` method
+    and all incoming messages are dispatched to `handle_msg` method. If a message
+    starts with a command_prefix defined in config it will be also sent to
+    a proper handler, for example `command_help`.
 
     Example config:
 
@@ -159,9 +160,11 @@ class BaseResponder(BaseIdleModule):
         return commands
 
     def _dispatch_message(self, msg):
+        # Main handler
+        self.handle_msg(msg)
         if msg.command == 'PRIVMSG':
-            # Main handler
-            self.handle_message(msg)
+            # PRIVMSG handler
+            self.handle_privmsg(msg)
             # Command-specific handler
             if self.is_command(msg):
                 # First word of the last parameter:
@@ -257,6 +260,10 @@ class BaseResponder(BaseIdleModule):
                 for line in lines:
                     self.respond(msg, line, pm=True)
 
-    def handle_message(self, msg):
-        """Main handler called if a received command is a PRIVMSG."""
+    def handle_msg(self, msg):
+        """Handler called when a message is received."""
+        pass
+
+    def handle_privmsg(self, msg):
+        """Handler called when a message with a PRIVMSG command is received."""
         pass

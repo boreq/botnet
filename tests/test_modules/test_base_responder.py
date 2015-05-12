@@ -25,12 +25,16 @@ def test_dispatching():
         def __init__(self, config):
             super(TestResponder, self).__init__(config)
             self.launched_main = False
+            self.launched_priv = False
             self.launched_command = False
 
         def command_test(self, msg):
             self.launched_command = True
 
-        def handle_message(self, msg):
+        def handle_privmsg(self, msg):
+            self.launched_priv = True
+
+        def handle_msg(self, msg):
             self.launched_main = True
 
     config = make_config()
@@ -40,12 +44,14 @@ def test_dispatching():
     message_in.send(None, msg=msg)
     assert re.launched_main
     assert re.launched_command
+    assert re.launched_priv
 
     msg = make_message('#channel :.test arg1 arg2')
     re = TestResponder(config)
     message_in.send(None, msg=msg)
     assert re.launched_main
     assert re.launched_command
+    assert re.launched_priv
 
     config = make_config(':')
     msg = make_message('#channel ::test arg1 arg2')
@@ -53,6 +59,7 @@ def test_dispatching():
     message_in.send(None, msg=msg)
     assert re.launched_main
     assert re.launched_command
+    assert re.launched_priv
 
 
 def test_help(msg_t):

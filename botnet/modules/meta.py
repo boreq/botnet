@@ -38,8 +38,7 @@ class Meta(BaseResponder):
         text = 'Supported commands: %s' % ', '.join(commands)
         self.respond(msg, text)
 
-
-    def handle_message(self, msg):
+    def handle_privmsg(self, msg):
         # Handle IBIP:
         if self.is_command(msg, 'bots', command_prefix='.'):
             self.ibip(msg)
