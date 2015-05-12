@@ -1,6 +1,6 @@
 import time
 from botnet.config import Config
-from botnet.modules.irc import IRC, InactivityMonitor
+from botnet.modules.builtin.irc import IRC, InactivityMonitor
 
 
 def make_config():

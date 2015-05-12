@@ -3,10 +3,10 @@ import socket
 import ssl
 import threading
 import time
-from . import BaseModule
-from ..logging import get_logger
-from ..message import Message
-from ..signals import message_in, message_out, on_exception
+from ...logging import get_logger
+from ...message import Message
+from ...signals import message_in, message_out, on_exception
+from .. import BaseModule
 
 
 class InactivityMonitor(object):

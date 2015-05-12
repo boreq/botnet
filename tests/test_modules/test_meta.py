@@ -1,8 +1,7 @@
 from botnet.config import Config
 from botnet.message import Message
 from botnet.manager import Manager
-from botnet.modules import BaseResponder
-from botnet.modules.meta import Meta
+from botnet.modules.builtin.meta import Meta
 from botnet.signals import message_in, message_out
 
 
