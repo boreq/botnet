@@ -29,30 +29,37 @@ class InactivityMonitor(object):
         self._timer_ping = None
         self._timer_abort = None
 
+    def __enter__(self):
         message_in.connect(self.on_message_in)
+        self._set_timers()
+        return self
 
-    def clear_timers(self):
+    def __exit__(self, exception_type, exception_value, traceback):
+        message_in.disconnect(self.on_message_in)
+        self._clear_timers()
+
+    def _clear_timers(self):
         """Cancel scheduled execution of the timers."""
         self.logger.debug('clear timers')
         for timer in [self._timer_ping, self._timer_abort]:
             if timer is not None:
                 timer.cancel()
 
-    def set_timers(self):
-        self.logger.debug('set timers')
+    def _set_timers(self):
         """Schedule the execution of the timers."""
+        self.logger.debug('set timers')
         self._timer_ping = threading.Timer(self.ping_timeout, self.on_timer_ping)
         self._timer_abort = threading.Timer(self.abort_timeout, self.on_timer_abort)
         self._timer_ping.start()
         self._timer_abort.start()
 
-    def reset_timers(self):
+    def _reset_timers(self):
         """Reschedule the execution of the timers."""
-        self.clear_timers()
-        self.set_timers()
+        self._clear_timers()
+        self._set_timers()
 
     def on_message_in(self, sender, msg):
-        self.reset_timers()
+        self._reset_timers()
 
     def on_timer_ping(self):
         """Launched by _timer_ping."""
@@ -98,7 +105,6 @@ class IRC(BaseModule):
         self.config = config.get_for_module('irc')
         self.soc = None
         self._partial_data = None
-        self.inact_monitor = InactivityMonitor(self)
 
     def stop(self):
         """To stop correctly it is necessary to disconnect from the server
@@ -230,23 +236,23 @@ class IRC(BaseModule):
     def update(self):
         """Main method which should be called."""
         self.logger.debug('Update')
-        try:
-            self.connect()
-            self.identify()
-            while not self.stop_event.is_set():
-                try:
-                    data = self.soc.recv(4096)
-                    if not data:
-                        break
-                    for line in self.process_data(data):
-                        msg = self.process_message(line)
-                        self.handle_message(msg)
-                except (socket.timeout, ssl.SSLWantReadError) as e:
-                    pass
-        finally:
-            if self.soc:
-                self.soc.close()
-            self.inact_monitor.clear_timers()
+        with InactivityMonitor(self):
+            try:
+                self.connect()
+                self.identify()
+                while not self.stop_event.is_set():
+                    try:
+                        data = self.soc.recv(4096)
+                        if not data:
+                            break
+                        for line in self.process_data(data):
+                            msg = self.process_message(line)
+                            self.handle_message(msg)
+                    except (socket.timeout, ssl.SSLWantReadError) as e:
+                        pass
+            finally:
+                if self.soc:
+                    self.soc.close()
 
 
 mod = IRC
