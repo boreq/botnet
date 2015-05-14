@@ -108,3 +108,5 @@ def test_config_gone():
     with pytest.raises(KeyError):
         assert t.config_get('k') == 'v'
     assert t.config_set('k', 'v')
+
+    assert t.config_append('gone', 1)

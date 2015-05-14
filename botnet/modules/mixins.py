@@ -1,4 +1,3 @@
-
 def iterate_dict(d, key):
     """Allows to search a dict using a key.which.looks.like.this instead
     of passing complex lambda expressions to functions.
@@ -11,7 +10,6 @@ def iterate_dict(d, key):
         else:
             raise ValueError('''Tried to access a value which is not a dict. '''
                              '''Failed for key "{}"'''.format(key))
-
 
 class ConfigMixin(object):
 
@@ -79,6 +77,10 @@ class ConfigMixin(object):
 
     def config_append(self, key, value):
         try:
+            try:
+                self.config_get(key)
+            except KeyError:
+                self.config_set(key, [])
             self.config_get(key).append(value)
         except AttributeError as e:
             raise AttributeError('Value for a key "{}" is not a list'.format(key)) from e
