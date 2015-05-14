@@ -101,10 +101,10 @@ class IRC(BaseModule):
 
     def __init__(self, config):
         super(IRC, self).__init__(config)
-        message_out.connect(self.on_message_out)
-        self.config = config.get_for_module('irc')
+        self.config = config.get_for_module('botnet', 'irc')
         self.soc = None
         self._partial_data = None
+        message_out.connect(self.on_message_out)
 
     def stop(self):
         """To stop correctly it is necessary to disconnect from the server

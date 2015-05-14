@@ -1,4 +1,6 @@
+import copy
 import re
+from functools import partial
 from ..helpers import is_channel_name
 from ..message import Message
 from ..signals import message_in, message_out, on_exception
@@ -6,7 +8,94 @@ from .base import BaseIdleModule
 from .utils import parse_command
 
 
-class BaseResponder(BaseIdleModule):
+def iterate_dict(d, key):
+    """Allows to search a dict using a key.which.looks.like.this instead
+    of passing complex lambda expressions to functions.
+    """
+    location = d
+    for i, part in enumerate(key.split('.')):
+        if isinstance(location, dict):
+            location = location[part]
+            yield location
+        else:
+            raise ValueError('''Tried to access a value which is not a dict. '''
+                             '''Failed for key "{}"'''.format(key))
+
+
+class ConfigMixin(object):
+
+    def __init__(self, config):
+        super(ConfigMixin, self).__init__(config)
+        self.config = config
+        self._defaults = []
+        self._configs = []
+
+    def _get_config_key(self, config, key):
+        return 'module_config.{}.{}.{}'.format(config[0], config[1], key)
+
+    def register_default_config(self, config):
+        """Adds a default config. Default configs are queried for requested
+        values in a reverse order in which they were registered so the
+        first registered default config will be used last if the
+        value is missing.
+        """
+        self._defaults.append(config)
+
+    def register_config(self, namespace, name):
+        """Adds a location of the configuration values used by this module."""
+        self._configs.append((namespace, name))
+
+    def config_get(self, key):
+        """Tries to get the value assigned to `key` from the registered configs.
+        Raises KeyError if a key does not exist in the dictionary,
+        Raises ValueError if a value in the key other than the last one is not
+        a dict.  For example in a key 'a.b.c' only 'c' can be something else like
+        string, int, list etc.
+        """
+        # configs
+        for config in reversed(self._configs):
+            actual_key = self._get_config_key(config, key)
+            try:
+                return next(reversed(list(iterate_dict(self.config, actual_key))))
+            except KeyError:
+                continue
+
+        # defaults
+        for config in reversed(self._defaults):
+            try:
+                return next(reversed(list(iterate_dict(config, key))))
+            except KeyError:
+                continue
+
+        raise KeyError
+
+
+    def config_set(self, key, value):
+        actual_key = self._get_config_key(self._configs[-1], key)
+
+        # walk
+        location = self.config
+        parts = actual_key.split('.')
+        for i, part in enumerate(parts[:-1]):
+            if isinstance(location, dict):
+                if not part in location:
+                    location[part] = {}
+                location = location[part]
+            else:
+                raise ValueError('''Tried to change a value which is not a dict. '''
+                                 '''Failed for key "{}"'''.format(key))
+        location[parts[-1]] = value
+        return True
+
+    def config_append(self, key, value):
+        try:
+            self.config_get(key).append(value)
+        except AttributeError as e:
+            raise AttributeError('Value for a key "{}" is not a list'.format(key)) from e
+        return True
+
+
+class BaseResponder(ConfigMixin, BaseIdleModule):
     """Inherit from this class to quickly create a module which reacts to users'
     messages. Each incomming PRIVMSG is dispatched to the `handle_privmsg` method
     and all incoming messages are dispatched to `handle_msg` method. If a message
@@ -34,11 +123,29 @@ class BaseResponder(BaseIdleModule):
     # had to be defined in all modules.
     ignore_help = True
 
+    # A module is expected to store the config in
+    # config['module_config'][config_namespace][config_name]
+    config_namespace = None
+    config_name = None
+
+    # This is the default config for this class
+    base_default_config = {
+        "command_prefix": "."
+    }
+
+    # Default config for the class which inherits from BaseResponder
+    default_config = {}
+
     def __init__(self, config):
         super(BaseResponder, self).__init__(config)
-        self.base_config = config.get_for_module('base_responder')
         self._commands = self._get_commands_from_handlers()
         message_in.connect(self.on_message_in)
+
+        self.register_default_config(self.base_default_config)
+        self.register_default_config(self.default_config)
+        self.register_config('botnet', 'base_responder')
+        if self.config_namespace and self.config_name:
+            self.register_config(self.config_namespace, self.config_name)
 
     def _get_commands_from_handlers(self):
         """Generates a list of supported commands from defined handlers."""
@@ -62,7 +169,7 @@ class BaseResponder(BaseIdleModule):
             if self.is_command(msg):
                 # First word of the last parameter:
                 cmd_name = msg.params[-1].split(' ')[0]
-                cmd_name = cmd_name.strip(self.base_config['command_prefix'])
+                cmd_name = cmd_name.strip(self.config_get('command_prefix'))
                 func = self._get_command_handler(cmd_name)
                 if func is not None:
                     func(msg)
@@ -80,6 +187,7 @@ class BaseResponder(BaseIdleModule):
             self._dispatch_message(msg)
         except Exception as e:
             on_exception.send(self, e=e)
+            raise
 
     def is_command(self, priv_msg, command_name=None, command_prefix=None):
         """Returns True if the message text starts with a prefixed command_name.
@@ -89,7 +197,7 @@ class BaseResponder(BaseIdleModule):
         command_prefox parameter.
         """
         if command_prefix is None:
-            cmd = self.base_config['command_prefix']
+            cmd = self.config_get('command_prefix')
         else:
             cmd = command_prefix
 

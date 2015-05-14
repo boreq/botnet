@@ -10,6 +10,8 @@ class Meta(BaseResponder):
     def __init__(self, config):
         super(Meta, self).__init__(config)
         _list_commands.connect(self.on_list_commands)
+        print('<<<<<<')
+        print(__name__)
 
     def command_git(self, msg):
         """Alias for the IBIP identification."""

@@ -13,5 +13,5 @@ class Config(dict):
     def from_json_file(self, file_path):
         self.update(load_json(file_path))
 
-    def get_for_module(self, module_name):
-        return self['module_config'][module_name]
+    def get_for_module(self, namespace, module_name):
+        return self['module_config'][namespace][module_name]
