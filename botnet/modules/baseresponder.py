@@ -1,6 +1,4 @@
-import copy
 import re
-from functools import partial
 from ..helpers import is_channel_name
 from ..message import Message
 from ..signals import message_in, message_out, on_exception
