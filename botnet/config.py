@@ -3,7 +3,7 @@ from .helpers import load_json
 
 class Config(dict):
     """A dictionary which provides additional methods to load values from files.
-    
+
     defaults: default values.
     """
 
