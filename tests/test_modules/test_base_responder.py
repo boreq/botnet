@@ -12,7 +12,7 @@ def make_message(text):
 
 
 def make_config(command_prefix='.'):
-    config = {'module_config': {'base_responder': {'command_prefix': command_prefix}}}
+    config = {'module_config': {'botnet': {'base_responder': {'command_prefix': command_prefix}}}}
     config = Config(config)
     return config
 

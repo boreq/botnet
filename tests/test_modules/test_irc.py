@@ -6,7 +6,9 @@ from botnet.modules.builtin.irc import IRC, InactivityMonitor
 def make_config():
     config = {
         'module_config': {
-            'irc': {}
+            'botnet': {
+                'irc': {}
+            }
         }
     }
     return Config(config)
