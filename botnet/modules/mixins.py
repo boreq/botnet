@@ -50,14 +50,17 @@ class ConfigMixin(object):
         """
         self._configs.append((namespace, name))
 
-    def config_get(self, key, default=_senti):
+    def config_get(self, key, default=_senti, auto=_senti):
         """Tries to get the value assigned to `key` from the registered configs.
         Raises KeyError if a key does not exist in the dictionary,
         Raises ValueError if a value which a key tries to subscript is not a dict.
 
         key: key in the following format: 'one.two.three'
-        default: key will be set in to that value if it is not present in the
-                 config
+        default: returns this value instead of rising a KeyError if a key is not
+                 in the config.
+        auto: key will be set in to that value if it is not present in the
+              config. And the new value will be returned. Takes precedence over
+              default so using those two options together is pointless.
         """
         # configs
         for config in reversed(self._configs):
@@ -74,9 +77,12 @@ class ConfigMixin(object):
             except KeyError:
                 continue
 
-        if not default is _senti:
-            self.config_set(key, default)
+        if not auto is _senti:
+            self.config_set(key, auto)
             return self.config_get(key)
+
+        if not default is _senti:
+            return default
 
         raise KeyError
 
@@ -100,10 +106,10 @@ class ConfigMixin(object):
 
     def config_append(self, key, value):
         """Alias for
-            self.config_get(key, []).append(value)
+            self.config_get(key, auto=[]).append(value)
         """
         try:
-            self.config_get(key, []).append(value)
+            self.config_get(key, auto=[]).append(value)
         except AttributeError as e:
             raise AttributeError('Value for a key "{}" is not a list'.format(key)) from e
         return True
