@@ -1,3 +1,6 @@
+_senti = object()
+
+
 def iterate_dict(d, key):
     """Allows to search a dict using a key.which.looks.like.this instead
     of passing complex lambda expressions to functions.
@@ -11,12 +14,24 @@ def iterate_dict(d, key):
             raise ValueError('''Tried to access a value which is not a dict. '''
                              '''Failed for key "{}"'''.format(key))
 
+
 class ConfigMixin(object):
+    """Adds various config related methods to a module. Allows the user to
+    access config keys by passing a string delimited by dots.
+
+        self.register_config('my_namespace', 'common')
+        self.register_config('my_namespace', 'my_module')
+        self.config_set('one.two.three', 'value')
+        self.config_get('one.two.three')
+    """
 
     def __init__(self, config):
         super(ConfigMixin, self).__init__(config)
+        # actual Config object
         self.config = config
+        # list of dicts with default configuration values
         self._defaults = []
+        # list of tuples (namespace, name)
         self._configs = []
 
     def _get_config_key(self, config, key):
@@ -24,22 +39,25 @@ class ConfigMixin(object):
 
     def register_default_config(self, config):
         """Adds a default config. Default configs are queried for requested
-        values in a reverse order in which they were registered so the
-        first registered default config will be used last if the
-        value is missing.
+        values in a reverse order in which they were registered in case a value
+        is missing from the actual config.
         """
         self._defaults.append(config)
 
     def register_config(self, namespace, name):
-        """Adds a location of the configuration values used by this module."""
+        """Adds a location of the configuration values used by this module
+        in the config.
+        """
         self._configs.append((namespace, name))
 
-    def config_get(self, key):
+    def config_get(self, key, default=_senti):
         """Tries to get the value assigned to `key` from the registered configs.
         Raises KeyError if a key does not exist in the dictionary,
-        Raises ValueError if a value in the key other than the last one is not
-        a dict.  For example in a key 'a.b.c' only 'c' can be something else like
-        string, int, list etc.
+        Raises ValueError if a value which a key tries to subscript is not a dict.
+
+        key: key in the following format: 'one.two.three'
+        default: key will be set in to that value if it is not present in the
+                 config
         """
         # configs
         for config in reversed(self._configs):
@@ -56,9 +74,14 @@ class ConfigMixin(object):
             except KeyError:
                 continue
 
+        if not default is _senti:
+            self.config_set(key, default)
+            return self.config_get(key)
+
         raise KeyError
 
     def config_set(self, key, value):
+        """Sets a value in the last registered location in the config."""
         actual_key = self._get_config_key(self._configs[-1], key)
 
         # walk
@@ -70,18 +93,17 @@ class ConfigMixin(object):
                     location[part] = {}
                 location = location[part]
             else:
-                raise ValueError('''Tried to change a value which is not a dict. '''
-                                 '''Failed for key "{}"'''.format(key))
+                raise ValueError("""Tried to change a value which is not a dict. """
+                                 """Failed for key '{}'""".format(key))
         location[parts[-1]] = value
         return True
 
     def config_append(self, key, value):
+        """Alias for
+            self.config_get(key, []).append(value)
+        """
         try:
-            try:
-                self.config_get(key)
-            except KeyError:
-                self.config_set(key, [])
-            self.config_get(key).append(value)
+            self.config_get(key, []).append(value)
         except AttributeError as e:
             raise AttributeError('Value for a key "{}" is not a list'.format(key)) from e
         return True

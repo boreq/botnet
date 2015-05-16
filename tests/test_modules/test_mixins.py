@@ -109,4 +109,5 @@ def test_config_gone():
         assert t.config_get('k') == 'v'
     assert t.config_set('k', 'v')
 
-    assert t.config_append('gone', 1)
+    t.config_append('gone', 1)
+    assert t.config_get('gone') == [1]
