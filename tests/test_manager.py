@@ -45,6 +45,21 @@ def test_load_module():
     assert manager.get_wrapper(DummyIdleModule) is None
 
 
+def test_load_twice():
+    class DummyIdleModule(modules.BaseIdleModule):
+        pass
+
+    manager = Manager()
+
+    manager.load_module(DummyIdleModule)
+    assert manager.get_wrapper(DummyIdleModule) is not None
+    assert len(manager.module_wrappers) == 1
+
+    manager.load_module(DummyIdleModule)
+    assert manager.get_wrapper(DummyIdleModule) is not None
+    assert len(manager.module_wrappers) == 1
+
+
 def test_get_wrapper():
     """Checks if get_wrapper properly handles inheritance. Ensures that
     a child is not returned when querying for a parent."""
