@@ -17,14 +17,15 @@ class WhoisMixin(object):
     Keys which *may* be present in the whois_data dictionary:
 
         [
-            'nick',       # nick
-            'user',       # username
-            'host',       # host
-            'real_name',  # real name
-            'channels',   # list of channels the user is in
-            'server',     # url of a server to which the user is connected
-            'server_info, # string with additional information about the server
-            'away',       # away message set by the user, present if the user is /away
+            'nick',            # nick
+            'user',            # username
+            'host',            # host
+            'real_name',       # real name
+            'channels',        # list of channels the user is in
+            'server',          # url of a server to which the user is connected
+            'server_info,      # string with additional information about the server
+            'away',            # away message set by the user, present if the user is /away
+            'nick_identified', # nick the user has identified for
         ]
 
     """
@@ -56,6 +57,12 @@ class WhoisMixin(object):
     def handler_rpl_whoisserver(self, msg):
         self._whois_current[msg.params[1]]['server'] = msg.params[2]
         self._whois_current[msg.params[1]]['server_info'] = msg.params[3]
+
+    def handler_rizon_rpl_whoisidentified(self, msg):
+        self._whois_current[msg.params[1]]['nick_identified'] = msg.params[2]
+
+    def handler_freenode_rpl_whoisidentified(self, msg):
+        self._whois_current[msg.params[1]]['nick_identified'] = msg.params[1]
 
     def handler_rpl_away(self, msg):
         self._whois_current[msg.params[1]]['away'] = msg.params[2]
@@ -137,7 +144,7 @@ class Admin(WhoisMixin, BaseResponder):
         admin_list = self.config_get('admins', [])
         if msg.nickname in admin_list:
             def on_complete(whois_data):
-                if whois_data.get('authenticated', None):
+                if whois_data.get('nick_identified', None):
                     admin_message_in.send(self, msg=msg)
             self.whois_schedule(msg.nickname, on_complete)
 
