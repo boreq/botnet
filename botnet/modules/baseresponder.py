@@ -1,7 +1,7 @@
 import re
 from ..helpers import is_channel_name
 from ..message import Message
-from ..signals import message_in, message_out, on_exception
+from ..signals import admin_message_in, message_in, message_out, on_exception
 from .base import BaseIdleModule
 from .mixins import ConfigMixin
 from .utils import parse_command
@@ -27,6 +27,9 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
     # Prefix for command handlers. For example `command_help` is a handler for
     # messages starting with .help
     handler_prefix = 'command_'
+
+    # Prefix for admin command handlers.
+    admin_handler_prefix = 'admin_command_'
 
     # Don't send description of the .help command - normally each module which
     # is based on this class would respond to such request and flood a user with
@@ -55,6 +58,7 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
         super(BaseResponder, self).__init__(config)
         self._commands = self._get_commands_from_handlers()
         message_in.connect(self.on_message_in)
+        admin_message_in.connect(self.on_admin_message_in)
 
         self.register_default_config(self.base_default_config)
         self.register_default_config(self.default_config)
@@ -74,6 +78,12 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
                         commands.append(command_name)
         return commands
 
+    def _get_command_name_from_privmsg(self, msg):
+        # First word of the last parameter:
+        cmd_name = msg.params[-1].split(' ')[0]
+        cmd_name = cmd_name.strip(self.config_get('command_prefix'))
+        return cmd_name
+
     def _dispatch_message(self, msg):
         # Main handler
         self.handle_msg(msg)
@@ -89,9 +99,25 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
                 if func is not None:
                     func(msg)
 
+    def _dispatch_admin_message(self, msg):
+        if msg.command == 'PRIVMSG':
+            # PRIVMSG handler
+            self.handle_admin_privmsg(msg)
+            # Command-specific handler
+            if self.is_command(msg):
+                cmd_name = self._get_command_name_from_privmsg(msg)
+                func = self._get_admin_command_handler(cmd_name)
+                if func is not None:
+                    func(msg)
+
     def _get_command_handler(self, cmd_name):
         """Returns a handler for a command."""
         handler_name = self.handler_prefix + cmd_name
+        return getattr(self, handler_name, None)
+
+    def _get_admin_command_handler(self, cmd_name):
+        """Returns a handler for an admin command."""
+        handler_name = self.admin_handler_prefix + cmd_name
         return getattr(self, handler_name, None)
 
     def on_message_in(self, sender, msg):
@@ -102,7 +128,15 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
             self._dispatch_message(msg)
         except Exception as e:
             on_exception.send(self, e=e)
-            raise
+
+    def on_admin_message_in(self, sender, msg):
+        """Handler for an admin_message_in signal. Dispatches the message to the
+        per-command handlers and the main handler.
+        """
+        try:
+            self._admin_dispatch_message(msg)
+        except Exception as e:
+            on_exception.send(self, e=e)
 
     def is_command(self, priv_msg, command_name=None, command_prefix=None):
         """Returns True if the message text starts with a prefixed command_name.
@@ -182,4 +216,10 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
 
     def handle_privmsg(self, msg):
         """Handler called when a message with a PRIVMSG command is received."""
+        pass
+
+    def handle_admin_privmsg(self, msg):
+        """Handler called when a message with a PRIVMSG command is received from
+        an admin.
+        """
         pass

@@ -17,25 +17,34 @@ def make_config(command_prefix='.'):
     return config
 
 
+class TestResponder(BaseResponder):
+
+    def __init__(self, config):
+        super(TestResponder, self).__init__(config)
+        self.launched_main = False
+        self.launched_priv = False
+        self.launched_admin_priv = False
+        self.launched_command = False
+        self.launched_admin_command = False
+
+    def command_test(self, msg):
+        self.launched_command = True
+
+    def admin_command_test(self, msg):
+        self.launched_admin_command = True
+
+    def handle_privmsg(self, msg):
+        self.launched_priv = True
+
+    def handle_admin_privmsg(self, msg):
+        self.launched_admin_priv = True
+
+    def handle_msg(self, msg):
+        self.launched_main = True
+
+
 def test_dispatching():
     """Test if a responder properly dispatches a message."""
-
-    class TestResponder(BaseResponder):
-
-        def __init__(self, config):
-            super(TestResponder, self).__init__(config)
-            self.launched_main = False
-            self.launched_priv = False
-            self.launched_command = False
-
-        def command_test(self, msg):
-            self.launched_command = True
-
-        def handle_privmsg(self, msg):
-            self.launched_priv = True
-
-        def handle_msg(self, msg):
-            self.launched_main = True
 
     config = make_config()
 
@@ -45,6 +54,8 @@ def test_dispatching():
     assert re.launched_main
     assert re.launched_command
     assert re.launched_priv
+    assert not re.launched_admin_command
+    assert not re.launched_admin_priv
 
     msg = make_message('#channel :.test arg1 arg2')
     re = TestResponder(config)
@@ -52,6 +63,8 @@ def test_dispatching():
     assert re.launched_main
     assert re.launched_command
     assert re.launched_priv
+    assert not re.launched_admin_command
+    assert not re.launched_admin_priv
 
     config = make_config(':')
     msg = make_message('#channel ::test arg1 arg2')
@@ -60,6 +73,8 @@ def test_dispatching():
     assert re.launched_main
     assert re.launched_command
     assert re.launched_priv
+    assert not re.launched_admin_command
+    assert not re.launched_admin_priv
 
 
 def test_help(msg_t):
