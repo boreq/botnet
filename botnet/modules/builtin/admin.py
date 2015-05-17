@@ -134,6 +134,7 @@ class Admin(WhoisMixin, BaseResponder):
                 "admins": ["nick1", "nick2"]
             }
         }
+
     """
 
     config_namespace = 'botnet'

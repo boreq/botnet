@@ -77,22 +77,24 @@ class InactivityMonitor(object):
 class IRC(BaseModule):
     """Connects to an IRC server, sends and receives commands.
 
-    Example config:
+    Example module config:
 
-        "irc": {
-            "server": "irc.example.com",
-            "port": 6667,
-            "ssl": false,
-            "nick": "my_bot",
-            "channels": [
-                {
-                    "name": "#my-channel",
-                    "password": null
-                }
-            ],
-            "autosend": [
-                "PRIVMSG NickServ :IDENTIFY pass"
-            ]
+        "botnet": {
+            "irc": {
+                "server": "irc.example.com",
+                "port": 6667,
+                "ssl": false,
+                "nick": "my_bot",
+                "channels": [
+                    {
+                        "name": "#my-channel",
+                        "password": null
+                    }
+                ],
+                "autosend": [
+                    "PRIVMSG NickServ :IDENTIFY pass"
+                ]
+            }
         }
 
     """

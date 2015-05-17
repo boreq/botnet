@@ -16,9 +16,12 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
 
     Example config:
 
-        "base_responder": {
-            "command_prefix": "."
+        "botnet": {
+            "base_responder": {
+                "command_prefix": "."
+            }
         }
+
     """
 
     # Prefix for command handlers. For example `command_help` is a handler for
