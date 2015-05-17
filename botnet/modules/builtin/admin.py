@@ -149,13 +149,21 @@ class Admin(WhoisMixin, BaseResponder):
         self.unload_commands = []
 
     @parse_command([('module_names', '*')])
-    def admin_command_load_module(self, msg, args):
+    def admin_command_module_load(self, msg, args):
+        """Loads a module.
+
+        Syntax: module_load MODULE_NAME ...
+        """
         for name in args.module_names:
             self.load_commands.append(msg)
             module_load.send(self, name=name)
 
     @parse_command([('module_names', '*')])
-    def admin_command_unload_module(self, msg, args):
+    def admin_command_module_unload(self, msg, args):
+        """Unloads a module.
+
+        Syntax: module_unload MODULE_NAME ...
+        """
         for name in args.module_names:
             self.unload_commands.append(msg)
             module_unload.send(self, name=name)
