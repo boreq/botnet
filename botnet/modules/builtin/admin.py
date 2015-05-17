@@ -10,6 +10,24 @@ DeferredWhois = namedtuple('DeferredWhois', ['nick', 'on_complete'])
 
 
 class WhoisMixin(object):
+    """Provides a way of requesting and handling WHOIS data received from the 
+    IRC server. WHOIS data should be requested using the function
+    WhoisMixin.whois_schedule.
+
+    Keys which *may* be present in the whois_data dictionary:
+
+        [
+            'nick',       # nick
+            'user',       # username
+            'host',       # host
+            'real_name',  # real name
+            'channels',   # list of channels the user is in
+            'server',     # url of a server to which the user is connected
+            'server_info, # string with additional information about the server
+            'away',       # away message set by the user, present if the user is /away
+        ]
+
+    """
 
     whois_cache_timeout = 60
 
@@ -35,6 +53,13 @@ class WhoisMixin(object):
             self._whois_current[msg.params[1]]['channels'] = []
         self._whois_current[msg.params[1]]['channels'].extend(msg.params[2:])
 
+    def handler_rpl_whoisserver(self, msg):
+        self._whois_current[msg.params[1]]['server'] = msg.params[2]
+        self._whois_current[msg.params[1]]['server_info'] = msg.params[3]
+
+    def handler_rpl_away(self, msg):
+        self._whois_current[msg.params[1]]['away'] = msg.params[2]
+
     def handler_rpl_endofwhois(self, msg):
         """End of WHOIS."""
         if not msg.params[1] in self._whois_current:
@@ -59,6 +84,9 @@ class WhoisMixin(object):
             self._whois_perform(data.nick)
 
     def _whois_run_deferred(self):
+        """Loops over the deferred functions and launched those for which WHOIS
+        data is available.
+        """
         for i in reversed(range(len(self._whois_deferred))):
             d = self._whois_deferred[i]
             data = self._whois_cache.get(d.nick)
@@ -84,6 +112,22 @@ class WhoisMixin(object):
 
 
 class Admin(WhoisMixin, BaseResponder):
+    """Implements a few administrative commands. Resends commands received
+    in the `message_in` signal which originate from one of the admins in the
+    `admin_message_in` signal. That way all modules which are subscribed to
+    the `admin_message_in` signal can implement commands which are available
+    only for the bot admins. An admin is a user whose nick is present in the
+    list `admins` in the module config and who has authenticated for that nick
+    on the IRC network.
+
+    Example module config:
+
+        "botnet": {
+            "admin": {
+                "admins": ["nick1", "nick2"]
+            }
+        }
+    """
 
     config_namespace = 'botnet'
     config_name = 'admin'
@@ -93,7 +137,7 @@ class Admin(WhoisMixin, BaseResponder):
         admin_list = self.config_get('admins', [])
         if msg.nickname in admin_list:
             def on_complete(whois_data):
-                if whois_data['authenticated']:
+                if whois_data.get('authenticated', None):
                     admin_message_in.send(self, msg=msg)
             self.whois_schedule(msg.nickname, on_complete)
 
