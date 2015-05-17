@@ -27,6 +27,7 @@ def cli(ctx, verbosity):
 @click.argument('config', type=click.Path(exists=True))
 @click.pass_context
 def run(ctx, config):
+    """Runs the bot."""
     def signal_handler(signum, frame):
         manager.stop()
 

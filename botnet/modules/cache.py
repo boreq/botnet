@@ -1,3 +1,8 @@
+"""
+    Contains cache implementations which can be used by the modules, for example
+    to cache results acquired from various online APIs.
+"""
+
 import datetime
 import hashlib
 
