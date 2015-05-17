@@ -1,6 +1,7 @@
 from botnet.config import Config
 from botnet.message import Message
 from botnet.modules import BaseResponder, parse_command
+from botnet.modules.builtin.admin import Admin
 from botnet.signals import message_in, message_out
 
 
@@ -15,7 +16,6 @@ def make_config(command_prefix='.'):
     config = {'module_config': {'botnet': {'base_responder': {'command_prefix': command_prefix}}}}
     config = Config(config)
     return config
-
 
 class TestResponder(BaseResponder):
 
@@ -75,6 +75,47 @@ def test_dispatching():
     assert re.launched_priv
     assert not re.launched_admin_command
     assert not re.launched_admin_priv
+
+
+def test_admin_dispatching():
+    def make_admin_config(command_prefix='.'):
+        config = {
+            'module_config': {
+                'botnet': {
+                    'base_responder': {
+                        'command_prefix': command_prefix
+                    },
+                    'admin': {
+                        'admins': [
+                            'nick4'
+                        ]
+                    }
+                }
+            }
+        }
+        config = Config(config)
+        return config
+
+    config = make_config()
+    admin_config = make_admin_config()
+
+    re = TestResponder(config)
+    ad = Admin(admin_config)
+
+    msg = make_message('#channel :.test')
+    message_in.send(None, msg=msg)
+    assert re.launched_main
+    assert re.launched_command
+    assert re.launched_priv
+    assert not re.launched_admin_command
+    assert not re.launched_admin_priv
+
+    from  test_modules.builtin.test_admin import admin_make_message, data4, send_data
+    msg = admin_make_message('nick4', '.test')
+    message_in.send(None, msg=msg)
+    send_data(data4)
+    assert re.launched_admin_command
+    assert re.launched_admin_priv
 
 
 def test_help(msg_t):

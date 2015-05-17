@@ -134,7 +134,7 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
         per-command handlers and the main handler.
         """
         try:
-            self._admin_dispatch_message(msg)
+            self._dispatch_admin_message(msg)
         except Exception as e:
             on_exception.send(self, e=e)
 
