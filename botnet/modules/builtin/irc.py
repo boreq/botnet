@@ -181,7 +181,7 @@ class IRC(BaseModule):
 
     def handler_rpl_endofmotd(self, msg):
         self.autosend()
-        self.join()
+        self.join_from_config()
 
     def handler_ping(self, msg):
         rmsg = Message(command='PONG', params=msg.params)
@@ -219,12 +219,19 @@ class IRC(BaseModule):
         self.send('NICK ' + self.config['nick'])
         self.send('USER botnet botnet botnet :Python bot')
 
-    def join(self):
+    def join_from_config(self):
         """Joins all channels defined in the config."""
         for channel in self.config['channels']:
-            msg = 'JOIN ' + channel['name']
-            if channel['password'] is not None:
-                msg += ' ' + channel['password']
+            self.join(channel['name'], channel['password'])
+
+    def join(self, channel_name, channel_password):
+            msg = 'JOIN ' + channel_name
+            if channel_password is not None:
+                msg += ' ' + channel_password
+            self.send(msg)
+
+    def part(self, channel_name):
+            msg = 'PART ' + channel_name
             self.send(msg)
 
     def autosend(self):
