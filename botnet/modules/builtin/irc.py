@@ -6,7 +6,7 @@ import time
 from ...logging import get_logger
 from ...message import Message
 from ...signals import message_in, message_out, on_exception
-from .. import BaseModule
+from .. import BaseModule, ConfigMixin
 
 
 class InactivityMonitor(object):
@@ -74,7 +74,7 @@ class InactivityMonitor(object):
         self.irc_module.stop()
 
 
-class IRC(BaseModule):
+class IRC(ConfigMixin, BaseModule):
     """Connects to an IRC server, sends and receives commands.
 
     Example module config:
@@ -103,7 +103,7 @@ class IRC(BaseModule):
 
     def __init__(self, config):
         super(IRC, self).__init__(config)
-        self.config = config.get_for_module('botnet', 'irc')
+        self.register_config('botnet', 'irc')
         self.soc = None
         self._partial_data = None
         message_out.connect(self.on_message_out)
@@ -204,11 +204,11 @@ class IRC(BaseModule):
     def connect(self):
         """Initiates the connection."""
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if self.config['ssl']:
+        if self.config_get('ssl'):
             self.soc = ssl.wrap_socket(self.soc)
         else:
             self.logger.warning('SSL disabled')
-        self.soc.connect((self.config['server'], self.config['port']))
+        self.soc.connect((self.config_get('server'), self.config_get('port')))
         self.soc.settimeout(1)
 
     def disconnect(self):
@@ -216,12 +216,12 @@ class IRC(BaseModule):
 
     def identify(self):
         """Identifies with a server."""
-        self.send('NICK ' + self.config['nick'])
+        self.send('NICK ' + self.config_get('nick'))
         self.send('USER botnet botnet botnet :Python bot')
 
     def join_from_config(self):
         """Joins all channels defined in the config."""
-        for channel in self.config['channels']:
+        for channel in self.config_get('channels'):
             self.join(channel['name'], channel['password'])
 
     def join(self, channel_name, channel_password):
@@ -236,7 +236,7 @@ class IRC(BaseModule):
 
     def autosend(self):
         """Automatically sends commands to a server before joining channels."""
-        commands = self.config.get('autosend', [])
+        commands = self.config_get('autosend', [])
         for command in commands:
             self.send(command)
         if len(commands) > 0:
