@@ -1,6 +1,14 @@
 # Botnet
 IRC bot written in Python.
 
+Botnet implements nearly all core functionality in a form of modules which can
+be loaded and unloaded at will and communicate with one another using signals.
+Thanks to that design a module which encounters serious issues and crashes is
+automatically restarted and does not affect the execution of other modules.
+Furthermore all features of the bot can be enabled and disabled at will. It is
+possible to use built-in modules or create easy to load and integrate user
+maintained external modules distributed in a form of Python packages.
+
 ## Usage
 
     botnet --help
@@ -12,56 +20,25 @@ IRC bot written in Python.
     {
         "modules": ["irc", "meta"],
         "module_config": {
-            "irc": {
-                "server": "irc.example.com",
-                "port": 6697,
-                "ssl": true,
-                "nick": "my_bot",
-                "channels": [
-                    {
-                        "name": "#my-channel",
-                        "password": null
-                    }
-                ],
-                "autosend": [
-                    "PRIVMSG your_nick :I connected!"
-                ]
-            },
-            "base_responder": {
-                "command_prefix": "."
+            "botnet": {
+                "irc": {
+                    "server": "irc.example.com",
+                    "port": 6697,
+                    "ssl": true,
+                    "nick": "my_bot",
+                    "channels": [
+                        {
+                            "name": "#my-channel",
+                            "password": null
+                        }
+                    ],
+                    "autosend": [
+                        "PRIVMSG your_nick :I connected!"
+                    ]
+                },
+                "base_responder": {
+                    "command_prefix": "."
+                }
             }
-        }
-    }
-
-
-## Modules
-All but core modules are available in a
-[separate repository](https://github.com/boreq/botnet_modules).
-
-## Creating external modules
-The easiest way to create a module is to subclass
-`botnet.modules.BaseResponder`. For details see a simple built-in module
-`botnet.modules.meta`.
-
-External modules must follow a few simple rules:
-
-* Python module name should start with `botnet_`
-* it should be possible to import a variable `mod` from that Python module
-* variable `mod` should be pointing to a class which is a child of
-`botnet.modules.BaseIdleModule`
-* if a module requires additional configuration it should be stored in
-`module_config->external_module_name`
-
-To load an external module it is necessary to install it and add it to
-`modules` in the config file. Example:
-
-
-    {
-        "modules": ["irc", "botnet_cool_external_module"],
-        "module_config": {
-            "botnet_cool_external_module": {
-                "key": "value"
-            }
-            ...
         }
     }
