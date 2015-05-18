@@ -44,6 +44,14 @@ module_loaded = _signals.signal('module-loaded')
 # kwargs: type cls
 module_unloaded = _signals.signal('module-unloaded')
 
+# Send this to reload the config
+# no kwargs
+config_reload = _signals.signal('config-reload')
+
+# Sent after the config is reloaded
+# no kwargs
+config_reloaded = _signals.signal('config-reloaded')
+
 # Meta module sends this to request `_list_commands` signal
 # kwargs: Message msg
 # msg: message to which the bot should respond with the list of commands

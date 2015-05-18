@@ -2,7 +2,7 @@ import datetime
 from collections import namedtuple
 from ...message import Message
 from ...signals import message_out, admin_message_in, module_load, module_unload, \
-    module_loaded, module_unloaded
+    module_loaded, module_unloaded, config_reload, config_reloaded
 from .. import BaseResponder, parse_command
 from ..cache import MemoryCache
 
@@ -145,8 +145,13 @@ class Admin(WhoisMixin, BaseResponder):
         super(Admin, self).__init__(config)
         module_loaded.connect(self.on_module_loaded)
         module_unloaded.connect(self.on_module_unloaded)
+        config_reloaded.connect(self.on_config_reloaded)
+        # Since there is no threading involved in the signal distribution
+        # the last message which triggered a command will simply be on top of
+        # those lists
         self.load_commands = []
         self.unload_commands = []
+        self.config_reload = []
 
     @parse_command([('module_names', '*')])
     def admin_command_module_load(self, msg, args):
@@ -168,10 +173,16 @@ class Admin(WhoisMixin, BaseResponder):
             self.unload_commands.append(msg)
             module_unload.send(self, name=name)
 
+    def admin_command_config_reload(self, msg):
+        """Reloads the config.
+
+        Syntax: config_reload
+        """
+        self.config_reload.append(msg)
+        config_reload.send(self)
+
     def on_module_loaded(self, sender, cls):
         try:
-            # Since there is no threading involved in the signal distribution
-            # the last message will simply be on top of the list
             msg = self.load_commands.pop()
             self.respond(msg, 'Loaded module %s' % cls)
         except IndexError as e:
@@ -179,10 +190,15 @@ class Admin(WhoisMixin, BaseResponder):
 
     def on_module_unloaded(self, sender, cls):
         try:
-            # Since there is no threading involved in the signal distribution
-            # the last message will simply be on top of the list
             msg = self.unload_commands.pop()
             self.respond(msg, 'Unloaded module %s' % cls)
+        except IndexError as e:
+            pass
+
+    def on_config_reloaded(self, sender):
+        try:
+            msg = self.config_reload.pop()
+            self.respond(msg, 'Config reloaded')
         except IndexError as e:
             pass
 
