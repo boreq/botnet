@@ -91,6 +91,9 @@ class ConfigMixin(object):
 
     def config_set(self, key, value):
         """Sets a value in the last registered location in the config."""
+        if not self._config_locations:
+            raise ValueError('No config locations. Call register_config first.')
+
         actual_key = self._get_config_key(self._config_locations[-1], key)
 
         # walk
