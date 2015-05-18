@@ -30,9 +30,9 @@ class ConfigMixin(object):
         # actual Config object
         self.config = config
         # list of dicts with default configuration values
-        self._defaults = []
+        self._config_defaults = []
         # list of tuples (namespace, name)
-        self._configs = []
+        self._config_locations = []
 
     def _get_config_key(self, config, key):
         return 'module_config.{}.{}.{}'.format(config[0], config[1], key)
@@ -42,13 +42,13 @@ class ConfigMixin(object):
         values in a reverse order in which they were registered in case a value
         is missing from the actual config.
         """
-        self._defaults.append(config)
+        self._config_defaults.append(config)
 
     def register_config(self, namespace, name):
         """Adds a location of the configuration values used by this module
         in the config.
         """
-        self._configs.append((namespace, name))
+        self._config_locations.append((namespace, name))
 
     def config_get(self, key, default=_senti, auto=_senti):
         """Tries to get the value assigned to `key` from the registered configs.
@@ -63,7 +63,7 @@ class ConfigMixin(object):
               default so using those two options together is pointless.
         """
         # configs
-        for config in reversed(self._configs):
+        for config in reversed(self._config_locations):
             actual_key = self._get_config_key(config, key)
             try:
                 return next(reversed(list(iterate_dict(self.config, actual_key))))
@@ -71,7 +71,7 @@ class ConfigMixin(object):
                 continue
 
         # defaults
-        for config in reversed(self._defaults):
+        for config in reversed(self._config_defaults):
             try:
                 return next(reversed(list(iterate_dict(config, key))))
             except KeyError:
@@ -88,7 +88,7 @@ class ConfigMixin(object):
 
     def config_set(self, key, value):
         """Sets a value in the last registered location in the config."""
-        actual_key = self._get_config_key(self._configs[-1], key)
+        actual_key = self._get_config_key(self._config_locations[-1], key)
 
         # walk
         location = self.config
