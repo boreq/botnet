@@ -157,13 +157,17 @@ class MessageDispatcherMixin(object):
         # Extract the first word the last message parameter:
         cmd_name = priv_msg.params[-1].split(' ')[0]
         # Remove the command prefix
-        cmd_name = cmd_name.strip(self.config_get('command_prefix'))
+        cmd_name = cmd_name.strip(self.get_command_prefix())
         return cmd_name
 
     def _get_command_handler(self, handler_prefix, cmd_name):
         """Returns a handler for a command."""
         handler_name = handler_prefix + cmd_name
         return getattr(self, handler_name, None)
+
+    def get_command_prefix(self):
+        """This method should return the command prefix."""
+        raise NotImplementedError
 
     def is_command(self, priv_msg, command_name=None, command_prefix=None):
         """Returns True if the message text starts with a `command_name`
@@ -174,7 +178,7 @@ class MessageDispatcherMixin(object):
         `command_prefix` parameter.
         """
         if command_prefix is None:
-            command_prefix = self.config_get('command_prefix')
+            command_prefix = self.get_command_prefix()
 
         if command_name:
             cmd = command_prefix + command_name

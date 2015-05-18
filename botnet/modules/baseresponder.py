@@ -69,6 +69,9 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseIdleModule):
                         commands.append(command_name)
         return commands
 
+    def get_command_prefix(self):
+        return self.config_get('command_prefix')
+
     def respond(self, priv_msg, text, pm=False):
         """Send a text in response to a message. Text will be automatically
         sent to a proper channel or user.
