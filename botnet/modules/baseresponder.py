@@ -1,7 +1,7 @@
 import re
 from ..helpers import is_channel_name
 from ..message import Message
-from ..signals import admin_message_in, message_in, message_out, on_exception
+from ..signals import message_out
 from .base import BaseIdleModule
 from .mixins import ConfigMixin, MessageDispatcherMixin
 from .utils import parse_command
