@@ -177,7 +177,10 @@ class IRC(ConfigMixin, BaseModule):
             func(msg)
 
         # Forward the message to other modules
-        message_in.send(self, msg=msg)
+        try:
+            message_in.send(self, msg=msg)
+        except Exception as e:
+            on_exception.send(self, e=e)
 
     def handler_rpl_endofmotd(self, msg):
         self.autosend()

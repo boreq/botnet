@@ -3,7 +3,7 @@ from .config import Config
 from .logging import get_logger
 from .modules import get_module_class
 from .signals import module_loaded, module_unloaded, module_load, module_unload, \
-    _request_list_commands, _list_commands
+    _request_list_commands, _list_commands, config_changed, on_exception
 from .wrappers import ModuleWrapper
 
 
@@ -32,6 +32,7 @@ class Manager(object):
         self.deltatime = 1
 
         self.config = self.config_class()
+        self.config_path = config_path
         if config_path:
             self.config.from_json_file(config_path)
 
@@ -41,6 +42,7 @@ class Manager(object):
         module_load.connect(self.on_module_load)
         module_unload.connect(self.on_module_unload)
         _request_list_commands.connect(self.on_request_list_commands)
+        config_changed.connect(self.on_config_changed)
 
     def stop(self):
         """Stops the entire program."""
@@ -67,13 +69,39 @@ class Manager(object):
                 commands.extend(wrapper.module.get_all_commands())
         _list_commands.send(self, msg=msg, commands=commands)
 
+    def on_config_changed(self, sender):
+        """Handler for the config_changed signal."""
+        try:
+            with self.config.lock:
+                if self.config_path:
+                    self.config.to_json_file(self.config_path)
+        except Exception as e:
+            on_exception.send(self, e=e)
+
     def on_module_load(self, sender, name):
         """Handler for the module_load signal."""
-        self.load_module_by_name(name)
+        try:
+            result = self.load_module_by_name(name)
+            if result:
+                with self.config.lock:
+                    if not 'modules' in self.config:
+                        self.config['modules'] = []
+                    self.config['modules'].append(name)
+                config_changed.send(self)
+        except Exception as e:
+            on_exception.send(self, e=e)
 
     def on_module_unload(self, sender, name):
         """Handler for the module_unload signal."""
-        self.unload_module_by_name(name)
+        try:
+            result = self.unload_module_by_name(name)
+            if result:
+                with self.config.lock:
+                    if 'modules' in self.config:
+                        self.config['modules'].remove(name)
+                config_changed.send(self)
+        except Exception as e:
+            on_exception.send(self, e=e)
 
     def load_module_by_name(self, module_name):
         try:
@@ -112,6 +140,8 @@ class Manager(object):
                 wrapper.stop()
                 self.module_wrappers.remove(wrapper)
                 module_unloaded.send(self, cls=module_class)
+                return True
+        return False
 
     def run(self):
         """Periodically calls self.update."""

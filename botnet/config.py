@@ -1,5 +1,5 @@
 import threading
-from .helpers import load_json
+from .helpers import load_json, save_json
 
 
 class Config(dict):
@@ -14,3 +14,6 @@ class Config(dict):
 
     def from_json_file(self, file_path):
         self.update(load_json(file_path))
+
+    def to_json_file(self, file_path):
+        save_json(file_path, self, indent=4)

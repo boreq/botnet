@@ -6,9 +6,9 @@ def load_json(file_path):
         return json.load(f)
 
 
-def save_json(file_path, data):
+def save_json(file_path, data, **kwargs):
     with open(file_path, 'w') as f:
-        json.dump(data, f)
+        json.dump(data, f, **kwargs)
 
 
 def is_channel_name(text):
