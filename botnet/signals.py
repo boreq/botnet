@@ -52,6 +52,10 @@ config_reload = _signals.signal('config-reload')
 # no kwargs
 config_reloaded = _signals.signal('config-reloaded')
 
+# Send this to indicate that the config has changed and should be saved
+# no kwargs
+config_changed = _signals.signal('config-changed')
+
 # Meta module sends this to request `_list_commands` signal
 # kwargs: Message msg
 # msg: message to which the bot should respond with the list of commands

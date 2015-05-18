@@ -1,4 +1,4 @@
-from ..signals import admin_message_in, message_in, on_exception
+from ..signals import admin_message_in, message_in, on_exception, config_changed
 
 
 _senti = object()
@@ -66,12 +66,13 @@ class ConfigMixin(object):
               default so using those two options together is pointless.
         """
         # configs
-        for config in reversed(self._config_locations):
-            actual_key = self._get_config_key(config, key)
-            try:
-                return next(reversed(list(iterate_dict(self.config, actual_key))))
-            except KeyError:
-                continue
+        with self.config.lock:
+            for config in reversed(self._config_locations):
+                actual_key = self._get_config_key(config, key)
+                try:
+                    return next(reversed(list(iterate_dict(self.config, actual_key))))
+                except KeyError:
+                    continue
 
         # defaults
         for config in reversed(self._config_defaults):
@@ -97,17 +98,20 @@ class ConfigMixin(object):
         actual_key = self._get_config_key(self._config_locations[-1], key)
 
         # walk
-        location = self.config
-        parts = actual_key.split('.')
-        for i, part in enumerate(parts[:-1]):
-            if isinstance(location, dict):
-                if not part in location:
-                    location[part] = {}
-                location = location[part]
-            else:
-                raise ValueError("""Tried to change a value which is not a dict. """
-                                 """Failed for key '{}'""".format(key))
-        location[parts[-1]] = value
+        with self.config.lock:
+            location = self.config
+            parts = actual_key.split('.')
+            for i, part in enumerate(parts[:-1]):
+                if isinstance(location, dict):
+                    if not part in location:
+                        location[part] = {}
+                    location = location[part]
+                else:
+                    raise ValueError("""Tried to change a value which is not a dict. """
+                                     """Failed for key '{}'""".format(key))
+            location[parts[-1]] = value
+        # indicate that the config was modified
+        config_changed.send(self)
         return True
 
     def config_append(self, key, value):
