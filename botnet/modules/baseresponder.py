@@ -3,11 +3,11 @@ from ..helpers import is_channel_name
 from ..message import Message
 from ..signals import admin_message_in, message_in, message_out, on_exception
 from .base import BaseIdleModule
-from .mixins import ConfigMixin
+from .mixins import ConfigMixin, MessageDispatcherMixin
 from .utils import parse_command
 
 
-class BaseResponder(ConfigMixin, BaseIdleModule):
+class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseIdleModule):
     """Inherit from this class to quickly create a module which reacts to users'
     messages. Each incomming PRIVMSG is dispatched to the `handle_privmsg` method
     and all incoming messages are dispatched to `handle_msg` method. If a message
@@ -23,13 +23,6 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
         }
 
     """
-
-    # Prefix for command handlers. For example `command_help` is a handler for
-    # messages starting with .help
-    handler_prefix = 'command_'
-
-    # Prefix for admin command handlers.
-    admin_handler_prefix = 'admin_command_'
 
     # Don't send description of the .help command - normally each module which
     # is based on this class would respond to such request and flood a user with
@@ -57,8 +50,6 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
     def __init__(self, config):
         super(BaseResponder, self).__init__(config)
         self._commands = self._get_commands_from_handlers()
-        message_in.connect(self.on_message_in)
-        admin_message_in.connect(self.on_admin_message_in)
 
         self.register_default_config(self.base_default_config)
         self.register_default_config(self.default_config)
@@ -77,84 +68,6 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
                     if not (self.ignore_help and command_name == 'help'):
                         commands.append(command_name)
         return commands
-
-    def _get_command_name_from_privmsg(self, msg):
-        # First word of the last parameter:
-        cmd_name = msg.params[-1].split(' ')[0]
-        cmd_name = cmd_name.strip(self.config_get('command_prefix'))
-        return cmd_name
-
-    def _dispatch_message(self, msg):
-        # Main handler
-        self.handle_msg(msg)
-        if msg.command == 'PRIVMSG':
-            # PRIVMSG handler
-            self.handle_privmsg(msg)
-            # Command-specific handler
-            if self.is_command(msg):
-                # First word of the last parameter:
-                cmd_name = msg.params[-1].split(' ')[0]
-                cmd_name = cmd_name.strip(self.config_get('command_prefix'))
-                func = self._get_command_handler(cmd_name)
-                if func is not None:
-                    func(msg)
-
-    def _dispatch_admin_message(self, msg):
-        if msg.command == 'PRIVMSG':
-            # PRIVMSG handler
-            self.handle_admin_privmsg(msg)
-            # Command-specific handler
-            if self.is_command(msg):
-                cmd_name = self._get_command_name_from_privmsg(msg)
-                func = self._get_admin_command_handler(cmd_name)
-                if func is not None:
-                    func(msg)
-
-    def _get_command_handler(self, cmd_name):
-        """Returns a handler for a command."""
-        handler_name = self.handler_prefix + cmd_name
-        return getattr(self, handler_name, None)
-
-    def _get_admin_command_handler(self, cmd_name):
-        """Returns a handler for an admin command."""
-        handler_name = self.admin_handler_prefix + cmd_name
-        return getattr(self, handler_name, None)
-
-    def on_message_in(self, sender, msg):
-        """Handler for a message_in signal. Dispatches the message to the
-        per-command handlers and the main handler.
-        """
-        try:
-            self._dispatch_message(msg)
-        except Exception as e:
-            on_exception.send(self, e=e)
-
-    def on_admin_message_in(self, sender, msg):
-        """Handler for an admin_message_in signal. Dispatches the message to the
-        per-command handlers and the main handler.
-        """
-        try:
-            self._dispatch_admin_message(msg)
-        except Exception as e:
-            on_exception.send(self, e=e)
-
-    def is_command(self, priv_msg, command_name=None, command_prefix=None):
-        """Returns True if the message text starts with a prefixed command_name.
-        If command_name is None this function will simply check if the message
-        is prefixed with a command prefix. By default the command prefix
-        defined in the config is used but you can ovverida it by passing the
-        command_prefox parameter.
-        """
-        if command_prefix is None:
-            cmd = self.config_get('command_prefix')
-        else:
-            cmd = command_prefix
-
-        if command_name:
-            cmd += command_name
-            return priv_msg.params[-1].split()[0] == cmd
-        else:
-            return priv_msg.params[-1].startswith(cmd)
 
     def respond(self, priv_msg, text, pm=False):
         """Send a text in response to a message. Text will be automatically
@@ -192,7 +105,7 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
                 if self.ignore_help and name == 'help':
                     continue
                 lines = []
-                handler = self._get_command_handler(name)
+                handler = self._get_command_handler(self.handler_prefix, name)
                 if handler:
                     # Header
                     res = 'Module %s, help for `%s`: ' % (self.__class__.__name__,
@@ -210,16 +123,3 @@ class BaseResponder(ConfigMixin, BaseIdleModule):
                 for line in lines:
                     self.respond(msg, line, pm=True)
 
-    def handle_msg(self, msg):
-        """Handler called when a message is received."""
-        pass
-
-    def handle_privmsg(self, msg):
-        """Handler called when a message with a PRIVMSG command is received."""
-        pass
-
-    def handle_admin_privmsg(self, msg):
-        """Handler called when a message with a PRIVMSG command is received from
-        an admin.
-        """
-        pass

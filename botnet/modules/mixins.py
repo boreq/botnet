@@ -1,3 +1,6 @@
+from ..signals import admin_message_in, message_in, on_exception
+
+
 _senti = object()
 
 
@@ -113,3 +116,126 @@ class ConfigMixin(object):
         except AttributeError as e:
             raise AttributeError('Value for a key "{}" is not a list'.format(key)) from e
         return True
+
+
+class MessageDispatcherMixin(object):
+    """Dispatches all messages received via `message_in` and `admin_message_in`
+    signals to the proper methods.
+
+    When a message is received via the `message_in` signal:
+        Each incomming PRIVMSG is dispatched to the `handle_privmsg` method
+        and all incoming messages are dispatched to `handle_msg` method. If a
+        message starts with a command_prefix defined in the config it will be
+        also sent to a proper handler, for example `command_help`.
+
+    When a message is received via the `admin_message_in` signal:
+        Each incomming PRIVMSG is dispatched to the `handle_admin_privmsg`
+        method. If a message starts with a command_prefix defined in the config
+        it will be also sent to a proper handler, for example
+        `admin_command_help`.
+    """
+
+    # Prefix for command handlers. For example a method `command_help` would be
+    # a handler for messages starting with .help
+    handler_prefix = 'command_'
+
+    # Prefix for admin command handlers. For example a method
+    # `admin_command_help` would be a handler for messages starting with .help
+    # received from an admin
+    admin_handler_prefix = 'admin_command_'
+
+    def __init__(self, config):
+        super(MessageDispatcherMixin, self).__init__(config)
+        message_in.connect(self.on_message_in)
+        admin_message_in.connect(self.on_admin_message_in)
+
+    def _get_command_name(self, priv_msg):
+        """Extracts the used command name from a PRIVMSG message."""
+        # Extract the first word the last message parameter:
+        cmd_name = priv_msg.params[-1].split(' ')[0]
+        # Remove the command prefix
+        cmd_name = cmd_name.strip(self.config_get('command_prefix'))
+        return cmd_name
+
+    def _get_command_handler(self, handler_prefix, cmd_name):
+        """Returns a handler for a command."""
+        handler_name = handler_prefix + cmd_name
+        return getattr(self, handler_name, None)
+
+    def is_command(self, priv_msg, command_name=None, command_prefix=None):
+        """Returns True if the message text starts with a `command_name`
+        prefixed with `command_prefix`.
+        If `command_name` is None this function will simply check if the message
+        is prefixed with a command prefix. By default the command prefix
+        defined in the config is used but you can ovverida it by passing the
+        `command_prefix` parameter.
+        """
+        if command_prefix is None:
+            command_prefix = self.config_get('command_prefix')
+
+        if command_name:
+            cmd = command_prefix + command_name
+            return priv_msg.params[-1].split()[0] == cmd
+        else:
+            return priv_msg.params[-1].startswith(command_prefix)
+
+    def dispatch_message(self, msg):
+        """Dispatches a message to all handlers."""
+        # Main handler
+        self.handle_msg(msg)
+        if msg.command == 'PRIVMSG':
+            # PRIVMSG handler
+            self.handle_privmsg(msg)
+            # Command-specific handler
+            if self.is_command(msg):
+                cmd_name = self._get_command_name(msg)
+                func = self._get_command_handler(self.handler_prefix, cmd_name)
+                if func is not None:
+                    func(msg)
+
+    def dispatch_admin_message(self, msg):
+        """Dispatches a message originating from an admin to all handlers."""
+        # Main handler
+        if msg.command == 'PRIVMSG':
+            # PRIVMSG handler
+            self.handle_admin_privmsg(msg)
+            # Command-specific handler
+            if self.is_command(msg):
+                cmd_name = self._get_command_name(msg)
+                func = self._get_command_handler(self.admin_handler_prefix, cmd_name)
+                if func is not None:
+                    func(msg)
+
+    def on_message_in(self, sender, msg):
+        """Handler for a message_in signal. Dispatches the message to the
+        per-command handlers and the main handler.
+        """
+        try:
+            self.dispatch_message(msg)
+        except Exception as e:
+            raise
+            on_exception.send(self, e=e)
+
+    def on_admin_message_in(self, sender, msg):
+        """Handler for an admin_message_in signal. Dispatches the message to the
+        per-command handlers and the main handler.
+        """
+        try:
+            self.dispatch_admin_message(msg)
+        except Exception as e:
+            raise
+            on_exception.send(self, e=e)
+
+    def handle_msg(self, msg):
+        """Called when a message is received."""
+        pass
+
+    def handle_privmsg(self, msg):
+        """Called when a message with a PRIVMSG command is received."""
+        pass
+
+    def handle_admin_privmsg(self, msg):
+        """Called when a message with a PRIVMSG command originating from an
+        admin is received.
+        """
+        pass
