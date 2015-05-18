@@ -9,10 +9,7 @@ from .utils import parse_command
 
 class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseIdleModule):
     """Inherit from this class to quickly create a module which reacts to users'
-    messages. Each incomming PRIVMSG is dispatched to the `handle_privmsg` method
-    and all incoming messages are dispatched to `handle_msg` method. If a message
-    starts with a command_prefix defined in config it will be also sent to
-    a proper handler, for example `command_help`.
+    messages. 
 
     Example config:
 
