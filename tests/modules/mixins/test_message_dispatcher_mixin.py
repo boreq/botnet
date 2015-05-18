@@ -78,7 +78,7 @@ def test_dispatching_prefix():
 
 def test_admin_dispatching():
     from botnet.modules.builtin.admin import Admin
-    from  test_modules.builtin.test_admin import admin_make_message, data4, send_data
+    from modules.builtin.test_admin import admin_make_message, data4, send_data
 
     def make_admin_config(command_prefix='.'):
         config = {
