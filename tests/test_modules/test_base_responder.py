@@ -2,7 +2,7 @@ from botnet.config import Config
 from botnet.message import Message
 from botnet.modules import BaseResponder, parse_command
 from botnet.modules.builtin.admin import Admin
-from botnet.signals import message_in, message_out
+from botnet.signals import message_in
 
 
 def make_message(text):
@@ -12,119 +12,12 @@ def make_message(text):
     return msg
 
 
-def make_config(command_prefix='.'):
-    config = {'module_config': {'botnet': {'base_responder': {'command_prefix': command_prefix}}}}
-    config = Config(config)
-    return config
-
-class TestResponder(BaseResponder):
-
-    def __init__(self, config):
-        super(TestResponder, self).__init__(config)
-        self.launched_main = False
-        self.launched_priv = False
-        self.launched_admin_priv = False
-        self.launched_command = False
-        self.launched_admin_command = False
-
-    def command_test(self, msg):
-        self.launched_command = True
-
-    def admin_command_test(self, msg):
-        self.launched_admin_command = True
-
-    def handle_privmsg(self, msg):
-        self.launched_priv = True
-
-    def handle_admin_privmsg(self, msg):
-        self.launched_admin_priv = True
-
-    def handle_msg(self, msg):
-        self.launched_main = True
-
-
-def test_dispatching():
-    """Test if a responder properly dispatches a message."""
-
-    config = make_config()
-
-    re = TestResponder(config)
-    msg = make_message('#channel :.test')
-    message_in.send(None, msg=msg)
-    assert re.launched_main
-    assert re.launched_command
-    assert re.launched_priv
-    assert not re.launched_admin_command
-    assert not re.launched_admin_priv
-
-    msg = make_message('#channel :.test arg1 arg2')
-    re = TestResponder(config)
-    message_in.send(None, msg=msg)
-    assert re.launched_main
-    assert re.launched_command
-    assert re.launched_priv
-    assert not re.launched_admin_command
-    assert not re.launched_admin_priv
-
-    config = make_config(':')
-    msg = make_message('#channel ::test arg1 arg2')
-    re = TestResponder(config)
-    message_in.send(None, msg=msg)
-    assert re.launched_main
-    assert re.launched_command
-    assert re.launched_priv
-    assert not re.launched_admin_command
-    assert not re.launched_admin_priv
-
-
-def test_admin_dispatching():
-    def make_admin_config(command_prefix='.'):
-        config = {
-            'module_config': {
-                'botnet': {
-                    'base_responder': {
-                        'command_prefix': command_prefix
-                    },
-                    'admin': {
-                        'admins': [
-                            'nick4'
-                        ]
-                    }
-                }
-            }
-        }
-        config = Config(config)
-        return config
-
-    config = make_config()
-    admin_config = make_admin_config()
-
-    re = TestResponder(config)
-    ad = Admin(admin_config)
-
-    msg = make_message('#channel :.test')
-    message_in.send(None, msg=msg)
-    assert re.launched_main
-    assert re.launched_command
-    assert re.launched_priv
-    assert not re.launched_admin_command
-    assert not re.launched_admin_priv
-
-    from  test_modules.builtin.test_admin import admin_make_message, data4, send_data
-    msg = admin_make_message('nick4', '.test')
-    message_in.send(None, msg=msg)
-    send_data(data4)
-    assert re.launched_admin_command
-    assert re.launched_admin_priv
-
-
 def test_help(msg_t):
     """Test help command. Only Meta module should respond to that command
     without any parameters."""
     msg = make_message('#channel :.help')
-    config = make_config()
 
-    re = BaseResponder(config)
+    re = BaseResponder(Config())
     message_in.send(None, msg=msg)
 
     assert not msg_t.msg
@@ -139,9 +32,8 @@ def test_specific(msg_t):
             pass
 
     msg = make_message('#channel :.help test')
-    config = make_config()
 
-    re = Responder(config)
+    re = Responder(Config())
     message_in.send(None, msg=msg)
 
     assert msg_t.msg
@@ -155,8 +47,7 @@ def test_respond(msg_t):
         ('#channel :test message', 'nick', True),
         ('bot_nick :test message', 'nick', True),
     )
-    config = make_config()
-    re = BaseResponder(config)
+    re = BaseResponder(Config())
 
     for text, target, pm in params:
         msg_t.reset()
@@ -176,9 +67,8 @@ def test_decorator():
         def command_test(self, msg, args):
             self.args = args
 
-    config = make_config()
     msg = make_message('#channel :.test awesome one two three')
-    re = TestResponder(config)
+    re = TestResponder(Config())
     message_in.send(None, msg=msg)
 
     assert re.args.command == ['.test']
@@ -197,9 +87,8 @@ def test_decorator_dont_launch():
         def command_test(self, msg, args):
             self.args = True
 
-    config = make_config()
     msg = make_message('#channel :.test')
-    re = TestResponder(config)
+    re = TestResponder(Config())
     message_in.send(None, msg=msg)
 
     assert re.args is None
@@ -216,17 +105,15 @@ def test_decorator_launch():
         def command_test(self, msg, args):
             self.args = True
 
-    config = make_config()
     msg = make_message('#channel :.test')
-    re = TestResponder(config)
+    re = TestResponder(Config())
     message_in.send(None, msg=msg)
 
     assert re.args is not None
 
 
 def test_is_command():
-    config = make_config()
-    re = BaseResponder(config)
+    re = BaseResponder(Config())
 
     msg = make_message('#channel :.test')
     assert re.is_command(msg)
