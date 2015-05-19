@@ -42,6 +42,6 @@ class Meta(BaseResponder):
         # Handle IBIP:
         if self.is_command(msg, 'bots', command_prefix='.'):
             self.ibip(msg)
-            
+
 
 mod = Meta
