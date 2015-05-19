@@ -1,7 +1,7 @@
 import threading
 from .config import Config
 from .logging import get_logger
-from .modules import get_module_class
+from .modules import get_module, reload_module
 from .signals import module_loaded, module_unloaded, module_load, module_unload, \
     _request_list_commands, _list_commands, config_changed, on_exception
 from .wrappers import ModuleWrapper
@@ -105,15 +105,18 @@ class Manager(object):
 
     def load_module_by_name(self, module_name):
         try:
-            module_class = get_module_class(module_name)
-        except ImportError as e:
+            module = get_module(module_name)
+            reload_module(module)
+            module_class = getattr(module, 'mod')
+        except (ImportError, AttributeError) as e:
             raise ValueError('Could not import module %s.' % module_name) from e
         return self.load_module(module_class)
 
     def unload_module_by_name(self, module_name):
         try:
-            module_class = get_module_class(module_name)
-        except ImportError as e:
+            module = get_module(module_name)
+            module_class = getattr(module, 'mod')
+        except (ImportError, AttributeError) as e:
             raise ValueError('Could not import module %s.' % module_name) from e
         return self.unload_module(module_class)
 
