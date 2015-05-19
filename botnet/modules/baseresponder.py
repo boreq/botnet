@@ -11,7 +11,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseIdleModule):
     """Inherit from this class to quickly create a module which reacts to users'
     messages. 
 
-    Example config:
+    Example module config:
 
         "botnet": {
             "base_responder": {
