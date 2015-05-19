@@ -25,6 +25,15 @@ class Quotes(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'quotes'
 
+    def get_all_commands(self):
+        rw = super(Quotes, self).get_all_commands()
+        try:
+            for command in self.config['module_config'][self.config_namespace][self.config_name].keys():
+                rw.append(command)
+        except:
+            pass
+        return rw
+
     def handle_privmsg(self, msg):
         if self.is_command(msg):
             key = self.get_command_name(msg)
