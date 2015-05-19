@@ -37,3 +37,14 @@ def msg_t():
             self.msg = None
 
     return Trap()
+
+
+@pytest.fixture()
+def make_privmsg():
+    """Provides a message factory."""
+    def f(text, nick='nick'):
+        text = ':%s!~user@1-2-3-4.example.com PRIVMSG %s' % (nick, text)
+        msg = Message()
+        msg.from_string(text)
+        return msg
+    return f
