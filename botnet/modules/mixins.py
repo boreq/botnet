@@ -156,7 +156,7 @@ class MessageDispatcherMixin(object):
         message_in.connect(self.on_message_in)
         admin_message_in.connect(self.on_admin_message_in)
 
-    def _get_command_name(self, priv_msg):
+    def get_command_name(self, priv_msg):
         """Extracts the used command name from a PRIVMSG message."""
         # Extract the first word the last message parameter:
         cmd_name = priv_msg.params[-1].split(' ')[0]
@@ -199,7 +199,7 @@ class MessageDispatcherMixin(object):
             self.handle_privmsg(msg)
             # Command-specific handler
             if self.is_command(msg):
-                cmd_name = self._get_command_name(msg)
+                cmd_name = self.get_command_name(msg)
                 func = self._get_command_handler(self.handler_prefix, cmd_name)
                 if func is not None:
                     func(msg)
@@ -212,7 +212,7 @@ class MessageDispatcherMixin(object):
             self.handle_admin_privmsg(msg)
             # Command-specific handler
             if self.is_command(msg):
-                cmd_name = self._get_command_name(msg)
+                cmd_name = self.get_command_name(msg)
                 func = self._get_command_handler(self.admin_handler_prefix, cmd_name)
                 if func is not None:
                     func(msg)
