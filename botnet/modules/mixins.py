@@ -125,36 +125,7 @@ class ConfigMixin(object):
         return True
 
 
-class MessageDispatcherMixin(object):
-    """Dispatches all messages received via `message_in` and `admin_message_in`
-    signals to the proper methods.
-
-    When a message is received via the `message_in` signal:
-        Each incomming PRIVMSG is dispatched to the `handle_privmsg` method
-        and all incoming messages are dispatched to `handle_msg` method. If a
-        message starts with a command_prefix defined in the config it will be
-        also sent to a proper handler, for example `command_help`.
-
-    When a message is received via the `admin_message_in` signal:
-        Each incomming PRIVMSG is dispatched to the `handle_admin_privmsg`
-        method. If a message starts with a command_prefix defined in the config
-        it will be also sent to a proper handler, for example
-        `admin_command_help`.
-    """
-
-    # Prefix for command handlers. For example a method `command_help` would be
-    # a handler for messages starting with .help
-    handler_prefix = 'command_'
-
-    # Prefix for admin command handlers. For example a method
-    # `admin_command_help` would be a handler for messages starting with .help
-    # received from an admin
-    admin_handler_prefix = 'admin_command_'
-
-    def __init__(self, config):
-        super(MessageDispatcherMixin, self).__init__(config)
-        message_in.connect(self.on_message_in)
-        admin_message_in.connect(self.on_admin_message_in)
+class BaseMessageDispatcherMixin(object):
 
     def get_command_name(self, priv_msg):
         """Extracts the used command name from a PRIVMSG message."""
@@ -190,6 +161,26 @@ class MessageDispatcherMixin(object):
         else:
             return priv_msg.params[-1].startswith(command_prefix)
 
+
+class StandardMessageDispatcherMixin(BaseMessageDispatcherMixin):
+    """Dispatches all messages received via `message_in` signal to the proper
+    methods.
+
+    When a message is received via the `message_in` signal:
+        Each incomming PRIVMSG is dispatched to the `handle_privmsg` method
+        and all incoming messages are dispatched to `handle_msg` method. If a
+        message starts with a command_prefix defined in the config it will be
+        also sent to a proper handler, for example `command_help`.
+    """
+
+    # Prefix for command handlers. For example a method `command_help` would be
+    # a handler for messages starting with .help
+    handler_prefix = 'command_'
+
+    def __init__(self, config):
+        super(StandardMessageDispatcherMixin, self).__init__(config)
+        message_in.connect(self.on_message_in)
+
     def dispatch_message(self, msg):
         """Dispatches a message to all handlers."""
         # Main handler
@@ -204,6 +195,45 @@ class MessageDispatcherMixin(object):
                 if func is not None:
                     func(msg)
 
+    def on_message_in(self, sender, msg):
+        """Handler for a message_in signal. Dispatches the message to the
+        per-command handlers and the main handler.
+        """
+        try:
+            self.dispatch_message(msg)
+        except Exception as e:
+            raise
+            on_exception.send(self, e=e)
+
+    def handle_msg(self, msg):
+        """Called when a message is received."""
+        pass
+
+    def handle_privmsg(self, msg):
+        """Called when a message with a PRIVMSG command is received."""
+        pass
+
+
+class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
+    """Dispatches all messages received via `admin_message_in` signal to the
+    proper methods.
+
+    When a message is received via the `admin_message_in` signal:
+        Each incomming PRIVMSG is dispatched to the `handle_admin_privmsg`
+        method. If a message starts with a command_prefix defined in the config
+        it will be also sent to a proper handler, for example
+        `admin_command_help`.
+    """
+
+    # Prefix for admin command handlers. For example a method
+    # `admin_command_help` would be a handler for messages starting with .help
+    # received from an admin
+    admin_handler_prefix = 'admin_command_'
+
+    def __init__(self, config):
+        super(AdminMessageDispatcherMixin, self).__init__(config)
+        admin_message_in.connect(self.on_admin_message_in)
+
     def dispatch_admin_message(self, msg):
         """Dispatches a message originating from an admin to all handlers."""
         # Main handler
@@ -217,16 +247,6 @@ class MessageDispatcherMixin(object):
                 if func is not None:
                     func(msg)
 
-    def on_message_in(self, sender, msg):
-        """Handler for a message_in signal. Dispatches the message to the
-        per-command handlers and the main handler.
-        """
-        try:
-            self.dispatch_message(msg)
-        except Exception as e:
-            raise
-            on_exception.send(self, e=e)
-
     def on_admin_message_in(self, sender, msg):
         """Handler for an admin_message_in signal. Dispatches the message to the
         per-command handlers and the main handler.
@@ -237,16 +257,14 @@ class MessageDispatcherMixin(object):
             raise
             on_exception.send(self, e=e)
 
-    def handle_msg(self, msg):
-        """Called when a message is received."""
-        pass
-
-    def handle_privmsg(self, msg):
-        """Called when a message with a PRIVMSG command is received."""
-        pass
-
     def handle_admin_privmsg(self, msg):
         """Called when a message with a PRIVMSG command originating from an
         admin is received.
         """
         pass
+
+
+class MessageDispatcherMixin(AdminMessageDispatcherMixin, StandardMessageDispatcherMixin):
+    """Dispatches all messages received via `message_in` and `admin_message_in`
+    signals to the proper methods."""
+    pass
