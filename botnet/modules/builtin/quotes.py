@@ -1,6 +1,6 @@
 import random
 from ...signals import on_exception
-from .. import BaseResponder, parse_command
+from .. import BaseResponder
 
 
 def random_line(filename):
