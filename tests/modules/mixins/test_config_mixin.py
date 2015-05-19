@@ -132,6 +132,7 @@ def test_complex_config():
     with pytest.raises(AttributeError):
         t.config_append('new_key.c', 2)
 
+
 def test_config_gone():
     class TestResponder(ConfigMixin, BaseIdleModule):
         a = {}
