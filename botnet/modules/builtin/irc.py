@@ -6,7 +6,8 @@ import time
 from ...logging import get_logger
 from ...message import Message
 from ...signals import message_in, message_out, on_exception
-from .. import BaseModule, ConfigMixin
+from .. import BaseModule, parse_command
+from ..mixins import AdminMessageDispatcherMixin, ConfigMixin
 
 
 class InactivityMonitor(object):
@@ -40,14 +41,12 @@ class InactivityMonitor(object):
 
     def _clear_timers(self):
         """Cancel scheduled execution of the timers."""
-        self.logger.debug('clear timers')
         for timer in [self._timer_ping, self._timer_abort]:
             if timer is not None:
                 timer.cancel()
 
     def _set_timers(self):
         """Schedule the execution of the timers."""
-        self.logger.debug('set timers')
         self._timer_ping = threading.Timer(self.ping_timeout, self.on_timer_ping)
         self._timer_abort = threading.Timer(self.abort_timeout, self.on_timer_abort)
         self._timer_ping.start()
@@ -74,7 +73,7 @@ class InactivityMonitor(object):
         self.irc_module.stop()
 
 
-class IRC(ConfigMixin, BaseModule):
+class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
     """Connects to an IRC server, sends and receives commands.
 
     Example module config:
@@ -103,10 +102,23 @@ class IRC(ConfigMixin, BaseModule):
 
     def __init__(self, config):
         super(IRC, self).__init__(config)
+        self.register_config('botnet', 'base_responder')
         self.register_config('botnet', 'irc')
         self.soc = None
         self._partial_data = None
         message_out.connect(self.on_message_out)
+
+    def get_command_prefix(self):
+        """This method should return the command prefix."""
+        return self.config_get('command_prefix', '.')
+
+    @parse_command([('name', 1), ('password', '?')], launch_invalid=False)
+    def admin_command_channel_join(self, msg, args):
+        self.join(args.name[0], args.password)
+
+    @parse_command([('name', 1)], launch_invalid=False)
+    def admin_command_channel_part(self, msg, args):
+        self.part(args.name[0])
 
     def stop(self):
         """To stop correctly it is necessary to disconnect from the server
@@ -201,7 +213,7 @@ class IRC(ConfigMixin, BaseModule):
                 self.soc.send(text)
                 return True
         except (OSError, ssl.SSLError) as e:
-            on_exception(self, e=e)
+            on_exception.send(self, e=e)
         return False
 
     def connect(self):
