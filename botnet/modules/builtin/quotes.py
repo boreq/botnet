@@ -27,7 +27,7 @@ class Quotes(BaseResponder):
 
     def handle_privmsg(self, msg):
         if self.is_command(msg):
-            key = 'quotes.' + self.get_command_name(msg)
+            key = self.get_command_name(msg)
             filename = self.config_get(key, None)
             if filename is not None:
                 try:
