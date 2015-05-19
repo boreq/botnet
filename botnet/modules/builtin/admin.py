@@ -173,6 +173,20 @@ class Admin(WhoisMixin, BaseResponder):
             self.unload_commands.append(msg)
             module_unload.send(self, name=name)
 
+    @parse_command([('module_names', '*')])
+    def admin_command_module_reload(self, msg, args):
+        """Unloads and loads a module back.
+
+        Syntax: module_reload MODULE_NAME ...
+        """
+        for name in args.module_names:
+            # unload
+            self.unload_commands.append(msg)
+            module_unload.send(self, name=name)
+            # load
+            self.load_commands.append(msg)
+            module_load.send(self, name=name)
+
     def admin_command_config_reload(self, msg):
         """Reloads the config.
 
