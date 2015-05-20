@@ -20,67 +20,70 @@ def test_stop():
 
 
 def test_load_module():
-    class DummyIdleModule(modules.BaseIdleModule):
-        pass
-
     class DummyModule(modules.BaseModule):
         pass
 
     manager = Manager()
 
-    manager.load_module(DummyIdleModule)
     manager.load_module(DummyModule)
     assert manager.get_wrapper(DummyModule) is not None
-    assert manager.get_wrapper(DummyIdleModule) is not None
 
-    # Lets actually test if DummyModule will start (and later terminate)
-    assert manager.get_wrapper(DummyIdleModule).is_alive()
-    assert not manager.get_wrapper(DummyModule).is_alive()
-    manager.update()
-    assert manager.get_wrapper(DummyModule).is_alive()
-
-    manager.unload_module(DummyIdleModule)
     manager.unload_module(DummyModule)
     assert manager.get_wrapper(DummyModule) is None
-    assert manager.get_wrapper(DummyIdleModule) is None
 
 
 def test_load_twice():
-    class DummyIdleModule(modules.BaseIdleModule):
+    class DummyModule(modules.BaseModule):
         pass
 
     manager = Manager()
 
-    manager.load_module(DummyIdleModule)
-    assert manager.get_wrapper(DummyIdleModule) is not None
+    manager.load_module(DummyModule)
+    assert manager.get_wrapper(DummyModule) is not None
     assert len(manager.module_wrappers) == 1
 
-    manager.load_module(DummyIdleModule)
-    assert manager.get_wrapper(DummyIdleModule) is not None
+    manager.load_module(DummyModule)
+    assert manager.get_wrapper(DummyModule) is not None
     assert len(manager.module_wrappers) == 1
+
+
+def test_load_twice_by_name():
+    manager = Manager()
+
+    manager.load_module_by_name('meta')
+    assert len(manager.module_wrappers) == 1
+
+    manager.load_module_by_name('meta')
+    assert len(manager.module_wrappers) == 1
+
+    manager.load_module_by_name('admin')
+    assert len(manager.module_wrappers) == 2
+
+    manager.load_module_by_name('admin')
+    assert len(manager.module_wrappers) == 2
 
 
 def test_get_wrapper():
     """Checks if get_wrapper properly handles inheritance. Ensures that
     a child is not returned when querying for a parent."""
-    class DummyIdleModule(modules.BaseIdleModule):
+    class DummyModule(modules.BaseModule):
         value = 'parent'
 
-    class DummyIdleModuleChild(DummyIdleModule):
+    class DummyModuleChild(DummyModule):
         value = 'child'
 
     def test(manager):
-        parent = manager.get_wrapper(DummyIdleModule)
-        child = manager.get_wrapper(DummyIdleModuleChild)
+        parent = manager.get_wrapper(DummyModule)
+        child = manager.get_wrapper(DummyModuleChild)
         assert parent.module.value == 'parent'
         assert child.module.value == 'child'
 
     manager = Manager()
-    manager.load_module(DummyIdleModule)
-    manager.load_module(DummyIdleModuleChild)
+    manager.load_module(DummyModule)
+    manager.load_module(DummyModuleChild)
     test(manager)
 
     manager = Manager()
-    manager.load_module(DummyIdleModuleChild)
-    manager.load_module(DummyIdleModule)
+    manager.load_module(DummyModuleChild)
+    manager.load_module(DummyModule)
     test(manager)

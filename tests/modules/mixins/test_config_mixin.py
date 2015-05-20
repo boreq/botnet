@@ -1,12 +1,12 @@
 import pytest
 from botnet.config import Config
-from botnet.modules import BaseIdleModule
+from botnet.modules import BaseModule
 from botnet.modules.mixins import ConfigMixin
 
 
 def test_default_config():
 
-    class TestResponder(ConfigMixin, BaseIdleModule):
+    class TestResponder(ConfigMixin, BaseModule):
 
         a = {
             'overwrite': {
@@ -74,7 +74,7 @@ def test_complex_config():
         }
         return Config(config)
 
-    class TestResponder(ConfigMixin, BaseIdleModule):
+    class TestResponder(ConfigMixin, BaseModule):
 
         a = {
             'overwrite': {
@@ -134,7 +134,7 @@ def test_complex_config():
 
 
 def test_config_gone():
-    class TestResponder(ConfigMixin, BaseIdleModule):
+    class TestResponder(ConfigMixin, BaseModule):
         a = {}
 
         def __init__(self, config):

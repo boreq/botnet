@@ -1,7 +1,7 @@
 import threading
 from .config import Config
 from .logging import get_logger
-from .modules import get_module, reload_module
+from .modules import get_module, reload_module, get_ident_string
 from .signals import module_loaded, module_unloaded, module_load, module_unload, \
     _request_list_commands, _list_commands, config_changed, on_exception
 from .wrappers import ModuleWrapper
@@ -27,9 +27,6 @@ class Manager(object):
 
         # Lock used to access the module_wrappers list
         self.wrappers_lock = threading.Lock()
-
-        # Time between two updates
-        self.deltatime = 1
 
         self.config = self.config_class()
         self.config_path = config_path
@@ -57,7 +54,7 @@ class Manager(object):
         failure.
         """
         for wrapper in self.module_wrappers:
-            if type(wrapper.module) is module_class:
+            if wrapper.name == get_ident_string(module_class):
                 return wrapper
         return None
 
@@ -129,6 +126,7 @@ class Manager(object):
             if not self.get_wrapper(module_class):
                 module = module_class(self.config)
                 wrapper = ModuleWrapper(module)
+                wrapper.start()
                 self.module_wrappers.append(wrapper)
                 module_loaded.send(self, cls=module_class)
                 return wrapper
@@ -147,15 +145,4 @@ class Manager(object):
         return False
 
     def run(self):
-        """Periodically calls self.update."""
-        while not self.stop_event.is_set():
-            self.update()
-            self.stop_event.wait(self.deltatime)
-
-    def update(self):
-        """(Re)starts modules which aren't running."""
-        with self.wrappers_lock:
-            if not self.stop_event.is_set():
-                for wrapper in self.module_wrappers:
-                    if not wrapper.is_alive():
-                        wrapper.start()
+        self.stop_event.wait()

@@ -1,4 +1,5 @@
 import datetime
+import threading
 from collections import namedtuple
 from ...message import Message
 from ...signals import message_out, admin_message_in, module_load, module_unload, \
@@ -153,6 +154,23 @@ class Admin(WhoisMixin, BaseResponder):
         self.unload_commands = []
         self.config_reload = []
 
+    def load(self, msg, name):
+        self.load_commands.append(msg)
+        module_load.send(self, name=name)
+
+    def unload(self, msg, name):
+        self.unload_commands.append(msg)
+        module_unload.send(self, name=name)
+
+    def reload(self, msg, name):
+        def f():
+            self.unload(msg, name)
+            self.load(msg, name)
+
+        t = threading.Thread(target=f)
+        t.start()
+
+
     @parse_command([('module_names', '*')])
     def admin_command_module_load(self, msg, args):
         """Loads a module.
@@ -160,8 +178,7 @@ class Admin(WhoisMixin, BaseResponder):
         Syntax: module_load MODULE_NAME ...
         """
         for name in args.module_names:
-            self.load_commands.append(msg)
-            module_load.send(self, name=name)
+            self.load(msg, name)
 
     @parse_command([('module_names', '*')])
     def admin_command_module_unload(self, msg, args):
@@ -170,8 +187,7 @@ class Admin(WhoisMixin, BaseResponder):
         Syntax: module_unload MODULE_NAME ...
         """
         for name in args.module_names:
-            self.unload_commands.append(msg)
-            module_unload.send(self, name=name)
+            self.unload(msg, name)
 
     @parse_command([('module_names', '*')])
     def admin_command_module_reload(self, msg, args):
@@ -180,12 +196,7 @@ class Admin(WhoisMixin, BaseResponder):
         Syntax: module_reload MODULE_NAME ...
         """
         for name in args.module_names:
-            # unload
-            self.unload_commands.append(msg)
-            module_unload.send(self, name=name)
-            # load
-            self.load_commands.append(msg)
-            module_load.send(self, name=name)
+            self.reload(msg, name)
 
     def admin_command_config_reload(self, msg):
         """Reloads the config.

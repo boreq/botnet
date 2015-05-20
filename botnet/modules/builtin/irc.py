@@ -120,12 +120,19 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
     def admin_command_channel_part(self, msg, args):
         self.part(args.name[0])
 
+    def start(self):
+        self.stop_event = threading.Event()
+        self.t = threading.Thread(target=self.run)
+        self.t.start()
+
     def stop(self):
         """To stop correctly it is necessary to disconnect from the server
         because blocking sockets are used.
         """
         super(IRC, self).stop()
         self.disconnect()
+        self.stop_event.set()
+        self.t.join()
 
     def on_message_out(self, sender, msg):
         """Handler for the message_out signal.
@@ -278,5 +285,13 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
                 if self.soc:
                     self.soc.close()
 
+    def run(self):
+        while not self.stop_event.is_set():
+            try:
+                self.update()
+                self.stop_event.wait(self.deltatime)
+            except:
+                raise
+                pass
 
 mod = IRC

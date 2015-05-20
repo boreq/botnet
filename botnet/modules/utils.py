@@ -21,6 +21,14 @@ def reload_module(module):
     importlib.reload(module)
 
 
+def get_ident_string(module_class):
+    """Returns a string which can be used to identify a module class.
+    Normal comparison marks the same class as different after reloading its
+    parent module.
+    """
+    return module_class.__module__ + "." + module_class.__name__
+
+
 def parse_command(params, launch_invalid=True):
     """Decorator. Automatically parses the last argument of PRIVMSG, which is
     the message itself, using argparse. If launch_invalid is True the function

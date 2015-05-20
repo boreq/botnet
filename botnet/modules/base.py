@@ -3,7 +3,7 @@ from ..signals import on_exception
 from ..logging import get_logger
 
 
-class BaseIdleModule(object):
+class BaseModule(object):
     """Base class for all modules."""
 
     def __init__(self, config):
@@ -15,34 +15,19 @@ class BaseIdleModule(object):
         """
         return []
 
+    def start(self):
+        """Called when the module is loaded."""
+        pass
+
+    def stop(self):
+        """Called when the module is unloaded. Here you can for example stop the
+        execution of all threads the module has created and wait for them to
+        finish before returning.
+        """
+        pass
+
     @property
     def logger(self):
         if not self._logger:
             self._logger = get_logger(self)
         return self._logger
-
-
-class BaseModule(BaseIdleModule):
-    """Base module with a loop used for periodic updates."""
-
-    deltatime = .016
-
-    def __init__(self, config):
-        super(BaseModule, self).__init__(config)
-        self.stop_event = threading.Event()
-
-    def stop(self):
-        self.stop_event.set()
-
-    def run(self):
-        self.stop_event.clear()
-        while not self.stop_event.is_set():
-            try:
-                self.update()
-            except Exception as e:
-                on_exception.send(self, e=e)
-            self.stop_event.wait(self.deltatime)
-
-    def update(self):
-        """This is executed every time deltatime passes."""
-        pass

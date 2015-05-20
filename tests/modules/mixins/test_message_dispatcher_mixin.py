@@ -1,6 +1,6 @@
 from botnet.config import Config
 from botnet.message import Message
-from botnet.modules import BaseIdleModule
+from botnet.modules import BaseModule
 from botnet.signals import message_in
 from botnet.modules.mixins import MessageDispatcherMixin
 
@@ -12,7 +12,7 @@ def make_privmsg(text):
     return msg
 
 
-class Tester(MessageDispatcherMixin, BaseIdleModule):
+class Tester(MessageDispatcherMixin, BaseModule):
 
     def __init__(self, config):
         super(Tester, self).__init__(config)
