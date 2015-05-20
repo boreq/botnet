@@ -4,8 +4,8 @@ from .logging import get_logger
 
 
 class ModuleWrapper(object):
-    """Wraps a module. If a module inherits from BaseModule it runs that
-    module's run method in a separate thread.
+    """Wraps a module. It is used to hold a reference to a loaded module in the
+    Manager.
     """
 
     def __init__(self, module):

@@ -8,10 +8,7 @@ from .wrappers import ModuleWrapper
 
 
 class Manager(object):
-    """Main class which manages modules. This class loads and unloads modules
-    and keeps them running by restarting the loops of the ones that have
-    crashed.
-    """
+    """Main class which manages modules."""
 
     # Class used for config
     config_class = Config
@@ -28,6 +25,7 @@ class Manager(object):
         # Lock used to access the module_wrappers list
         self.wrappers_lock = threading.Lock()
 
+        # Handle config, load modules defined there
         self.config = self.config_class()
         self.config_path = config_path
         if config_path:
@@ -36,13 +34,14 @@ class Manager(object):
         for module_name in self.config.get('modules', []):
             self.load_module_by_name(module_name)
 
+        # Connect signals
         module_load.connect(self.on_module_load)
         module_unload.connect(self.on_module_unload)
         _request_list_commands.connect(self.on_request_list_commands)
         config_changed.connect(self.on_config_changed)
 
     def stop(self):
-        """Stops the entire program."""
+        """Stops all modules and then the entire program."""
         self.logger.debug('Stop')
         with self.wrappers_lock:
             for wrapper in self.module_wrappers:
@@ -50,7 +49,7 @@ class Manager(object):
             self.stop_event.set()
 
     def get_wrapper(self, module_class):
-        """Checks if the module is loaded. Returns ModuleWrapper or None on
+        """Checks if a module is loaded. Returns ModuleWrapper or None on
         failure.
         """
         for wrapper in self.module_wrappers:
@@ -145,4 +144,10 @@ class Manager(object):
         return False
 
     def run(self):
+        """Method which can be used to block until the self.stop method has
+        been called. There is nothing to do in the Manager because all modules
+        are separate and if they want to do anything (generate signals out of
+        their own initiative and not in response to other signals) they have to
+        run in a separate threads anyway to avoid blocking everything else.
+        """
         self.stop_event.wait()

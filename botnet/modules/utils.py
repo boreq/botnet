@@ -23,8 +23,9 @@ def reload_module(module):
 
 def get_ident_string(module_class):
     """Returns a string which can be used to identify a module class.
-    Normal comparison marks the same class as different after reloading its
-    parent module.
+    Normal comparison marks the same class as different after reloading it 
+    so this string has to be used to compare modules after reloading instead
+    of a direct comparison of a type.
     """
     return module_class.__module__ + "." + module_class.__name__
 
