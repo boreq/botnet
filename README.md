@@ -3,13 +3,12 @@ IRC bot written in Python.
 
 Botnet implements nearly all core functionality in a form of modules which can
 be loaded and unloaded at will and communicate with one another using signals.
-Thanks to that design a module which encounters serious issues and crashes is
-automatically restarted and does not affect the execution of other modules.
-Furthermore all features of the bot can be enabled and disabled at will and the
-modules can be updated without restarting the entire bot and reconnecting to the
-IRC network simply by reloading a module. It is possible to use built-in modules
-or create easy to load and integrate user-maintained external modules
-distributed in a form of Python packages.
+Thanks to that design a module which encounters serious issues does not affect
+the execution of other modules. Furthermore all features of the bot can be
+enabled and disabled at will and the modules can be updated without restarting
+the entire bot and reconnecting to the IRC network simply by reloading a module.
+It is possible to use built-in modules or create easy to load and integrate
+user-maintained external modules distributed in a form of Python packages.
 
 ## Usage
 
