@@ -56,12 +56,6 @@ def test_load_twice_by_name():
     manager.load_module_by_name('meta')
     assert len(manager.module_wrappers) == 1
 
-    manager.load_module_by_name('admin')
-    assert len(manager.module_wrappers) == 2
-
-    manager.load_module_by_name('admin')
-    assert len(manager.module_wrappers) == 2
-
 
 def test_get_wrapper():
     """Checks if get_wrapper properly handles inheritance. Ensures that
