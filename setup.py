@@ -18,6 +18,7 @@ setup(
     install_requires=[
         'blinker',
         'Click',
+        'requests',
     ],
     entry_points='''
         [console_scripts]

@@ -3,7 +3,8 @@ from .config import Config
 from .logging import get_logger
 from .modules import get_module, reload_module, get_ident_string
 from .signals import module_loaded, module_unloaded, module_load, module_unload, \
-    _request_list_commands, _list_commands, config_changed, on_exception
+    _request_list_commands, _list_commands, config_changed, on_exception, \
+    config_reload, config_reloaded
 from .wrappers import ModuleWrapper
 
 
@@ -38,6 +39,7 @@ class Manager(object):
         module_load.connect(self.on_module_load)
         module_unload.connect(self.on_module_unload)
         _request_list_commands.connect(self.on_request_list_commands)
+        config_reload.connect(self.on_config_reload)
         config_changed.connect(self.on_config_changed)
 
     def stop(self):
@@ -71,6 +73,16 @@ class Manager(object):
             with self.config.lock:
                 if self.config_path:
                     self.config.to_json_file(self.config_path)
+        except Exception as e:
+            on_exception.send(self, e=e)
+
+    def on_config_reload(self, sender):
+        """Handler for the config_reload signal."""
+        try:
+            with self.config.lock:
+                if self.config_path:
+                    self.config.from_json_file(self.config_path)
+                    config_reloaded.send(self)
         except Exception as e:
             on_exception.send(self, e=e)
 
