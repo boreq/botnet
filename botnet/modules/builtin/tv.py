@@ -1,7 +1,6 @@
 import threading
 import xmltodict
 from datetime import datetime
-from xml.etree import ElementTree
 from .. import BaseResponder, parse_command
 from ..network import get_url
 from ..cache import MemoryCache
