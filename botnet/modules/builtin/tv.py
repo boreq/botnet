@@ -138,6 +138,10 @@ class TV(BaseResponder):
 
     @parse_command([('series_name', '+')], launch_invalid=False)
     def command_next_episode(self, msg, args):
+        """Returns the information about the next episode of a TV series.
+
+        Syntax: next_episode EPISODE_NAME
+        """
         series_name = ' '.join(args.series_name)
         def f():
             try:
