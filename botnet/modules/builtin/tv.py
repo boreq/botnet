@@ -14,7 +14,9 @@ class TheTVDB(object):
 
     def __init__(self, config_get):
         self.config_get = config_get
+        # cache which stores series ids (series_name -> series_id)
         self.id_cache = MemoryCache(default_timeout=600)
+        # cache which stores the data from the API (series_name -> series_data)
         self.info_cache = MemoryCache(default_timeout=600)
 
     def _get_series_id(self, series_name):
@@ -75,6 +77,7 @@ class TheTVDB(object):
         rw = None
         timespan = None
 
+        # Search for the episode which airs next (air date is the closest to now)
         for episode in series_info['Data']['Episode']:
             try:
                 date_string = episode['FirstAired']
@@ -93,11 +96,13 @@ class TheTVDB(object):
         series_info = self.get_series_info(series_name)
         episode = self.find_next_episode(series_info)
 
+        # series title
         try:
             series_title = series_info['Data']['Series']['SeriesName']
         except:
             series_title = '<series title unknown>'
 
+        # main text
         if episode:
             text = '{series_title}: Episode {season}x{episode} "{episode_title}" will air {date}'.format(
                     series_title=series_title,
@@ -112,7 +117,8 @@ class TheTVDB(object):
 
 
 class TV(BaseResponder):
-    """Various TV related features.
+    """Various TV related features. To use this module you need to acquire the
+    API key from http://thetvdb.com/.
 
     Example module config:
 
