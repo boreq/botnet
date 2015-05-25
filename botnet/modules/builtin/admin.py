@@ -100,6 +100,7 @@ class WhoisMixin(object):
             d = self._whois_deferred[i]
             data = self._whois_cache.get(d.nick)
             if data is not None:
+                self.logger.debug('Running deferred %s', d.on_complete)
                 d.on_complete(data)
                 self._whois_deferred.pop(i)
 
@@ -169,7 +170,6 @@ class Admin(WhoisMixin, BaseResponder):
 
         t = threading.Thread(target=f)
         t.start()
-
 
     @parse_command([('module_names', '*')])
     def admin_command_module_load(self, msg, args):
