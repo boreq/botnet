@@ -114,3 +114,6 @@ class Message(object):
 
     def __str__(self):
         return self.to_string()
+
+    def __repr__(self):
+        return '<Message: %s>' % self.__str__()
