@@ -6,6 +6,7 @@
 
 
 from blinker import Namespace
+import inspect
 
 
 _signals = Namespace()
@@ -65,3 +66,35 @@ _request_list_commands = _signals.signal('_request_list_commands')
 # kwargs: Message msg, [str,] commands
 # msg: message to which the bot should respond with the list of commands
 _list_commands = _signals.signal('_list_commands')
+
+
+def unsubscribe_from_all(module):
+    """Unsubscribes a bot module from all signals. Called when a module is
+    unloaded. That is necessary because if a module is a part of a reference
+    cycle it will not be deleted by refcounting alone and it will stay in the
+    memory for a while longer before the garbage collector removes it.
+    Unsubscribing is supposed to avoid a situation when an unloaded module is
+    still reacting to commands. Another solution to that problem would involve
+    calling `gc.collect()` periodically to force the collection, require the
+    modules to unsubscribe from signals on their own or require that the modules
+    free all circular dependencies when terminating.
+    """
+    for name, signal in _signals.items():
+        for receiver in list(signal.receivers.values()):
+            obj = receiver()
+            if obj is not None:
+                if inspect.ismethod(obj):
+                    # find the object to which a method is bound
+                    self = None
+                    for name, value in inspect.getmembers(obj):
+                        if name == '__self__':
+                            self = value
+                    # if this is a method which belongs to the module
+                    if self is not None and self is module:
+                        signal.disconnect(obj)
+
+
+def clear_state():
+    """Removes all state from signals. Used in unit tests."""
+    for name, signal in _signals.items():
+        signal._clear_state()

@@ -1,3 +1,4 @@
+from .. import signals
 from ..logging import get_logger
 
 
@@ -22,7 +23,7 @@ class BaseModule(object):
         execution of all threads the module has created and wait for them to
         finish before returning.
         """
-        pass
+        signals.unsubscribe_from_all(self)
 
     @property
     def logger(self):

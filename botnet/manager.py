@@ -139,8 +139,10 @@ class Manager(object):
                 wrapper = ModuleWrapper(module)
                 wrapper.start()
                 self.module_wrappers.append(wrapper)
+                self.logger.debug('Loaded module %s', module_class)
                 module_loaded.send(self, cls=module_class)
                 return wrapper
+            self.logger.debug('Module %s is already loaded', module_class)
             return None
 
     def unload_module(self, module_class):
@@ -151,6 +153,7 @@ class Manager(object):
             if wrapper is not None:
                 wrapper.stop()
                 self.module_wrappers.remove(wrapper)
+                self.logger.debug('Unloaded module %s', module_class)
                 module_unloaded.send(self, cls=module_class)
                 return True
         return False
