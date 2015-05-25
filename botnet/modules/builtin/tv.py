@@ -29,13 +29,13 @@ class TheTVDB(object):
                 r = get_url(self.config_get('search_api_url'), params=params)
                 r.raise_for_status()
             except:
-                raise TVError('Could not connect to the API.')
+                raise APIError('Could not connect to the API.')
 
             # parse the data
             try:
                 data = xmltodict.parse(r.content)
             except:
-                raise TVError('Could not parse the API response.')
+                raise APIError('Could not parse the API response.')
 
             # find the data for the first episode
             try:
@@ -49,7 +49,7 @@ class TheTVDB(object):
     def get_series_info(self, series_name):
         """Gets all available information about a TV series."""
         if self.config_get('api_key', None) is None:
-            raise TVError('API key missing.')
+            raise APIError('API key missing.')
 
         series_id = self._get_series_id(series_name)
         rw = self.info_cache.get(series_name)
@@ -61,7 +61,7 @@ class TheTVDB(object):
                 r = get_url(url)
                 r.raise_for_status()
             except:
-                raise TVError('Could not connect to the API.')
+                raise APIError('Could not connect to the API.')
 
             # parse the data
             try:
