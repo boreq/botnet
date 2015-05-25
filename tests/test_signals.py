@@ -3,9 +3,7 @@ from botnet.modules import BaseResponder
 from botnet import signals
 
 
-def test_unsubscribe_from_all():
-    signals.clear_state()
-
+def test_unsubscribe_from_all(cl):
     r = BaseResponder(Config())
 
     assert signals.message_in.receivers
