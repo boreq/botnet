@@ -92,10 +92,6 @@ def test_reload_tv(cl, msg_l, make_privmsg, rec_msg):
     assert len(msg_l.msgs) == 1
 
     manager.unload_module_by_name('tv')
-    # (always?) fixed by adding those lines right here:
-    #import gc
-    #gc.collect()
-    # this does not fix the issue during real usage
     rec_msg(msg)
     assert len(msg_l.msgs) == 1
 
@@ -129,11 +125,6 @@ def test_reload_tv_with_admin(cl, msg_l, make_privmsg, rec_msg):
     amsg = admin_make_message('nick4', ':.module_unload tv')
     rec_msg(amsg)
     assert len(msg_l.msgs) == 4 # unloaded module
-
-    # (always?) fixed by adding those lines right here:
-    #import gc
-    #gc.collect()
-    # this does not fix the issue during real usage
 
     # send
     rec_msg(msg)
