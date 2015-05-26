@@ -27,6 +27,7 @@ class BaseModule(object):
 
     @property
     def logger(self):
+        """Modules can use the logger instance returned by this property."""
         if not self._logger:
             self._logger = get_logger(self)
         return self._logger

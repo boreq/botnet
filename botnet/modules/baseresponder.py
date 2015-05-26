@@ -122,4 +122,3 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
 
                 for line in lines:
                     self.respond(msg, line, pm=True)
-

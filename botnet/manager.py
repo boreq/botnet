@@ -112,6 +112,7 @@ class Manager(object):
             on_exception.send(self, e=e)
 
     def load_module_by_name(self, module_name):
+        """Loads a module by name using the `modules.get_module` function."""
         try:
             module = get_module(module_name)
             reload_module(module)
@@ -121,6 +122,7 @@ class Manager(object):
         return self.load_module(module_class)
 
     def unload_module_by_name(self, module_name):
+        """Unloads a module by name using the `modules.get_module` function."""
         try:
             module = get_module(module_name)
             module_class = getattr(module, 'mod')

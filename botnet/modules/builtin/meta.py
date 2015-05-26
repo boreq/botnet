@@ -12,7 +12,10 @@ class Meta(BaseResponder):
         _list_commands.connect(self.on_list_commands)
 
     def command_git(self, msg):
-        """Alias for the IBIP identification."""
+        """Alias for the IBIP identification.
+        
+        Syntax: git
+        """
         self.ibip(msg)
 
     @parse_command([('command_names', '*')])

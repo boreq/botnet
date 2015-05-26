@@ -114,10 +114,18 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
 
     @parse_command([('name', 1), ('password', '?')], launch_invalid=False)
     def admin_command_channel_join(self, msg, args):
+        """Joins a channel.
+
+        Syntax: channel_join CHANNEL_NAME [CHANNEL_PASSWORD]
+        """
         self.join(args.name[0], args.password)
 
     @parse_command([('name', 1)], launch_invalid=False)
     def admin_command_channel_part(self, msg, args):
+        """Parts a channel.
+
+        Syntax: channel_part CHANNEL_NAME
+        """
         self.part(args.name[0])
 
     def start(self):

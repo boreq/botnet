@@ -1,6 +1,5 @@
-import threading
-from .modules import BaseModule, get_ident_string
 from .logging import get_logger
+from .modules import get_ident_string
 
 
 class ModuleWrapper(object):

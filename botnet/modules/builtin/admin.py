@@ -57,16 +57,20 @@ class WhoisMixin(object):
         self._whois_current[msg.params[1]]['channels'].extend(msg.params[2:])
 
     def handler_rpl_whoisserver(self, msg):
+        """WHOIS server."""
         self._whois_current[msg.params[1]]['server'] = msg.params[2]
         self._whois_current[msg.params[1]]['server_info'] = msg.params[3]
 
     def handler_rizon_rpl_whoisidentified(self, msg):
+        """WHOIS identification on Rizon."""
         self._whois_current[msg.params[1]]['nick_identified'] = msg.params[2]
 
     def handler_freenode_rpl_whoisidentified(self, msg):
+        """WHOIS identification on Freenode."""
         self._whois_current[msg.params[1]]['nick_identified'] = msg.params[1]
 
     def handler_rpl_away(self, msg):
+        """WHOIS away message."""
         self._whois_current[msg.params[1]]['away'] = msg.params[2]
 
     def handler_rpl_endofwhois(self, msg):
@@ -79,9 +83,10 @@ class WhoisMixin(object):
     def whois_schedule(self, nick, on_complete):
         """Schedules an action to be completed when the whois for the nick is
         available.
+
         nick: nick of the user for whom whois is required.
         on_complete: function which will be called when the whois will be
-                     available.
+                     available. Required function signature:
                      void (*function)(dict whois_data)
         """
         whois_data = self._whois_cache.get(nick)
