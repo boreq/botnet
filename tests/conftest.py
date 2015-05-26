@@ -86,7 +86,7 @@ def send_msg():
         message_out.send(None, msg=msg)
     return f
 
+
 @pytest.fixture()
 def cl():
     clear_state()
-
