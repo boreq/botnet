@@ -70,8 +70,8 @@ class InactivityMonitor(object):
 
     def on_timer_abort(self):
         """Launched by _timer_abort."""
-        self.logger.debug('stop the module')
-        self.irc_module.stop()
+        self.logger.debug('restart the connection')
+        self.irc_module.restart()
 
 
 class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
@@ -108,6 +108,7 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         self.soc = None
         self._partial_data = None
         message_out.connect(self.on_message_out)
+        self.restart_event = threading.Event()
 
     def get_command_prefix(self):
         """This method should return the command prefix."""
@@ -142,6 +143,11 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         self.disconnect()
         self.stop_event.set()
         self.t.join()
+
+    def restart(self):
+        """Makes the module reconnect to the irc server."""
+        self.disconnect()
+        self.restart_event.set()
 
     def on_message_out(self, sender, msg):
         """Handler for the message_out signal.
@@ -278,9 +284,10 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         self.logger.debug('Update')
         with InactivityMonitor(self):
             try:
+                self.restart_event.clear()
                 self.connect()
                 self.identify()
-                while not self.stop_event.is_set():
+                while not self.stop_event.is_set() and not self.restart_event.is_set():
                     try:
                         data = self.soc.recv(4096)
                         if not data:
