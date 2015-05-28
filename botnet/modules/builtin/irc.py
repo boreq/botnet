@@ -299,7 +299,6 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
                 self.update()
                 self.stop_event.wait(self.deltatime)
             except:
-                raise
                 pass
 
 mod = IRC

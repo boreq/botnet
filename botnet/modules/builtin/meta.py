@@ -1,4 +1,4 @@
-from ...signals import  _request_list_commands, _list_commands
+from ...signals import _request_list_commands, _list_commands
 from .. import BaseResponder, parse_command
 
 
