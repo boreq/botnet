@@ -3,5 +3,5 @@
     implementation but rather form a library which can be used by modules.
 """
 from .cache import BaseCache, MemoryCache
-from .decorators import parse_command
+from .decorators import parse_command, catch_other
 from .network import get_url

@@ -1,27 +1,11 @@
 from functools import wraps
 import threading
 from .. import BaseResponder
-from ..lib import MemoryCache, get_url, parse_command
-from ...signals import on_exception
+from ..lib import MemoryCache, get_url, parse_command, catch_other
 
 
 class APIError(Exception):
     pass
-
-
-def api_func(f):
-    """Decorator which catches exceptions which don't inherit from APIError 
-    and throws an APIError instead.
-    """
-    @wraps(f)
-    def df(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except APIError:
-            raise
-        except Exception:
-            raise APIError('API error')
-    return df
 
 
 class GithubAPI(object):
@@ -70,12 +54,12 @@ class Github(BaseResponder):
         super(Github, self).__init__(config)
         self.api = GithubAPI()
 
-    @api_func
+    @catch_other(APIError, 'API error')
     def get_repo(self, phrase):
         r = self.api.search_repositories(phrase)
         return self.get_first(r)
 
-    @api_func
+    @catch_other(APIError, 'API error')
     def get_user(self, phrase):
         r = self.api.search_users(phrase)
         return self.get_first(r)
