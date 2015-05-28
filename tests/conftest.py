@@ -1,5 +1,5 @@
 from botnet.message import Message
-from botnet.signals import message_out, message_in, clear_state
+from botnet.signals import message_out, admin_message_in, message_in, clear_state
 import logging
 import os
 import pytest
@@ -80,10 +80,27 @@ def rec_msg():
 
 
 @pytest.fixture()
+def rec_admin_msg():
+    """Provides a function used for sending messages via admin_message_in signal."""
+    def f(msg):
+        admin_message_in.send(None, msg=msg)
+    return f
+
+
+@pytest.fixture()
 def send_msg():
     """Provides a function used for sending messages via message_out signal."""
     def f(msg):
         message_out.send(None, msg=msg)
+    return f
+
+
+@pytest.fixture()
+def resource_path():
+    """Provides a function used for creating paths to resources."""
+    def f(path):
+        dirpath = os.path.dirname(os.path.realpath(__file__))
+        return os.path.join(dirpath, 'resources', path)
     return f
 
 

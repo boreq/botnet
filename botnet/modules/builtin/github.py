@@ -3,7 +3,7 @@ import threading
 from .. import BaseResponder
 from ..lib import MemoryCache, get_url, parse_command, catch_other
 from ...message import Message
-from ...signals import on_exception, message_out
+from ...signals import on_exception, message_out, config_changed
 
 
 class APIError(Exception):
@@ -255,6 +255,77 @@ class Github(BaseResponder):
         t = threading.Thread(target=f)
         t.daemon = True
         t.run()
+
+    def config_get_tracking_data(self, owner, repo):
+        tracked = self.config_get('track', [])
+        for data in tracked:
+            if data['owner'] == owner and data['repo'] == repo:
+                return data
+        return None
+
+    def get_subscription_info_text(self, owner, repo):
+        d = self.config_get_tracking_data(owner, repo)
+        if d is not None:
+            text = 'Channels subscribed to %s/%s: %s' % (owner, repo, ', '.join(d['channels']))
+        else:
+            text = '%s/%s is not being tracked' % (owner, repo)
+        return text
+
+    @parse_command([('owner', 1), ('repo', 1), ('channels', '+')], launch_invalid=False)
+    def admin_command_github_track(self, msg, args):
+        """Starts tracking a repo. Events from a tracked repository (such as new
+        created issues or pushed commits) are sent to the specified channels.
+        If the repo is already tracked subscribes additional channels to the
+        updates.
+
+        Syntax: github_track OWNER REPO CHANNEL ...
+        """
+        owner = args.owner[0]
+        repo = args.repo[0]
+
+        d = self.config_get_tracking_data(owner, repo)
+        if d is not None:
+            d['channels'].extend(args.channels)
+            config_changed.send(self)
+        else:
+            data = {
+                'owner': owner,
+                'repo': repo,
+                'channels': args.channels
+            }
+            self.config_append('track', data)
+
+        text = self.get_subscription_info_text(owner, repo)
+        self.respond(msg, text)
+
+    @parse_command([('owner', 1), ('repo', 1), ('channels', '+')], launch_invalid=False)
+    def admin_command_github_untrack(self, msg, args):
+        """Unsubscribes a channel from receiving updates about events occuring
+        in a repository. If a wildcard '*' is passed as a CHANNEL all channels
+        are unsubscribed from the updates and the repository is in effect no
+        longer tracked.
+
+        Syntax: github_untrack OWNER REPO CHANNEL ...
+        """
+        owner = args.owner[0]
+        repo = args.repo[0]
+
+        d = self.config_get_tracking_data(owner, repo)
+        if d is not None:
+            # remove channels
+            if args.channels[0] == '*':
+                d['channels'] = []
+            else:
+                d['channels'] = [c for c in d['channels'] if c not in args.channels]
+            # remove entire entry if no channels left
+            if not d['channels']:
+                self.config_get('track').remove(d)
+            config_changed.send(self)
+            # info text
+            text = 'Channels removed. ' + self.get_subscription_info_text(owner, repo)
+            self.respond(msg, text)
+        else:
+            self.respond(msg, 'This repository is not being tracked')
 
     @parse_command([('phrase', '+')], launch_invalid=False)
     def command_github(self, msg, args):
