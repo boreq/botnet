@@ -8,6 +8,7 @@ import click
 import logging
 import signal
 from .manager import Manager
+from .modules import get_module
 
 
 logger_levels = ['warning', 'info', 'debug']
@@ -25,8 +26,7 @@ def cli(ctx, verbosity):
 
 @cli.command()
 @click.argument('config', type=click.Path(exists=True))
-@click.pass_context
-def run(ctx, config):
+def run(config):
     """Runs the bot."""
     def signal_handler(signum, frame):
         manager.stop()
