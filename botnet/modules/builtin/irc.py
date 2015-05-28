@@ -6,7 +6,8 @@ import time
 from ...logging import get_logger
 from ...message import Message
 from ...signals import message_in, message_out, on_exception
-from .. import BaseModule, parse_command
+from .. import BaseModule
+from ..lib import parse_command
 from ..mixins import AdminMessageDispatcherMixin, ConfigMixin
 
 

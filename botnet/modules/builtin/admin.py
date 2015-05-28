@@ -4,8 +4,8 @@ from collections import namedtuple
 from ...message import Message
 from ...signals import message_out, admin_message_in, module_load, module_unload, \
     module_loaded, module_unloaded, config_reload, config_reloaded
-from .. import BaseResponder, parse_command
-from ..cache import MemoryCache
+from .. import BaseResponder
+from ..lib import MemoryCache, parse_command
 
 
 DeferredWhois = namedtuple('DeferredWhois', ['nick', 'on_complete'])

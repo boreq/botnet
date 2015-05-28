@@ -1,9 +1,8 @@
 import threading
 import xmltodict
 from datetime import datetime
-from .. import BaseResponder, parse_command
-from ..network import get_url
-from ..cache import MemoryCache
+from .. import BaseResponder
+from ..lib import MemoryCache, parse_command, get_url
 
 
 class APIError(Exception):

@@ -1,5 +1,6 @@
 from ...signals import _request_list_commands, _list_commands
-from .. import BaseResponder, parse_command
+from .. import BaseResponder
+from ..lib import parse_command
 
 
 class Meta(BaseResponder):
@@ -14,7 +15,7 @@ class Meta(BaseResponder):
 
     def command_git(self, msg):
         """Alias for the IBIP identification.
-        
+
         Syntax: git
         """
         self.ibip(msg)

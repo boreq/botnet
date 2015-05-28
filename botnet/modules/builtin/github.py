@@ -1,8 +1,7 @@
 from functools import wraps
 import threading
-from .. import BaseResponder, parse_command
-from ..cache import MemoryCache
-from ..network import get_url
+from .. import BaseResponder
+from ..lib import MemoryCache, get_url, parse_command
 from ...signals import on_exception
 
 

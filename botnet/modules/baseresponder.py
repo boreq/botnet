@@ -4,7 +4,7 @@ from ..message import Message
 from ..signals import message_out
 from .base import BaseModule
 from .mixins import ConfigMixin, MessageDispatcherMixin
-from .utils import parse_command
+from .lib import parse_command
 
 
 class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):

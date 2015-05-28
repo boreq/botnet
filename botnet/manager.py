@@ -1,7 +1,7 @@
 import threading
 from .config import Config
 from .logging import get_logger
-from .modules import get_module, reload_module, get_ident_string
+from .modules.utils import get_module, reload_module, get_ident_string
 from .signals import module_loaded, module_unloaded, module_load, module_unload, \
     _request_list_commands, _list_commands, config_changed, on_exception, \
     config_reload, config_reloaded
