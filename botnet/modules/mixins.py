@@ -202,7 +202,6 @@ class StandardMessageDispatcherMixin(BaseMessageDispatcherMixin):
         try:
             self.dispatch_message(msg)
         except Exception as e:
-            raise
             on_exception.send(self, e=e)
 
     def handle_msg(self, msg):
@@ -254,7 +253,6 @@ class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
         try:
             self.dispatch_admin_message(msg)
         except Exception as e:
-            raise
             on_exception.send(self, e=e)
 
     def handle_admin_privmsg(self, msg):
