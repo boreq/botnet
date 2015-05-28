@@ -8,7 +8,6 @@ import click
 import logging
 import signal
 from .manager import Manager
-from .modules import get_module
 
 
 logger_levels = ['warning', 'info', 'debug']
