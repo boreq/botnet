@@ -6,6 +6,7 @@ class Meta(BaseResponder):
     """Displays basic info about this bot."""
 
     ignore_help = False
+    ibip_repo = 'https://github.com/boreq/botnet'
 
     def __init__(self, config):
         super(Meta, self).__init__(config)
@@ -34,7 +35,11 @@ class Meta(BaseResponder):
         """Makes the bot identify itself as defined by The IRC Bot
         Identification Protocol Standard.
         """
-        self.respond(msg, 'Reporting in! [Python] https://github.com/boreq/botnet')
+        text = 'Reporting in! [Python] {ibip_repo} try {prefix}help'.format(
+            ibip_repo=self.ibip_repo,
+            prefix=self.config_get('command_prefix')
+        )
+        self.respond(msg, text)
 
     def on_list_commands(self, sender, msg, commands):
         """Sends a list of commands received from the Manager."""
