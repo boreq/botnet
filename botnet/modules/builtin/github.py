@@ -2,7 +2,8 @@ from collections import defaultdict
 import threading
 from .. import BaseResponder
 from ..lib import MemoryCache, get_url, parse_command, catch_other
-from ...signals import on_exception
+from ...message import Message
+from ...signals import on_exception, message_out
 
 
 class APIError(Exception):
@@ -44,7 +45,7 @@ class EventParser(object):
         text = 'issue comments created: %s' % ', '.join(comments)
         return [text]
 
-    def parse_IssueEvent(self, events):
+    def parse_IssuesEvent(self, events):
         actions = []
         for e in events:
             actions.append('%s was %s' % (e['payload']['issue']['html_url'], e['payload']['action']))
@@ -66,9 +67,9 @@ class EventParser(object):
         return texts
 
     def parse_ReleaseEvent(self, events):
-        release = []
+        actions = []
         for e in events:
-            actions.append('%s was %s' % (e['release']['html_url'], e['action']))
+            actions.append('%s was %s' % (e['payload']['release']['html_url'], e['payload']['action']))
         text = 'releases: %s' % ', '.join(actions)
         return [text]
 
@@ -187,11 +188,12 @@ class Github(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'github'
+    api_class = GithubAPI
     deltatime = 300
 
     def __init__(self, config):
         super(Github, self).__init__(config)
-        self.api = GithubAPI()
+        self.api = self.api_class()
 
     def start(self):
         super(Github, self).start()
@@ -218,15 +220,17 @@ class Github(BaseResponder):
         self.logger.debug('Performing event update')
         for data in self.config_get('track', []):
             try:
+                # prepare the text
                 texts = self.api.get_event_texts(data['owner'], data['repo'])
                 info = 'https://github.com/{owner}/{repo} new events: '.format(
                     owner=data['owner'],
                     repo=data['repo']
                 )
                 text = info + ' | '.join(texts)
-                # send
-                print()
-                print(text)
+                # send the text
+                for channel in data['channels']:
+                    msg = Message(command='PRIVMSG', params=[channel, text])
+                    message_out.send(self, msg=msg)
             except Exception as e:
                 on_exception.send(self, e=e)
 
