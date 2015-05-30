@@ -120,6 +120,7 @@ class ConfigMixin(object):
         """
         try:
             self.config_get(key, auto=[]).append(value)
+            config_changed.send(self)
         except AttributeError as e:
             raise AttributeError('Value for a key "{}" is not a list'.format(key)) from e
         return True
