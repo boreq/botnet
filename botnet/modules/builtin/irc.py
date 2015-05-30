@@ -130,6 +130,9 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         """
         self.part(args.name[0])
 
+    def get_all_admin_commands(self):
+        return ['channel_join', 'channel_part']
+
     def start(self):
         self.stop_event = threading.Event()
         self.t = threading.Thread(target=self.run)
