@@ -19,6 +19,7 @@ setup(
         'blinker',
         'Click',
         'requests',
+        'xmltodict',
     ],
     entry_points='''
         [console_scripts]
