@@ -46,25 +46,40 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
 
     def __init__(self, config):
         super(BaseResponder, self).__init__(config)
-        self._commands = self._get_commands_from_handlers()
-
         self.register_default_config(self.base_default_config)
         self.register_default_config(self.default_config)
         self.register_config('botnet', 'base_responder')
         if self.config_namespace and self.config_name:
             self.register_config(self.config_namespace, self.config_name)
 
-    def _get_commands_from_handlers(self):
+    def _get_commands_from_handlers(self, handler_prefix):
         """Generates a list of supported commands from defined handlers."""
         commands = []
         for name in dir(self):
-            if name.startswith(self.handler_prefix):
+            if name.startswith(handler_prefix):
                 attr = getattr(self, name)
                 if hasattr(attr, '__call__'):
-                    command_name = name[len(self.handler_prefix):]
+                    command_name = name[len(handler_prefix):]
                     if not (self.ignore_help and command_name == 'help'):
                         commands.append(command_name)
         return commands
+
+    def _get_help_for_command(self, handler_prefix, name):
+        handler = self._get_command_handler(handler_prefix, name)
+        if not handler:
+            return None
+        # Header
+        rw = 'Module %s, help for `%s`: ' % (self.__class__.__name__,
+                                             name)
+        # Docstring
+        help_text = handler.__doc__
+        if help_text:
+            rw += ' '.join(help_text.splitlines())
+        else:
+            rw += 'No help available.'
+
+        rw = re.sub(' +', ' ', rw)
+        return rw
 
     def get_command_prefix(self):
         return self.config_get('command_prefix')
@@ -90,7 +105,13 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
         """Should return a list of strings containing all commands supported by
         this module.
         """
-        return self._commands
+        return self._get_commands_from_handlers(self.handler_prefix)
+
+    def get_all_admin_commands(self):
+        """Should return a list of strings containing all admin commands
+        supported by this module.
+        """
+        return self._get_commands_from_handlers(self.admin_handler_prefix)
 
     @parse_command([('command_names', '*')])
     def command_help(self, msg, args):
@@ -104,21 +125,14 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
             for name in args.command_names:
                 if self.ignore_help and name == 'help':
                     continue
+
+                # get help
                 lines = []
-                handler = self._get_command_handler(self.handler_prefix, name)
-                if handler:
-                    # Header
-                    res = 'Module %s, help for `%s`: ' % (self.__class__.__name__,
-                                                          name)
-                    # Docstring
-                    help_text = handler.__doc__
-                    if help_text:
-                        res += ' '.join(help_text.splitlines())
-                    else:
-                        res += 'No help available.'
+                for prefix in [self.handler_prefix, self.admin_handler_prefix]:
+                    text = self._get_help_for_command(prefix, name)
+                    if text:
+                        lines.append(text)
 
-                    res = re.sub(' +', ' ', res)
-                    lines.append(res)
-
+                # send help
                 for line in lines:
                     self.respond(msg, line, pm=True)

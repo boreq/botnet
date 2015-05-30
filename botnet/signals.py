@@ -58,12 +58,13 @@ config_reloaded = _signals.signal('config-reloaded')
 config_changed = _signals.signal('config-changed')
 
 # Meta module sends this to request `_list_commands` signal
-# kwargs: Message msg
+# kwargs: Message msg, bool admin
 # msg: message to which the bot should respond with the list of commands
+# admin: if True the response signal will contain the admin commands
 _request_list_commands = _signals.signal('_request_list_commands')
 
 # Manager sends this in response to `_request_list_commands` signal
-# kwargs: Message msg, [str,] commands
+# kwargs: Message msg, bool admin, [str,] commands
 # msg: message to which the bot should respond with the list of commands
 _list_commands = _signals.signal('_list_commands')
 

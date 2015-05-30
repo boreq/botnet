@@ -28,7 +28,19 @@ class Meta(BaseResponder):
         Syntax: help [COMMAND ...]
         """
         if len(args.command_names) == 0:
-            _request_list_commands.send(self, msg=msg)
+            _request_list_commands.send(self, msg=msg, admin=False)
+        else:
+            super(Meta, self).command_help(msg)
+
+    @parse_command([('command_names', '*')])
+    def admin_command_help(self, msg, args):
+        """Sends a list of commands. If COMMAND is specified sends detailed help
+        in a private message.
+
+        Syntax: help [COMMAND ...]
+        """
+        if len(args.command_names) == 0:
+            _request_list_commands.send(self, msg=msg, admin=True)
         else:
             super(Meta, self).command_help(msg)
 
@@ -42,9 +54,12 @@ class Meta(BaseResponder):
         )
         self.respond(msg, text)
 
-    def on_list_commands(self, sender, msg, commands):
+    def on_list_commands(self, sender, msg, admin, commands):
         """Sends a list of commands received from the Manager."""
-        text = 'Supported commands: %s' % ', '.join(commands)
+        if admin:
+            text = 'Supported admin commands: %s' % ', '.join(commands)
+        else:
+            text = 'Supported commands: %s' % ', '.join(commands)
         self.respond(msg, text)
 
     def handle_privmsg(self, msg):

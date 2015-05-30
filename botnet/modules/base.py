@@ -14,6 +14,12 @@ class BaseModule(object):
         """
         return []
 
+    def get_all_admin_commands(self):
+        """Should return a list of strings containing all admin commands
+        supported by this module. Used to generate a help message.
+        """
+        return []
+
     def start(self):
         """Called when the module is loaded."""
         pass

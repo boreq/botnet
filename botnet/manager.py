@@ -59,13 +59,16 @@ class Manager(object):
                 return wrapper
         return None
 
-    def on_request_list_commands(self, sender, msg):
+    def on_request_list_commands(self, sender, msg, admin):
         """Handler for the _request_list_commands signal."""
         commands = []
         with self.wrappers_lock:
             for wrapper in self.module_wrappers:
-                commands.extend(wrapper.module.get_all_commands())
-        _list_commands.send(self, msg=msg, commands=commands)
+                if admin:
+                    commands.extend(wrapper.module.get_all_admin_commands())
+                else:
+                    commands.extend(wrapper.module.get_all_commands())
+        _list_commands.send(self, msg=msg, admin=admin, commands=commands)
 
     def on_config_changed(self, sender):
         """Handler for the config_changed signal."""
