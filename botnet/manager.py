@@ -69,6 +69,7 @@ class Manager(object):
 
     def on_config_changed(self, sender):
         """Handler for the config_changed signal."""
+        self.logger.debug('Received config_changed signal')
         try:
             with self.config.lock:
                 if self.config_path:
@@ -78,6 +79,7 @@ class Manager(object):
 
     def on_config_reload(self, sender):
         """Handler for the config_reload signal."""
+        self.logger.debug('Received config_reload signal')
         try:
             with self.config.lock:
                 if self.config_path:
