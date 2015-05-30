@@ -228,9 +228,10 @@ class Github(BaseResponder):
                 )
                 text = info + ' | '.join(texts)
                 # send the text
-                for channel in data['channels']:
-                    msg = Message(command='PRIVMSG', params=[channel, text])
-                    message_out.send(self, msg=msg)
+                if texts:
+                    for channel in data['channels']:
+                        msg = Message(command='PRIVMSG', params=[channel, text])
+                        message_out.send(self, msg=msg)
             except Exception as e:
                 on_exception.send(self, e=e)
 

@@ -48,7 +48,7 @@ def test_response(resource_path, msg_t):
     g.api = a
 
     g.update()
-    assert 'new events' in str(msg_t.msg)
+    assert 'commits' in str(msg_t.msg)
 
 
 def test_admin(rec_admin_msg, make_privmsg):
