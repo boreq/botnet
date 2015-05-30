@@ -25,4 +25,4 @@ def get_ident_string(module_class):
     so this string has to be used to compare modules after reloading instead
     of a direct comparison of a type.
     """
-    return module_class.__module__ + "." + module_class.__name__
+    return module_class.__module__ + '.' + module_class.__name__
