@@ -301,14 +301,14 @@ class Github(BaseResponder):
         text = self.get_subscription_info_text(owner, repo)
         self.respond(msg, text)
 
-    @parse_command([('owner', 1), ('repo', 1), ('channels', '+')], launch_invalid=False)
+    @parse_command([('owner', 1), ('repo', 1), ('channels', '*')], launch_invalid=False)
     def admin_command_github_untrack(self, msg, args):
         """Unsubscribes a channel from receiving updates about events occuring
-        in a repository. If a wildcard '*' is passed as a CHANNEL all channels
+        in a repository. If no CHANNELs are passed as an argument all channels
         are unsubscribed from the updates and the repository is in effect no
         longer tracked.
 
-        Syntax: github_untrack OWNER REPO CHANNEL ...
+        Syntax: github_untrack OWNER REPO [CHANNEL ...]
         """
         owner = args.owner[0]
         repo = args.repo[0]
@@ -316,7 +316,7 @@ class Github(BaseResponder):
         d = self.config_get_tracking_data(owner, repo)
         if d is not None:
             # remove channels
-            if args.channels[0] == '*':
+            if not args.channels:
                 d['channels'] = []
             else:
                 d['channels'] = [c for c in d['channels'] if c not in args.channels]
@@ -329,6 +329,24 @@ class Github(BaseResponder):
             self.respond(msg, text)
         else:
             self.respond(msg, 'This repository is not being tracked')
+
+    def admin_command_github_tracked(self, msg):
+        """Lists tracked repositories.
+
+        Syntax: github_tracked
+        """
+        texts = []
+        for data in self.config_get('track', []):
+            texts.append('{owner}/{repo}: {channels}'.format(
+                owner=data['owner'],
+                repo=data['repo'],
+                channels=', '.join(data['channels']))
+            )
+        if texts:
+            text = ' | '.join(texts)
+        else:
+            text = 'No tracked repositories'
+        self.respond(msg, text)
 
     @parse_command([('phrase', '+')], launch_invalid=False)
     def command_github(self, msg, args):

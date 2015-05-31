@@ -89,7 +89,7 @@ def test_admin_all_gone(rec_admin_msg, make_privmsg):
     rec_admin_msg(msg)
     assert len(g.config_get('track')[0]['channels']) == 2
 
-    msg = make_privmsg('.github_untrack owner repo *')
+    msg = make_privmsg('.github_untrack owner repo')
     rec_admin_msg(msg)
     assert not g.config_get('track')
 
