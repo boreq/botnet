@@ -286,7 +286,9 @@ class Github(BaseResponder):
 
         d = self.config_get_tracking_data(owner, repo)
         if d is not None:
-            d['channels'].extend(args.channels)
+            for channel in args.channels:
+                if channel not in d['channels']:
+                    d['channels'].append(channel)
             config_changed.send(self)
         else:
             data = {

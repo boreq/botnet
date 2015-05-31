@@ -68,6 +68,7 @@ def test_admin_one_left(rec_admin_msg, make_privmsg):
 
     msg = make_privmsg('.github_track owner repo #channel1')
     rec_admin_msg(msg)
+    rec_admin_msg(msg)
     assert len(g.config_get('track')[0]['channels']) == 1
 
     msg = make_privmsg('.github_track owner repo #channel2')
