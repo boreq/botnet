@@ -20,6 +20,7 @@ setup(
         'Click',
         'requests',
         'xmltodict',
+        'protobuf',
     ],
     entry_points='''
         [console_scripts]
