@@ -107,6 +107,9 @@ class Decoder(object):
             except:
                 raise CriticalProtocolError
 
+    def flush(self):
+        self.buf = bytes()
+
     def _process(self):
         while True:
             # Abort if not enough data to read the header.
@@ -194,6 +197,10 @@ class Mumble(BaseResponder):
             self.soc.close()
             self.soc = None
 
+    def flush_state(self):
+        self.decoder.flush()
+        self.users = {}
+
     def process_data(self, data):
         """Process the raw data received from the socket."""
         self.decoder.write(data)
@@ -275,6 +282,7 @@ class Mumble(BaseResponder):
         self.logger.debug('Update')
         try:
             self.restart_event.clear()
+            self.flush_state()
             self.connect()
             self.identify()
             while not self.stop_event.is_set() and not self.restart_event.is_set():
