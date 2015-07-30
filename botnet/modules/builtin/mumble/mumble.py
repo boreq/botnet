@@ -1,3 +1,8 @@
+"""
+    Implements the mumble protocol.
+    https://mumble-protocol.readthedocs.org/en/latest/index.html
+"""
+
 import socket
 import ssl
 import threading
@@ -10,41 +15,42 @@ from ... import BaseResponder
 from . import mumble_pb2
 
 
+# Mapping of the `Type` field values to the protobuf message classes.
 message_types = {
-    0:   mumble_pb2.Version,
-    1:   mumble_pb2.UDPTunnel,
-    2:   mumble_pb2.Authenticate,
-    3:   mumble_pb2.Ping,
-    4:   mumble_pb2.Reject,
-    5:   mumble_pb2.ServerSync,
-    6:   mumble_pb2.ChannelRemove,
-    7:   mumble_pb2.ChannelState,
-    8:   mumble_pb2.UserRemove,
-    9:   mumble_pb2.UserState,
-    10:  mumble_pb2.BanList,
-    11:  mumble_pb2.TextMessage,
-    12:  mumble_pb2.PermissionDenied,
-    13:  mumble_pb2.ACL,
-    14:  mumble_pb2.QueryUsers,
-    15:  mumble_pb2.CryptSetup,
-    16:  mumble_pb2.ContextActionModify,
-    17:  mumble_pb2.ContextAction,
-    18:  mumble_pb2.UserList,
-    19:  mumble_pb2.VoiceTarget,
-    20:  mumble_pb2.PermissionQuery,
-    21:  mumble_pb2.CodecVersion,
-    22:  mumble_pb2.UserStats,
-    23:  mumble_pb2.RequestBlob,
-    24:  mumble_pb2.ServerConfig,
-    25:  mumble_pb2.SuggestConfig,
+    0:  mumble_pb2.Version,
+    1:  mumble_pb2.UDPTunnel,
+    2:  mumble_pb2.Authenticate,
+    3:  mumble_pb2.Ping,
+    4:  mumble_pb2.Reject,
+    5:  mumble_pb2.ServerSync,
+    6:  mumble_pb2.ChannelRemove,
+    7:  mumble_pb2.ChannelState,
+    8:  mumble_pb2.UserRemove,
+    9:  mumble_pb2.UserState,
+    10: mumble_pb2.BanList,
+    11: mumble_pb2.TextMessage,
+    12: mumble_pb2.PermissionDenied,
+    13: mumble_pb2.ACL,
+    14: mumble_pb2.QueryUsers,
+    15: mumble_pb2.CryptSetup,
+    16: mumble_pb2.ContextActionModify,
+    17: mumble_pb2.ContextAction,
+    18: mumble_pb2.UserList,
+    19: mumble_pb2.VoiceTarget,
+    20: mumble_pb2.PermissionQuery,
+    21: mumble_pb2.CodecVersion,
+    22: mumble_pb2.UserStats,
+    23: mumble_pb2.RequestBlob,
+    24: mumble_pb2.ServerConfig,
+    25: mumble_pb2.SuggestConfig,
 }
 
-# Format used for struct.pack() when encoding the message header.
-_header_format = '!hi'
 
+# Format used by struct.pack() when encoding the message header.
+_header_format = '!hi'
 # Length of the header proceeding each protobuf encoded message.
-# https://mumble-protocol.readthedocs.org/en/latest/protocol_stack_tcp.html
 _header_length = 6
+
 
 def encode(msg):
     """Encodes a message in the mumble protocol format."""
@@ -52,15 +58,16 @@ def encode(msg):
     header = struct.pack(_header_format, message_type_to_number(msg), len(payload))
     return header + payload
 
+
 def decode_header(header):
     """Decodes a header encoded in the mumble protocol format. Header must be
-    _header_length bytes long. Returns (message type, message length)."""
+    _header_length bytes long. Returns (message_type, message_length)."""
     data = struct.unpack(_header_format, header)
     return data
 
 
 def message_type_to_number(msg):
-    """Converts a type of the message to the number used to encode it in the
+    """Converts a message class to the `Type` field value as defined by the
     protocol."""
     for key, value in message_types.items():
         if value == type(msg):
@@ -69,6 +76,9 @@ def message_type_to_number(msg):
 
 
 class CriticalProtocolError(Exception):
+    """Returned when a critical error during decoding is encountered. Such
+    error makes any further communication impossible or unreliable.
+    """
     pass
 
 
@@ -174,22 +184,23 @@ class Mumble(BaseResponder):
         self.t.join()
 
     def restart(self):
-        """Makes the module reconnect to the irc server."""
+        """Makes the module reconnect to the Mumble server."""
         self.disconnect()
         self.restart_event.set()
 
     def disconnect(self):
+        """Makes the module disconnect from the Mumble server."""
         if self.soc is not None:
             self.soc.close()
             self.soc = None
 
     def process_data(self, data):
-        """Process data received from the socket."""
+        """Process the raw data received from the socket."""
         self.decoder.write(data)
 
     def on_message(self, msg):
-        """Triggered by decoder.
-        msg: Message object.
+        """Triggered by the decoder.
+        msg: Protobuf message object.
         """
         # Dispatch the message to the right handler
         handler_name = 'handler_%s' % msg.__class__.__name__
@@ -209,7 +220,6 @@ class Mumble(BaseResponder):
         if hasattr(msg, 'session'):
             if msg.session in self.users:
                 self.users.pop(msg.session)
-
 
     def send(self, msg):
         """Sends a protobuf message via the socket."""
@@ -246,6 +256,11 @@ class Mumble(BaseResponder):
         self.send(auth)
 
     def heartbeat(self):
+        """Pings a server in regular intervals to stop the server from ceasing
+        the connection. According to the protocol the server will disconect
+        a client "if the server does not receive a ping for 30 seconds". It is
+        unclear if that only refers to the Ping message or message of any kind.
+        """
         while not self.stop_event.is_set():
             try:
                 self.logger.debug('Heartbeat')
