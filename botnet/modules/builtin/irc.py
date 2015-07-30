@@ -21,8 +21,9 @@ class InactivityMonitor(object):
 
     # PING command will be sent after that many seconds without communication
     ping_timeout = 60
+    ping_repeat = 5
     # IRC module will be restarted after that many seconds without communication
-    abort_timeout = 70
+    abort_timeout = 80
 
     def __init__(self, irc_module):
         self.logger = get_logger(self)
@@ -46,12 +47,18 @@ class InactivityMonitor(object):
             if timer is not None:
                 timer.cancel()
 
+    def _set_ping(self, timeout):
+        self._timer_ping = threading.Timer(timeout, self.on_timer_ping)
+        self._timer_ping.start()
+
+    def _set_abort(self, timeout):
+        self._timer_abort = threading.Timer(timeout, self.on_timer_abort)
+        self._timer_abort.start()
+
     def _set_timers(self):
         """Schedule the execution of the timers."""
-        self._timer_ping = threading.Timer(self.ping_timeout, self.on_timer_ping)
-        self._timer_abort = threading.Timer(self.abort_timeout, self.on_timer_abort)
-        self._timer_ping.start()
-        self._timer_abort.start()
+        self._set_ping(self.ping_timeout)
+        self._set_abort(self.abort_timeout)
 
     def _reset_timers(self):
         """Reschedule the execution of the timers."""
@@ -67,6 +74,7 @@ class InactivityMonitor(object):
         timestamp = datetime.datetime.now().timestamp()
         msg = Message(command='PING', params=[str(timestamp)])
         message_out.send(self, msg=msg)
+        self._set_ping(self.ping_repeat)
 
     def on_timer_abort(self):
         """Launched by _timer_abort."""

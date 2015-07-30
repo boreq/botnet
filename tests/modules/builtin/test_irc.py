@@ -59,3 +59,33 @@ def test_inactivity_monitor():
     with TestMonitor(irc) as t:
         assert not t.pinged
         assert not t.aborted
+
+
+def test_inactivity_monitor_repeated():
+    class TestMonitor(InactivityMonitor):
+
+        ping_timeout = 0.5
+        ping_repeat = 0.1
+        abort_timeout = 1
+
+        def __init__(self, irc_module):
+            super(TestMonitor, self).__init__(irc_module)
+            self.pinged = 0
+            self.aborted = 0
+
+        def on_timer_ping(self):
+            super(TestMonitor, self).on_timer_ping()
+            self.pinged += 1
+
+        def on_timer_abort(self):
+            super(TestMonitor, self).on_timer_abort()
+            self.aborted += 1
+
+
+    config = make_config()
+    irc = IRC(config)
+
+    with TestMonitor(irc) as t:
+        time.sleep(1.5)
+        assert t.pinged > 3
+        assert t.aborted > 0
