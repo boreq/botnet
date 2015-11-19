@@ -10,6 +10,10 @@ the entire bot and reconnecting to the IRC network simply by reloading a module.
 It is possible to use built-in modules or create easy to load and integrate
 user-maintained external modules distributed in a form of Python packages.
 
+## Installation
+
+    pip install git+https://github.com/boreq/botnet
+
 ## Usage
 
     botnet --help
@@ -23,7 +27,7 @@ Each module is provided with a comment containing a description and an example
 config snippet.
 
 ## Configuration
-Config snippets from the module decription can be added to the `module_config`
+Config snippets from the module description can be added to the `module_config`
 key in the config file. This is the general structure of the config file:
 
     {
