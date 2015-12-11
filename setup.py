@@ -13,7 +13,13 @@ setup(
     author_email='boreq@sourcedrops.com',
     description = ('IRC bot.'),
     license='BSD',
-    packages=['botnet'],
+    packages=[
+        'botnet',
+        'botnet/modules',
+        'botnet/modules/builtin',
+        'botnet/modules/builtin/mumble',
+        'botnet/modules/lib'
+    ],
     long_description=read('README.md'),
     install_requires=[
         'blinker',
