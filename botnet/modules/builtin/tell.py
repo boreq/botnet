@@ -97,7 +97,7 @@ class Tell(BaseResponder):
         super(Tell, self).__init__(config)
         self.ms = MessageStore(lambda: self.config_get('message_data'))
 
-    @parse_command([('target', 1), ('message', '+')], launch_invalid=True)
+    @parse_command([('target', 1), ('message', '+')], launch_invalid=False)
     def command_tell(self, msg, args):
         """Leave a message for someone. The user will receive the message the
         next time he sends anything in any of the channels.
