@@ -52,26 +52,31 @@ class WhoisMixin(object):
 
     def handler_rpl_whoischannels(self, msg):
         """WHOIS channels."""
-        if not 'channels' in self._whois_current[msg.params[1]]:
-            self._whois_current[msg.params[1]]['channels'] = []
-        self._whois_current[msg.params[1]]['channels'].extend(msg.params[2:])
+        if msg.params[1] in self._whois_current:
+            if not 'channels' in self._whois_current[msg.params[1]]:
+                self._whois_current[msg.params[1]]['channels'] = []
+            self._whois_current[msg.params[1]]['channels'].extend(msg.params[2:])
 
     def handler_rpl_whoisserver(self, msg):
         """WHOIS server."""
-        self._whois_current[msg.params[1]]['server'] = msg.params[2]
-        self._whois_current[msg.params[1]]['server_info'] = msg.params[3]
+        if msg.params[1] in self._whois_current:
+            self._whois_current[msg.params[1]]['server'] = msg.params[2]
+            self._whois_current[msg.params[1]]['server_info'] = msg.params[3]
 
     def handler_rizon_rpl_whoisidentified(self, msg):
         """WHOIS identification on Rizon."""
-        self._whois_current[msg.params[1]]['nick_identified'] = msg.params[2]
+        if msg.params[1] in self._whois_current:
+            self._whois_current[msg.params[1]]['nick_identified'] = msg.params[2]
 
     def handler_freenode_rpl_whoisidentified(self, msg):
         """WHOIS identification on Freenode."""
-        self._whois_current[msg.params[1]]['nick_identified'] = msg.params[1]
+        if msg.params[1] in self._whois_current:
+            self._whois_current[msg.params[1]]['nick_identified'] = msg.params[1]
 
     def handler_rpl_away(self, msg):
         """WHOIS away message."""
-        self._whois_current[msg.params[1]]['away'] = msg.params[2]
+        if msg.params[1] in self._whois_current:
+            self._whois_current[msg.params[1]]['away'] = msg.params[2]
 
     def handler_rpl_endofwhois(self, msg):
         """End of WHOIS."""
