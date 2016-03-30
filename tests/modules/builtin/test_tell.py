@@ -37,3 +37,17 @@ def test_mod(tmp_file, msg_t, make_privmsg, rec_msg):
     msg = make_privmsg('sth', nick='target')
     rec_msg(msg)
     assert 'message text' in str(msg_t.msg)
+
+def test_message_store_ordering(tmp_file):
+    ms = MessageStore(lambda: tmp_file)
+
+    a = ms.get_messages('target1')
+    assert a == []
+
+    ms.add_message('author', 'target1', 'text1')
+    ms.add_message('author', 'target1', 'text2')
+
+    a = ms.get_messages('target1')
+    assert len(a) == 2
+    assert a[0]['message'] == 'text1'
+    assert a[1]['message'] == 'text2'

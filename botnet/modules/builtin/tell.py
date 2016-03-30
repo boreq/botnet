@@ -74,7 +74,7 @@ class MessageStore(object):
                 if m['target'] == target:
                     rw.append(self._msg_store.pop(i))
             self._save()
-        return rw
+        return list(reversed(rw))
 
 
 class Tell(BaseResponder):
