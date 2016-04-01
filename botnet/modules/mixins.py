@@ -158,7 +158,11 @@ class BaseMessageDispatcherMixin(object):
 
         if command_name:
             cmd = command_prefix + command_name
-            return priv_msg.params[-1].split()[0] == cmd
+            spl = priv_msg.params[-1].split()
+            if len(spl) > 0:
+                return spl[0] == cmd
+            else:
+                return False
         else:
             return priv_msg.params[-1].startswith(command_prefix)
 

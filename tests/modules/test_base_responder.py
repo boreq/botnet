@@ -1,6 +1,7 @@
 from botnet.config import Config
 from botnet.message import Message
-from botnet.modules import BaseResponder, parse_command
+from botnet.modules import BaseResponder
+from botnet.modules.lib import parse_command
 from botnet.modules.builtin.admin import Admin
 from botnet.signals import message_in, admin_message_in
 
@@ -144,4 +145,7 @@ def test_is_command():
     msg = make_message('#channel ::test')
     assert re.is_command(msg, 'test', ':')
     assert re.is_command(msg, 'test', command_prefix=':')
+    assert not re.is_command(msg, 'test')
+
+    msg = make_message('#channel : ')
     assert not re.is_command(msg, 'test')
