@@ -199,11 +199,13 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
 
         return lines
 
-    def process_message(self, msg):
+    def process_line(self, line):
         """Process one line received from the server."""
-        rw = Message()
-        rw.from_string(msg)
-        return rw
+        if not line:
+            return
+        msg = Message()
+        msg.from_string(line)
+        self.handle_message(msg)
 
     def handle_message(self, msg):
         """Process the created Message object."""
@@ -304,8 +306,10 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
                         if not data:
                             break
                         for line in self.process_data(data):
-                            msg = self.process_message(line)
-                            self.handle_message(msg)
+                            try:
+                                self.process_line(line)
+                            except Exception as e:
+                                on_exception.send(self, e=e)
                     except (socket.timeout, ssl.SSLWantReadError) as e:
                         pass
             finally:
