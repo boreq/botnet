@@ -49,7 +49,7 @@ class Quotes(BaseResponder):
 
             # Directories
             for directory in self.config_get('directories', []):
-                for root, dirs, files in os.walk(directory):
+                for root, dirs, files in os.walk(directory, followlinks=True):
                     for filename in files:
                         if filename == key:
                             path = os.path.join(root, filename)
