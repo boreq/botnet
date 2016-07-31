@@ -17,8 +17,8 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='mumble.proto',
-  package='mumble',
-  serialized_pb=_b('\n\x0cmumble.proto\x12\x06mumble\"K\n\x07Version\x12\x0f\n\x07version\x18\x01 \x01(\r\x12\x0f\n\x07release\x18\x02 \x01(\t\x12\n\n\x02os\x18\x03 \x01(\t\x12\x12\n\nos_version\x18\x04 \x01(\t\"\x1b\n\tUDPTunnel\x12\x0e\n\x06packet\x18\x01 \x02(\x0c\"n\n\x0c\x41uthenticate\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\x12\x0e\n\x06tokens\x18\x03 \x03(\t\x12\x15\n\rcelt_versions\x18\x04 \x03(\x05\x12\x13\n\x04opus\x18\x05 \x01(\x08:\x05\x66\x61lse\"\xd5\x01\n\x04Ping\x12\x11\n\ttimestamp\x18\x01 \x01(\x04\x12\x0c\n\x04good\x18\x02 \x01(\r\x12\x0c\n\x04late\x18\x03 \x01(\r\x12\x0c\n\x04lost\x18\x04 \x01(\r\x12\x0e\n\x06resync\x18\x05 \x01(\r\x12\x13\n\x0budp_packets\x18\x06 \x01(\r\x12\x13\n\x0btcp_packets\x18\x07 \x01(\r\x12\x14\n\x0cudp_ping_avg\x18\x08 \x01(\x02\x12\x14\n\x0cudp_ping_var\x18\t \x01(\x02\x12\x14\n\x0ctcp_ping_avg\x18\n \x01(\x02\x12\x14\n\x0ctcp_ping_var\x18\x0b \x01(\x02\"\xf2\x01\n\x06Reject\x12\'\n\x04type\x18\x01 \x01(\x0e\x32\x19.mumble.Reject.RejectType\x12\x0e\n\x06reason\x18\x02 \x01(\t\"\xae\x01\n\nRejectType\x12\x08\n\x04None\x10\x00\x12\x10\n\x0cWrongVersion\x10\x01\x12\x13\n\x0fInvalidUsername\x10\x02\x12\x0f\n\x0bWrongUserPW\x10\x03\x12\x11\n\rWrongServerPW\x10\x04\x12\x11\n\rUsernameInUse\x10\x05\x12\x0e\n\nServerFull\x10\x06\x12\x11\n\rNoCertificate\x10\x07\x12\x15\n\x11\x41uthenticatorFail\x10\x08\"_\n\nServerSync\x12\x0f\n\x07session\x18\x01 \x01(\r\x12\x15\n\rmax_bandwidth\x18\x02 \x01(\r\x12\x14\n\x0cwelcome_text\x18\x03 \x01(\t\x12\x13\n\x0bpermissions\x18\x04 \x01(\x04\"#\n\rChannelRemove\x12\x12\n\nchannel_id\x18\x01 \x02(\r\"\xe9\x01\n\x0c\x43hannelState\x12\x12\n\nchannel_id\x18\x01 \x01(\r\x12\x0e\n\x06parent\x18\x02 \x01(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\r\n\x05links\x18\x04 \x03(\r\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12\x11\n\tlinks_add\x18\x06 \x03(\r\x12\x14\n\x0clinks_remove\x18\x07 \x03(\r\x12\x18\n\ttemporary\x18\x08 \x01(\x08:\x05\x66\x61lse\x12\x13\n\x08position\x18\t \x01(\x05:\x01\x30\x12\x18\n\x10\x64\x65scription_hash\x18\n \x01(\x0c\x12\x11\n\tmax_users\x18\x0b \x01(\r\"I\n\nUserRemove\x12\x0f\n\x07session\x18\x01 \x02(\r\x12\r\n\x05\x61\x63tor\x18\x02 \x01(\r\x12\x0e\n\x06reason\x18\x03 \x01(\t\x12\x0b\n\x03\x62\x61n\x18\x04 \x01(\x08\"\xec\x02\n\tUserState\x12\x0f\n\x07session\x18\x01 \x01(\r\x12\r\n\x05\x61\x63tor\x18\x02 \x01(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0f\n\x07user_id\x18\x04 \x01(\r\x12\x12\n\nchannel_id\x18\x05 \x01(\r\x12\x0c\n\x04mute\x18\x06 \x01(\x08\x12\x0c\n\x04\x64\x65\x61\x66\x18\x07 \x01(\x08\x12\x10\n\x08suppress\x18\x08 \x01(\x08\x12\x11\n\tself_mute\x18\t \x01(\x08\x12\x11\n\tself_deaf\x18\n \x01(\x08\x12\x0f\n\x07texture\x18\x0b \x01(\x0c\x12\x16\n\x0eplugin_context\x18\x0c \x01(\x0c\x12\x17\n\x0fplugin_identity\x18\r \x01(\t\x12\x0f\n\x07\x63omment\x18\x0e \x01(\t\x12\x0c\n\x04hash\x18\x0f \x01(\t\x12\x14\n\x0c\x63omment_hash\x18\x10 \x01(\x0c\x12\x14\n\x0ctexture_hash\x18\x11 \x01(\x0c\x12\x18\n\x10priority_speaker\x18\x12 \x01(\x08\x12\x11\n\trecording\x18\x13 \x01(\x08\"\xbf\x01\n\x07\x42\x61nList\x12&\n\x04\x62\x61ns\x18\x01 \x03(\x0b\x32\x18.mumble.BanList.BanEntry\x12\x14\n\x05query\x18\x02 \x01(\x08:\x05\x66\x61lse\x1av\n\x08\x42\x61nEntry\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x02(\x0c\x12\x0c\n\x04mask\x18\x02 \x02(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0c\n\x04hash\x18\x04 \x01(\t\x12\x0e\n\x06reason\x18\x05 \x01(\t\x12\r\n\x05start\x18\x06 \x01(\t\x12\x10\n\x08\x64uration\x18\x07 \x01(\r\"c\n\x0bTextMessage\x12\r\n\x05\x61\x63tor\x18\x01 \x01(\r\x12\x0f\n\x07session\x18\x02 \x03(\r\x12\x12\n\nchannel_id\x18\x03 \x03(\r\x12\x0f\n\x07tree_id\x18\x04 \x03(\r\x12\x0f\n\x07message\x18\x05 \x02(\t\"\xda\x02\n\x10PermissionDenied\x12\x12\n\npermission\x18\x01 \x01(\r\x12\x12\n\nchannel_id\x18\x02 \x01(\r\x12\x0f\n\x07session\x18\x03 \x01(\r\x12\x0e\n\x06reason\x18\x04 \x01(\t\x12/\n\x04type\x18\x05 \x01(\x0e\x32!.mumble.PermissionDenied.DenyType\x12\x0c\n\x04name\x18\x06 \x01(\t\"\xbd\x01\n\x08\x44\x65nyType\x12\x08\n\x04Text\x10\x00\x12\x0e\n\nPermission\x10\x01\x12\r\n\tSuperUser\x10\x02\x12\x0f\n\x0b\x43hannelName\x10\x03\x12\x0f\n\x0bTextTooLong\x10\x04\x12\x07\n\x03H9K\x10\x05\x12\x14\n\x10TemporaryChannel\x10\x06\x12\x16\n\x12MissingCertificate\x10\x07\x12\x0c\n\x08UserName\x10\x08\x12\x0f\n\x0b\x43hannelFull\x10\t\x12\x10\n\x0cNestingLimit\x10\n\"\xca\x03\n\x03\x41\x43L\x12\x12\n\nchannel_id\x18\x01 \x02(\r\x12\x1a\n\x0cinherit_acls\x18\x02 \x01(\x08:\x04true\x12%\n\x06groups\x18\x03 \x03(\x0b\x32\x15.mumble.ACL.ChanGroup\x12!\n\x04\x61\x63ls\x18\x04 \x03(\x0b\x32\x13.mumble.ACL.ChanACL\x12\x14\n\x05query\x18\x05 \x01(\x08:\x05\x66\x61lse\x1a\x9c\x01\n\tChanGroup\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x17\n\tinherited\x18\x02 \x01(\x08:\x04true\x12\x15\n\x07inherit\x18\x03 \x01(\x08:\x04true\x12\x19\n\x0binheritable\x18\x04 \x01(\x08:\x04true\x12\x0b\n\x03\x61\x64\x64\x18\x05 \x03(\r\x12\x0e\n\x06remove\x18\x06 \x03(\r\x12\x19\n\x11inherited_members\x18\x07 \x03(\r\x1a\x93\x01\n\x07\x43hanACL\x12\x18\n\napply_here\x18\x01 \x01(\x08:\x04true\x12\x18\n\napply_subs\x18\x02 \x01(\x08:\x04true\x12\x17\n\tinherited\x18\x03 \x01(\x08:\x04true\x12\x0f\n\x07user_id\x18\x04 \x01(\r\x12\r\n\x05group\x18\x05 \x01(\t\x12\r\n\x05grant\x18\x06 \x01(\r\x12\x0c\n\x04\x64\x65ny\x18\x07 \x01(\r\"(\n\nQueryUsers\x12\x0b\n\x03ids\x18\x01 \x03(\r\x12\r\n\x05names\x18\x02 \x03(\t\"E\n\nCryptSetup\x12\x0b\n\x03key\x18\x01 \x01(\x0c\x12\x14\n\x0c\x63lient_nonce\x18\x02 \x01(\x0c\x12\x14\n\x0cserver_nonce\x18\x03 \x01(\x0c\"\xce\x01\n\x13\x43ontextActionModify\x12\x0e\n\x06\x61\x63tion\x18\x01 \x02(\t\x12\x0c\n\x04text\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontext\x18\x03 \x01(\r\x12\x38\n\toperation\x18\x04 \x01(\x0e\x32%.mumble.ContextActionModify.Operation\",\n\x07\x43ontext\x12\n\n\x06Server\x10\x01\x12\x0b\n\x07\x43hannel\x10\x02\x12\x08\n\x04User\x10\x04\" \n\tOperation\x12\x07\n\x03\x41\x64\x64\x10\x00\x12\n\n\x06Remove\x10\x01\"D\n\rContextAction\x12\x0f\n\x07session\x18\x01 \x01(\r\x12\x12\n\nchannel_id\x18\x02 \x01(\r\x12\x0e\n\x06\x61\x63tion\x18\x03 \x02(\t\"\x80\x01\n\x08UserList\x12$\n\x05users\x18\x01 \x03(\x0b\x32\x15.mumble.UserList.User\x1aN\n\x04User\x12\x0f\n\x07user_id\x18\x01 \x02(\r\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x11\n\tlast_seen\x18\x03 \x01(\t\x12\x14\n\x0clast_channel\x18\x04 \x01(\r\"\xb3\x01\n\x0bVoiceTarget\x12\n\n\x02id\x18\x01 \x01(\r\x12+\n\x07targets\x18\x02 \x03(\x0b\x32\x1a.mumble.VoiceTarget.Target\x1ak\n\x06Target\x12\x0f\n\x07session\x18\x01 \x03(\r\x12\x12\n\nchannel_id\x18\x02 \x01(\r\x12\r\n\x05group\x18\x03 \x01(\t\x12\x14\n\x05links\x18\x04 \x01(\x08:\x05\x66\x61lse\x12\x17\n\x08\x63hildren\x18\x05 \x01(\x08:\x05\x66\x61lse\"P\n\x0fPermissionQuery\x12\x12\n\nchannel_id\x18\x01 \x01(\r\x12\x13\n\x0bpermissions\x18\x02 \x01(\r\x12\x14\n\x05\x66lush\x18\x03 \x01(\x08:\x05\x66\x61lse\"\\\n\x0c\x43odecVersion\x12\r\n\x05\x61lpha\x18\x01 \x02(\x05\x12\x0c\n\x04\x62\x65ta\x18\x02 \x02(\x05\x12\x1a\n\x0cprefer_alpha\x18\x03 \x02(\x08:\x04true\x12\x13\n\x04opus\x18\x04 \x01(\x08:\x05\x66\x61lse\"\xa9\x04\n\tUserStats\x12\x0f\n\x07session\x18\x01 \x01(\r\x12\x19\n\nstats_only\x18\x02 \x01(\x08:\x05\x66\x61lse\x12\x14\n\x0c\x63\x65rtificates\x18\x03 \x03(\x0c\x12,\n\x0b\x66rom_client\x18\x04 \x01(\x0b\x32\x17.mumble.UserStats.Stats\x12,\n\x0b\x66rom_server\x18\x05 \x01(\x0b\x32\x17.mumble.UserStats.Stats\x12\x13\n\x0budp_packets\x18\x06 \x01(\r\x12\x13\n\x0btcp_packets\x18\x07 \x01(\r\x12\x14\n\x0cudp_ping_avg\x18\x08 \x01(\x02\x12\x14\n\x0cudp_ping_var\x18\t \x01(\x02\x12\x14\n\x0ctcp_ping_avg\x18\n \x01(\x02\x12\x14\n\x0ctcp_ping_var\x18\x0b \x01(\x02\x12 \n\x07version\x18\x0c \x01(\x0b\x32\x0f.mumble.Version\x12\x15\n\rcelt_versions\x18\r \x03(\x05\x12\x0f\n\x07\x61\x64\x64ress\x18\x0e \x01(\x0c\x12\x11\n\tbandwidth\x18\x0f \x01(\r\x12\x12\n\nonlinesecs\x18\x10 \x01(\r\x12\x10\n\x08idlesecs\x18\x11 \x01(\r\x12!\n\x12strong_certificate\x18\x12 \x01(\x08:\x05\x66\x61lse\x12\x13\n\x04opus\x18\x13 \x01(\x08:\x05\x66\x61lse\x1a\x41\n\x05Stats\x12\x0c\n\x04good\x18\x01 \x01(\r\x12\x0c\n\x04late\x18\x02 \x01(\r\x12\x0c\n\x04lost\x18\x03 \x01(\r\x12\x0e\n\x06resync\x18\x04 \x01(\r\"\\\n\x0bRequestBlob\x12\x17\n\x0fsession_texture\x18\x01 \x03(\r\x12\x17\n\x0fsession_comment\x18\x02 \x03(\r\x12\x1b\n\x13\x63hannel_description\x18\x03 \x03(\r\"\x98\x01\n\x0cServerConfig\x12\x15\n\rmax_bandwidth\x18\x01 \x01(\r\x12\x14\n\x0cwelcome_text\x18\x02 \x01(\t\x12\x12\n\nallow_html\x18\x03 \x01(\x08\x12\x16\n\x0emessage_length\x18\x04 \x01(\r\x12\x1c\n\x14image_message_length\x18\x05 \x01(\r\x12\x11\n\tmax_users\x18\x06 \x01(\r\"J\n\rSuggestConfig\x12\x0f\n\x07version\x18\x01 \x01(\r\x12\x12\n\npositional\x18\x02 \x01(\x08\x12\x14\n\x0cpush_to_talk\x18\x03 \x01(\x08\x42\x02H\x01')
+  package='MumbleProto',
+  serialized_pb=_b('\n\x0cmumble.proto\x12\x0bMumbleProto\"K\n\x07Version\x12\x0f\n\x07version\x18\x01 \x01(\r\x12\x0f\n\x07release\x18\x02 \x01(\t\x12\n\n\x02os\x18\x03 \x01(\t\x12\x12\n\nos_version\x18\x04 \x01(\t\"\x1b\n\tUDPTunnel\x12\x0e\n\x06packet\x18\x01 \x02(\x0c\"n\n\x0c\x41uthenticate\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\x12\x0e\n\x06tokens\x18\x03 \x03(\t\x12\x15\n\rcelt_versions\x18\x04 \x03(\x05\x12\x13\n\x04opus\x18\x05 \x01(\x08:\x05\x66\x61lse\"\xd5\x01\n\x04Ping\x12\x11\n\ttimestamp\x18\x01 \x01(\x04\x12\x0c\n\x04good\x18\x02 \x01(\r\x12\x0c\n\x04late\x18\x03 \x01(\r\x12\x0c\n\x04lost\x18\x04 \x01(\r\x12\x0e\n\x06resync\x18\x05 \x01(\r\x12\x13\n\x0budp_packets\x18\x06 \x01(\r\x12\x13\n\x0btcp_packets\x18\x07 \x01(\r\x12\x14\n\x0cudp_ping_avg\x18\x08 \x01(\x02\x12\x14\n\x0cudp_ping_var\x18\t \x01(\x02\x12\x14\n\x0ctcp_ping_avg\x18\n \x01(\x02\x12\x14\n\x0ctcp_ping_var\x18\x0b \x01(\x02\"\xf7\x01\n\x06Reject\x12,\n\x04type\x18\x01 \x01(\x0e\x32\x1e.MumbleProto.Reject.RejectType\x12\x0e\n\x06reason\x18\x02 \x01(\t\"\xae\x01\n\nRejectType\x12\x08\n\x04None\x10\x00\x12\x10\n\x0cWrongVersion\x10\x01\x12\x13\n\x0fInvalidUsername\x10\x02\x12\x0f\n\x0bWrongUserPW\x10\x03\x12\x11\n\rWrongServerPW\x10\x04\x12\x11\n\rUsernameInUse\x10\x05\x12\x0e\n\nServerFull\x10\x06\x12\x11\n\rNoCertificate\x10\x07\x12\x15\n\x11\x41uthenticatorFail\x10\x08\"_\n\nServerSync\x12\x0f\n\x07session\x18\x01 \x01(\r\x12\x15\n\rmax_bandwidth\x18\x02 \x01(\r\x12\x14\n\x0cwelcome_text\x18\x03 \x01(\t\x12\x13\n\x0bpermissions\x18\x04 \x01(\x04\"#\n\rChannelRemove\x12\x12\n\nchannel_id\x18\x01 \x02(\r\"\xe9\x01\n\x0c\x43hannelState\x12\x12\n\nchannel_id\x18\x01 \x01(\r\x12\x0e\n\x06parent\x18\x02 \x01(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\r\n\x05links\x18\x04 \x03(\r\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12\x11\n\tlinks_add\x18\x06 \x03(\r\x12\x14\n\x0clinks_remove\x18\x07 \x03(\r\x12\x18\n\ttemporary\x18\x08 \x01(\x08:\x05\x66\x61lse\x12\x13\n\x08position\x18\t \x01(\x05:\x01\x30\x12\x18\n\x10\x64\x65scription_hash\x18\n \x01(\x0c\x12\x11\n\tmax_users\x18\x0b \x01(\r\"I\n\nUserRemove\x12\x0f\n\x07session\x18\x01 \x02(\r\x12\r\n\x05\x61\x63tor\x18\x02 \x01(\r\x12\x0e\n\x06reason\x18\x03 \x01(\t\x12\x0b\n\x03\x62\x61n\x18\x04 \x01(\x08\"\xec\x02\n\tUserState\x12\x0f\n\x07session\x18\x01 \x01(\r\x12\r\n\x05\x61\x63tor\x18\x02 \x01(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0f\n\x07user_id\x18\x04 \x01(\r\x12\x12\n\nchannel_id\x18\x05 \x01(\r\x12\x0c\n\x04mute\x18\x06 \x01(\x08\x12\x0c\n\x04\x64\x65\x61\x66\x18\x07 \x01(\x08\x12\x10\n\x08suppress\x18\x08 \x01(\x08\x12\x11\n\tself_mute\x18\t \x01(\x08\x12\x11\n\tself_deaf\x18\n \x01(\x08\x12\x0f\n\x07texture\x18\x0b \x01(\x0c\x12\x16\n\x0eplugin_context\x18\x0c \x01(\x0c\x12\x17\n\x0fplugin_identity\x18\r \x01(\t\x12\x0f\n\x07\x63omment\x18\x0e \x01(\t\x12\x0c\n\x04hash\x18\x0f \x01(\t\x12\x14\n\x0c\x63omment_hash\x18\x10 \x01(\x0c\x12\x14\n\x0ctexture_hash\x18\x11 \x01(\x0c\x12\x18\n\x10priority_speaker\x18\x12 \x01(\x08\x12\x11\n\trecording\x18\x13 \x01(\x08\"\xc4\x01\n\x07\x42\x61nList\x12+\n\x04\x62\x61ns\x18\x01 \x03(\x0b\x32\x1d.MumbleProto.BanList.BanEntry\x12\x14\n\x05query\x18\x02 \x01(\x08:\x05\x66\x61lse\x1av\n\x08\x42\x61nEntry\x12\x0f\n\x07\x61\x64\x64ress\x18\x01 \x02(\x0c\x12\x0c\n\x04mask\x18\x02 \x02(\r\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x0c\n\x04hash\x18\x04 \x01(\t\x12\x0e\n\x06reason\x18\x05 \x01(\t\x12\r\n\x05start\x18\x06 \x01(\t\x12\x10\n\x08\x64uration\x18\x07 \x01(\r\"c\n\x0bTextMessage\x12\r\n\x05\x61\x63tor\x18\x01 \x01(\r\x12\x0f\n\x07session\x18\x02 \x03(\r\x12\x12\n\nchannel_id\x18\x03 \x03(\r\x12\x0f\n\x07tree_id\x18\x04 \x03(\r\x12\x0f\n\x07message\x18\x05 \x02(\t\"\xdf\x02\n\x10PermissionDenied\x12\x12\n\npermission\x18\x01 \x01(\r\x12\x12\n\nchannel_id\x18\x02 \x01(\r\x12\x0f\n\x07session\x18\x03 \x01(\r\x12\x0e\n\x06reason\x18\x04 \x01(\t\x12\x34\n\x04type\x18\x05 \x01(\x0e\x32&.MumbleProto.PermissionDenied.DenyType\x12\x0c\n\x04name\x18\x06 \x01(\t\"\xbd\x01\n\x08\x44\x65nyType\x12\x08\n\x04Text\x10\x00\x12\x0e\n\nPermission\x10\x01\x12\r\n\tSuperUser\x10\x02\x12\x0f\n\x0b\x43hannelName\x10\x03\x12\x0f\n\x0bTextTooLong\x10\x04\x12\x07\n\x03H9K\x10\x05\x12\x14\n\x10TemporaryChannel\x10\x06\x12\x16\n\x12MissingCertificate\x10\x07\x12\x0c\n\x08UserName\x10\x08\x12\x0f\n\x0b\x43hannelFull\x10\t\x12\x10\n\x0cNestingLimit\x10\n\"\xd4\x03\n\x03\x41\x43L\x12\x12\n\nchannel_id\x18\x01 \x02(\r\x12\x1a\n\x0cinherit_acls\x18\x02 \x01(\x08:\x04true\x12*\n\x06groups\x18\x03 \x03(\x0b\x32\x1a.MumbleProto.ACL.ChanGroup\x12&\n\x04\x61\x63ls\x18\x04 \x03(\x0b\x32\x18.MumbleProto.ACL.ChanACL\x12\x14\n\x05query\x18\x05 \x01(\x08:\x05\x66\x61lse\x1a\x9c\x01\n\tChanGroup\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x17\n\tinherited\x18\x02 \x01(\x08:\x04true\x12\x15\n\x07inherit\x18\x03 \x01(\x08:\x04true\x12\x19\n\x0binheritable\x18\x04 \x01(\x08:\x04true\x12\x0b\n\x03\x61\x64\x64\x18\x05 \x03(\r\x12\x0e\n\x06remove\x18\x06 \x03(\r\x12\x19\n\x11inherited_members\x18\x07 \x03(\r\x1a\x93\x01\n\x07\x43hanACL\x12\x18\n\napply_here\x18\x01 \x01(\x08:\x04true\x12\x18\n\napply_subs\x18\x02 \x01(\x08:\x04true\x12\x17\n\tinherited\x18\x03 \x01(\x08:\x04true\x12\x0f\n\x07user_id\x18\x04 \x01(\r\x12\r\n\x05group\x18\x05 \x01(\t\x12\r\n\x05grant\x18\x06 \x01(\r\x12\x0c\n\x04\x64\x65ny\x18\x07 \x01(\r\"(\n\nQueryUsers\x12\x0b\n\x03ids\x18\x01 \x03(\r\x12\r\n\x05names\x18\x02 \x03(\t\"E\n\nCryptSetup\x12\x0b\n\x03key\x18\x01 \x01(\x0c\x12\x14\n\x0c\x63lient_nonce\x18\x02 \x01(\x0c\x12\x14\n\x0cserver_nonce\x18\x03 \x01(\x0c\"\xd3\x01\n\x13\x43ontextActionModify\x12\x0e\n\x06\x61\x63tion\x18\x01 \x02(\t\x12\x0c\n\x04text\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontext\x18\x03 \x01(\r\x12=\n\toperation\x18\x04 \x01(\x0e\x32*.MumbleProto.ContextActionModify.Operation\",\n\x07\x43ontext\x12\n\n\x06Server\x10\x01\x12\x0b\n\x07\x43hannel\x10\x02\x12\x08\n\x04User\x10\x04\" \n\tOperation\x12\x07\n\x03\x41\x64\x64\x10\x00\x12\n\n\x06Remove\x10\x01\"D\n\rContextAction\x12\x0f\n\x07session\x18\x01 \x01(\r\x12\x12\n\nchannel_id\x18\x02 \x01(\r\x12\x0e\n\x06\x61\x63tion\x18\x03 \x02(\t\"\x85\x01\n\x08UserList\x12)\n\x05users\x18\x01 \x03(\x0b\x32\x1a.MumbleProto.UserList.User\x1aN\n\x04User\x12\x0f\n\x07user_id\x18\x01 \x02(\r\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x11\n\tlast_seen\x18\x03 \x01(\t\x12\x14\n\x0clast_channel\x18\x04 \x01(\r\"\xb8\x01\n\x0bVoiceTarget\x12\n\n\x02id\x18\x01 \x01(\r\x12\x30\n\x07targets\x18\x02 \x03(\x0b\x32\x1f.MumbleProto.VoiceTarget.Target\x1ak\n\x06Target\x12\x0f\n\x07session\x18\x01 \x03(\r\x12\x12\n\nchannel_id\x18\x02 \x01(\r\x12\r\n\x05group\x18\x03 \x01(\t\x12\x14\n\x05links\x18\x04 \x01(\x08:\x05\x66\x61lse\x12\x17\n\x08\x63hildren\x18\x05 \x01(\x08:\x05\x66\x61lse\"P\n\x0fPermissionQuery\x12\x12\n\nchannel_id\x18\x01 \x01(\r\x12\x13\n\x0bpermissions\x18\x02 \x01(\r\x12\x14\n\x05\x66lush\x18\x03 \x01(\x08:\x05\x66\x61lse\"\\\n\x0c\x43odecVersion\x12\r\n\x05\x61lpha\x18\x01 \x02(\x05\x12\x0c\n\x04\x62\x65ta\x18\x02 \x02(\x05\x12\x1a\n\x0cprefer_alpha\x18\x03 \x02(\x08:\x04true\x12\x13\n\x04opus\x18\x04 \x01(\x08:\x05\x66\x61lse\"\xb8\x04\n\tUserStats\x12\x0f\n\x07session\x18\x01 \x01(\r\x12\x19\n\nstats_only\x18\x02 \x01(\x08:\x05\x66\x61lse\x12\x14\n\x0c\x63\x65rtificates\x18\x03 \x03(\x0c\x12\x31\n\x0b\x66rom_client\x18\x04 \x01(\x0b\x32\x1c.MumbleProto.UserStats.Stats\x12\x31\n\x0b\x66rom_server\x18\x05 \x01(\x0b\x32\x1c.MumbleProto.UserStats.Stats\x12\x13\n\x0budp_packets\x18\x06 \x01(\r\x12\x13\n\x0btcp_packets\x18\x07 \x01(\r\x12\x14\n\x0cudp_ping_avg\x18\x08 \x01(\x02\x12\x14\n\x0cudp_ping_var\x18\t \x01(\x02\x12\x14\n\x0ctcp_ping_avg\x18\n \x01(\x02\x12\x14\n\x0ctcp_ping_var\x18\x0b \x01(\x02\x12%\n\x07version\x18\x0c \x01(\x0b\x32\x14.MumbleProto.Version\x12\x15\n\rcelt_versions\x18\r \x03(\x05\x12\x0f\n\x07\x61\x64\x64ress\x18\x0e \x01(\x0c\x12\x11\n\tbandwidth\x18\x0f \x01(\r\x12\x12\n\nonlinesecs\x18\x10 \x01(\r\x12\x10\n\x08idlesecs\x18\x11 \x01(\r\x12!\n\x12strong_certificate\x18\x12 \x01(\x08:\x05\x66\x61lse\x12\x13\n\x04opus\x18\x13 \x01(\x08:\x05\x66\x61lse\x1a\x41\n\x05Stats\x12\x0c\n\x04good\x18\x01 \x01(\r\x12\x0c\n\x04late\x18\x02 \x01(\r\x12\x0c\n\x04lost\x18\x03 \x01(\r\x12\x0e\n\x06resync\x18\x04 \x01(\r\"\\\n\x0bRequestBlob\x12\x17\n\x0fsession_texture\x18\x01 \x03(\r\x12\x17\n\x0fsession_comment\x18\x02 \x03(\r\x12\x1b\n\x13\x63hannel_description\x18\x03 \x03(\r\"\x98\x01\n\x0cServerConfig\x12\x15\n\rmax_bandwidth\x18\x01 \x01(\r\x12\x14\n\x0cwelcome_text\x18\x02 \x01(\t\x12\x12\n\nallow_html\x18\x03 \x01(\x08\x12\x16\n\x0emessage_length\x18\x04 \x01(\r\x12\x1c\n\x14image_message_length\x18\x05 \x01(\r\x12\x11\n\tmax_users\x18\x06 \x01(\r\"J\n\rSuggestConfig\x12\x0f\n\x07version\x18\x01 \x01(\r\x12\x12\n\npositional\x18\x02 \x01(\x08\x12\x14\n\x0cpush_to_talk\x18\x03 \x01(\x08\x42\x02H\x01')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -26,7 +26,7 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 _REJECT_REJECTTYPE = _descriptor.EnumDescriptor(
   name='RejectType',
-  full_name='mumble.Reject.RejectType',
+  full_name='MumbleProto.Reject.RejectType',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -69,14 +69,14 @@ _REJECT_REJECTTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=527,
-  serialized_end=701,
+  serialized_start=537,
+  serialized_end=711,
 )
 _sym_db.RegisterEnumDescriptor(_REJECT_REJECTTYPE)
 
 _PERMISSIONDENIED_DENYTYPE = _descriptor.EnumDescriptor(
   name='DenyType',
-  full_name='mumble.PermissionDenied.DenyType',
+  full_name='MumbleProto.PermissionDenied.DenyType',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -127,14 +127,14 @@ _PERMISSIONDENIED_DENYTYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=1968,
-  serialized_end=2157,
+  serialized_start=1988,
+  serialized_end=2177,
 )
 _sym_db.RegisterEnumDescriptor(_PERMISSIONDENIED_DENYTYPE)
 
 _CONTEXTACTIONMODIFY_CONTEXT = _descriptor.EnumDescriptor(
   name='Context',
-  full_name='mumble.ContextActionModify.Context',
+  full_name='MumbleProto.ContextActionModify.Context',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -153,14 +153,14 @@ _CONTEXTACTIONMODIFY_CONTEXT = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2862,
-  serialized_end=2906,
+  serialized_start=2897,
+  serialized_end=2941,
 )
 _sym_db.RegisterEnumDescriptor(_CONTEXTACTIONMODIFY_CONTEXT)
 
 _CONTEXTACTIONMODIFY_OPERATION = _descriptor.EnumDescriptor(
   name='Operation',
-  full_name='mumble.ContextActionModify.Operation',
+  full_name='MumbleProto.ContextActionModify.Operation',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -175,42 +175,42 @@ _CONTEXTACTIONMODIFY_OPERATION = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2908,
-  serialized_end=2940,
+  serialized_start=2943,
+  serialized_end=2975,
 )
 _sym_db.RegisterEnumDescriptor(_CONTEXTACTIONMODIFY_OPERATION)
 
 
 _VERSION = _descriptor.Descriptor(
   name='Version',
-  full_name='mumble.Version',
+  full_name='MumbleProto.Version',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='version', full_name='mumble.Version.version', index=0,
+      name='version', full_name='MumbleProto.Version.version', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='release', full_name='mumble.Version.release', index=1,
+      name='release', full_name='MumbleProto.Version.release', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='os', full_name='mumble.Version.os', index=2,
+      name='os', full_name='MumbleProto.Version.os', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='os_version', full_name='mumble.Version.os_version', index=3,
+      name='os_version', full_name='MumbleProto.Version.os_version', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -227,20 +227,20 @@ _VERSION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=24,
-  serialized_end=99,
+  serialized_start=29,
+  serialized_end=104,
 )
 
 
 _UDPTUNNEL = _descriptor.Descriptor(
   name='UDPTunnel',
-  full_name='mumble.UDPTunnel',
+  full_name='MumbleProto.UDPTunnel',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='packet', full_name='mumble.UDPTunnel.packet', index=0,
+      name='packet', full_name='MumbleProto.UDPTunnel.packet', index=0,
       number=1, type=12, cpp_type=9, label=2,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
@@ -257,48 +257,48 @@ _UDPTUNNEL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=101,
-  serialized_end=128,
+  serialized_start=106,
+  serialized_end=133,
 )
 
 
 _AUTHENTICATE = _descriptor.Descriptor(
   name='Authenticate',
-  full_name='mumble.Authenticate',
+  full_name='MumbleProto.Authenticate',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='username', full_name='mumble.Authenticate.username', index=0,
+      name='username', full_name='MumbleProto.Authenticate.username', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='password', full_name='mumble.Authenticate.password', index=1,
+      name='password', full_name='MumbleProto.Authenticate.password', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='tokens', full_name='mumble.Authenticate.tokens', index=2,
+      name='tokens', full_name='MumbleProto.Authenticate.tokens', index=2,
       number=3, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='celt_versions', full_name='mumble.Authenticate.celt_versions', index=3,
+      name='celt_versions', full_name='MumbleProto.Authenticate.celt_versions', index=3,
       number=4, type=5, cpp_type=1, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='opus', full_name='mumble.Authenticate.opus', index=4,
+      name='opus', full_name='MumbleProto.Authenticate.opus', index=4,
       number=5, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -315,90 +315,90 @@ _AUTHENTICATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=130,
-  serialized_end=240,
+  serialized_start=135,
+  serialized_end=245,
 )
 
 
 _PING = _descriptor.Descriptor(
   name='Ping',
-  full_name='mumble.Ping',
+  full_name='MumbleProto.Ping',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='timestamp', full_name='mumble.Ping.timestamp', index=0,
+      name='timestamp', full_name='MumbleProto.Ping.timestamp', index=0,
       number=1, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='good', full_name='mumble.Ping.good', index=1,
+      name='good', full_name='MumbleProto.Ping.good', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='late', full_name='mumble.Ping.late', index=2,
+      name='late', full_name='MumbleProto.Ping.late', index=2,
       number=3, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='lost', full_name='mumble.Ping.lost', index=3,
+      name='lost', full_name='MumbleProto.Ping.lost', index=3,
       number=4, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='resync', full_name='mumble.Ping.resync', index=4,
+      name='resync', full_name='MumbleProto.Ping.resync', index=4,
       number=5, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='udp_packets', full_name='mumble.Ping.udp_packets', index=5,
+      name='udp_packets', full_name='MumbleProto.Ping.udp_packets', index=5,
       number=6, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='tcp_packets', full_name='mumble.Ping.tcp_packets', index=6,
+      name='tcp_packets', full_name='MumbleProto.Ping.tcp_packets', index=6,
       number=7, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='udp_ping_avg', full_name='mumble.Ping.udp_ping_avg', index=7,
+      name='udp_ping_avg', full_name='MumbleProto.Ping.udp_ping_avg', index=7,
       number=8, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='udp_ping_var', full_name='mumble.Ping.udp_ping_var', index=8,
+      name='udp_ping_var', full_name='MumbleProto.Ping.udp_ping_var', index=8,
       number=9, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='tcp_ping_avg', full_name='mumble.Ping.tcp_ping_avg', index=9,
+      name='tcp_ping_avg', full_name='MumbleProto.Ping.tcp_ping_avg', index=9,
       number=10, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='tcp_ping_var', full_name='mumble.Ping.tcp_ping_var', index=10,
+      name='tcp_ping_var', full_name='MumbleProto.Ping.tcp_ping_var', index=10,
       number=11, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -415,27 +415,27 @@ _PING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=243,
-  serialized_end=456,
+  serialized_start=248,
+  serialized_end=461,
 )
 
 
 _REJECT = _descriptor.Descriptor(
   name='Reject',
-  full_name='mumble.Reject',
+  full_name='MumbleProto.Reject',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='type', full_name='mumble.Reject.type', index=0,
+      name='type', full_name='MumbleProto.Reject.type', index=0,
       number=1, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='reason', full_name='mumble.Reject.reason', index=1,
+      name='reason', full_name='MumbleProto.Reject.reason', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -453,41 +453,41 @@ _REJECT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=459,
-  serialized_end=701,
+  serialized_start=464,
+  serialized_end=711,
 )
 
 
 _SERVERSYNC = _descriptor.Descriptor(
   name='ServerSync',
-  full_name='mumble.ServerSync',
+  full_name='MumbleProto.ServerSync',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='session', full_name='mumble.ServerSync.session', index=0,
+      name='session', full_name='MumbleProto.ServerSync.session', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='max_bandwidth', full_name='mumble.ServerSync.max_bandwidth', index=1,
+      name='max_bandwidth', full_name='MumbleProto.ServerSync.max_bandwidth', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='welcome_text', full_name='mumble.ServerSync.welcome_text', index=2,
+      name='welcome_text', full_name='MumbleProto.ServerSync.welcome_text', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='permissions', full_name='mumble.ServerSync.permissions', index=3,
+      name='permissions', full_name='MumbleProto.ServerSync.permissions', index=3,
       number=4, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -504,20 +504,20 @@ _SERVERSYNC = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=703,
-  serialized_end=798,
+  serialized_start=713,
+  serialized_end=808,
 )
 
 
 _CHANNELREMOVE = _descriptor.Descriptor(
   name='ChannelRemove',
-  full_name='mumble.ChannelRemove',
+  full_name='MumbleProto.ChannelRemove',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='channel_id', full_name='mumble.ChannelRemove.channel_id', index=0,
+      name='channel_id', full_name='MumbleProto.ChannelRemove.channel_id', index=0,
       number=1, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -534,90 +534,90 @@ _CHANNELREMOVE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=800,
-  serialized_end=835,
+  serialized_start=810,
+  serialized_end=845,
 )
 
 
 _CHANNELSTATE = _descriptor.Descriptor(
   name='ChannelState',
-  full_name='mumble.ChannelState',
+  full_name='MumbleProto.ChannelState',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='channel_id', full_name='mumble.ChannelState.channel_id', index=0,
+      name='channel_id', full_name='MumbleProto.ChannelState.channel_id', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='parent', full_name='mumble.ChannelState.parent', index=1,
+      name='parent', full_name='MumbleProto.ChannelState.parent', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='name', full_name='mumble.ChannelState.name', index=2,
+      name='name', full_name='MumbleProto.ChannelState.name', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='links', full_name='mumble.ChannelState.links', index=3,
+      name='links', full_name='MumbleProto.ChannelState.links', index=3,
       number=4, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='description', full_name='mumble.ChannelState.description', index=4,
+      name='description', full_name='MumbleProto.ChannelState.description', index=4,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='links_add', full_name='mumble.ChannelState.links_add', index=5,
+      name='links_add', full_name='MumbleProto.ChannelState.links_add', index=5,
       number=6, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='links_remove', full_name='mumble.ChannelState.links_remove', index=6,
+      name='links_remove', full_name='MumbleProto.ChannelState.links_remove', index=6,
       number=7, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='temporary', full_name='mumble.ChannelState.temporary', index=7,
+      name='temporary', full_name='MumbleProto.ChannelState.temporary', index=7,
       number=8, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='position', full_name='mumble.ChannelState.position', index=8,
+      name='position', full_name='MumbleProto.ChannelState.position', index=8,
       number=9, type=5, cpp_type=1, label=1,
       has_default_value=True, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='description_hash', full_name='mumble.ChannelState.description_hash', index=9,
+      name='description_hash', full_name='MumbleProto.ChannelState.description_hash', index=9,
       number=10, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='max_users', full_name='mumble.ChannelState.max_users', index=10,
+      name='max_users', full_name='MumbleProto.ChannelState.max_users', index=10,
       number=11, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -634,41 +634,41 @@ _CHANNELSTATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=838,
-  serialized_end=1071,
+  serialized_start=848,
+  serialized_end=1081,
 )
 
 
 _USERREMOVE = _descriptor.Descriptor(
   name='UserRemove',
-  full_name='mumble.UserRemove',
+  full_name='MumbleProto.UserRemove',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='session', full_name='mumble.UserRemove.session', index=0,
+      name='session', full_name='MumbleProto.UserRemove.session', index=0,
       number=1, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='actor', full_name='mumble.UserRemove.actor', index=1,
+      name='actor', full_name='MumbleProto.UserRemove.actor', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='reason', full_name='mumble.UserRemove.reason', index=2,
+      name='reason', full_name='MumbleProto.UserRemove.reason', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='ban', full_name='mumble.UserRemove.ban', index=3,
+      name='ban', full_name='MumbleProto.UserRemove.ban', index=3,
       number=4, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -685,146 +685,146 @@ _USERREMOVE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1073,
-  serialized_end=1146,
+  serialized_start=1083,
+  serialized_end=1156,
 )
 
 
 _USERSTATE = _descriptor.Descriptor(
   name='UserState',
-  full_name='mumble.UserState',
+  full_name='MumbleProto.UserState',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='session', full_name='mumble.UserState.session', index=0,
+      name='session', full_name='MumbleProto.UserState.session', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='actor', full_name='mumble.UserState.actor', index=1,
+      name='actor', full_name='MumbleProto.UserState.actor', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='name', full_name='mumble.UserState.name', index=2,
+      name='name', full_name='MumbleProto.UserState.name', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='user_id', full_name='mumble.UserState.user_id', index=3,
+      name='user_id', full_name='MumbleProto.UserState.user_id', index=3,
       number=4, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='channel_id', full_name='mumble.UserState.channel_id', index=4,
+      name='channel_id', full_name='MumbleProto.UserState.channel_id', index=4,
       number=5, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='mute', full_name='mumble.UserState.mute', index=5,
+      name='mute', full_name='MumbleProto.UserState.mute', index=5,
       number=6, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='deaf', full_name='mumble.UserState.deaf', index=6,
+      name='deaf', full_name='MumbleProto.UserState.deaf', index=6,
       number=7, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='suppress', full_name='mumble.UserState.suppress', index=7,
+      name='suppress', full_name='MumbleProto.UserState.suppress', index=7,
       number=8, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='self_mute', full_name='mumble.UserState.self_mute', index=8,
+      name='self_mute', full_name='MumbleProto.UserState.self_mute', index=8,
       number=9, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='self_deaf', full_name='mumble.UserState.self_deaf', index=9,
+      name='self_deaf', full_name='MumbleProto.UserState.self_deaf', index=9,
       number=10, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='texture', full_name='mumble.UserState.texture', index=10,
+      name='texture', full_name='MumbleProto.UserState.texture', index=10,
       number=11, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='plugin_context', full_name='mumble.UserState.plugin_context', index=11,
+      name='plugin_context', full_name='MumbleProto.UserState.plugin_context', index=11,
       number=12, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='plugin_identity', full_name='mumble.UserState.plugin_identity', index=12,
+      name='plugin_identity', full_name='MumbleProto.UserState.plugin_identity', index=12,
       number=13, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='comment', full_name='mumble.UserState.comment', index=13,
+      name='comment', full_name='MumbleProto.UserState.comment', index=13,
       number=14, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='hash', full_name='mumble.UserState.hash', index=14,
+      name='hash', full_name='MumbleProto.UserState.hash', index=14,
       number=15, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='comment_hash', full_name='mumble.UserState.comment_hash', index=15,
+      name='comment_hash', full_name='MumbleProto.UserState.comment_hash', index=15,
       number=16, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='texture_hash', full_name='mumble.UserState.texture_hash', index=16,
+      name='texture_hash', full_name='MumbleProto.UserState.texture_hash', index=16,
       number=17, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='priority_speaker', full_name='mumble.UserState.priority_speaker', index=17,
+      name='priority_speaker', full_name='MumbleProto.UserState.priority_speaker', index=17,
       number=18, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='recording', full_name='mumble.UserState.recording', index=18,
+      name='recording', full_name='MumbleProto.UserState.recording', index=18,
       number=19, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -841,62 +841,62 @@ _USERSTATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1149,
-  serialized_end=1513,
+  serialized_start=1159,
+  serialized_end=1523,
 )
 
 
 _BANLIST_BANENTRY = _descriptor.Descriptor(
   name='BanEntry',
-  full_name='mumble.BanList.BanEntry',
+  full_name='MumbleProto.BanList.BanEntry',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='address', full_name='mumble.BanList.BanEntry.address', index=0,
+      name='address', full_name='MumbleProto.BanList.BanEntry.address', index=0,
       number=1, type=12, cpp_type=9, label=2,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='mask', full_name='mumble.BanList.BanEntry.mask', index=1,
+      name='mask', full_name='MumbleProto.BanList.BanEntry.mask', index=1,
       number=2, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='name', full_name='mumble.BanList.BanEntry.name', index=2,
+      name='name', full_name='MumbleProto.BanList.BanEntry.name', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='hash', full_name='mumble.BanList.BanEntry.hash', index=3,
+      name='hash', full_name='MumbleProto.BanList.BanEntry.hash', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='reason', full_name='mumble.BanList.BanEntry.reason', index=4,
+      name='reason', full_name='MumbleProto.BanList.BanEntry.reason', index=4,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='start', full_name='mumble.BanList.BanEntry.start', index=5,
+      name='start', full_name='MumbleProto.BanList.BanEntry.start', index=5,
       number=6, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='duration', full_name='mumble.BanList.BanEntry.duration', index=6,
+      name='duration', full_name='MumbleProto.BanList.BanEntry.duration', index=6,
       number=7, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -913,26 +913,26 @@ _BANLIST_BANENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1589,
-  serialized_end=1707,
+  serialized_start=1604,
+  serialized_end=1722,
 )
 
 _BANLIST = _descriptor.Descriptor(
   name='BanList',
-  full_name='mumble.BanList',
+  full_name='MumbleProto.BanList',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='bans', full_name='mumble.BanList.bans', index=0,
+      name='bans', full_name='MumbleProto.BanList.bans', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='query', full_name='mumble.BanList.query', index=1,
+      name='query', full_name='MumbleProto.BanList.query', index=1,
       number=2, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -949,48 +949,48 @@ _BANLIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1516,
-  serialized_end=1707,
+  serialized_start=1526,
+  serialized_end=1722,
 )
 
 
 _TEXTMESSAGE = _descriptor.Descriptor(
   name='TextMessage',
-  full_name='mumble.TextMessage',
+  full_name='MumbleProto.TextMessage',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='actor', full_name='mumble.TextMessage.actor', index=0,
+      name='actor', full_name='MumbleProto.TextMessage.actor', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='session', full_name='mumble.TextMessage.session', index=1,
+      name='session', full_name='MumbleProto.TextMessage.session', index=1,
       number=2, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='channel_id', full_name='mumble.TextMessage.channel_id', index=2,
+      name='channel_id', full_name='MumbleProto.TextMessage.channel_id', index=2,
       number=3, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='tree_id', full_name='mumble.TextMessage.tree_id', index=3,
+      name='tree_id', full_name='MumbleProto.TextMessage.tree_id', index=3,
       number=4, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='message', full_name='mumble.TextMessage.message', index=4,
+      name='message', full_name='MumbleProto.TextMessage.message', index=4,
       number=5, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1007,55 +1007,55 @@ _TEXTMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1709,
-  serialized_end=1808,
+  serialized_start=1724,
+  serialized_end=1823,
 )
 
 
 _PERMISSIONDENIED = _descriptor.Descriptor(
   name='PermissionDenied',
-  full_name='mumble.PermissionDenied',
+  full_name='MumbleProto.PermissionDenied',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='permission', full_name='mumble.PermissionDenied.permission', index=0,
+      name='permission', full_name='MumbleProto.PermissionDenied.permission', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='channel_id', full_name='mumble.PermissionDenied.channel_id', index=1,
+      name='channel_id', full_name='MumbleProto.PermissionDenied.channel_id', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='session', full_name='mumble.PermissionDenied.session', index=2,
+      name='session', full_name='MumbleProto.PermissionDenied.session', index=2,
       number=3, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='reason', full_name='mumble.PermissionDenied.reason', index=3,
+      name='reason', full_name='MumbleProto.PermissionDenied.reason', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='type', full_name='mumble.PermissionDenied.type', index=4,
+      name='type', full_name='MumbleProto.PermissionDenied.type', index=4,
       number=5, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='name', full_name='mumble.PermissionDenied.name', index=5,
+      name='name', full_name='MumbleProto.PermissionDenied.name', index=5,
       number=6, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1073,62 +1073,62 @@ _PERMISSIONDENIED = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1811,
-  serialized_end=2157,
+  serialized_start=1826,
+  serialized_end=2177,
 )
 
 
 _ACL_CHANGROUP = _descriptor.Descriptor(
   name='ChanGroup',
-  full_name='mumble.ACL.ChanGroup',
+  full_name='MumbleProto.ACL.ChanGroup',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='name', full_name='mumble.ACL.ChanGroup.name', index=0,
+      name='name', full_name='MumbleProto.ACL.ChanGroup.name', index=0,
       number=1, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='inherited', full_name='mumble.ACL.ChanGroup.inherited', index=1,
+      name='inherited', full_name='MumbleProto.ACL.ChanGroup.inherited', index=1,
       number=2, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=True,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='inherit', full_name='mumble.ACL.ChanGroup.inherit', index=2,
+      name='inherit', full_name='MumbleProto.ACL.ChanGroup.inherit', index=2,
       number=3, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=True,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='inheritable', full_name='mumble.ACL.ChanGroup.inheritable', index=3,
+      name='inheritable', full_name='MumbleProto.ACL.ChanGroup.inheritable', index=3,
       number=4, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=True,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='add', full_name='mumble.ACL.ChanGroup.add', index=4,
+      name='add', full_name='MumbleProto.ACL.ChanGroup.add', index=4,
       number=5, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='remove', full_name='mumble.ACL.ChanGroup.remove', index=5,
+      name='remove', full_name='MumbleProto.ACL.ChanGroup.remove', index=5,
       number=6, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='inherited_members', full_name='mumble.ACL.ChanGroup.inherited_members', index=6,
+      name='inherited_members', full_name='MumbleProto.ACL.ChanGroup.inherited_members', index=6,
       number=7, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -1145,61 +1145,61 @@ _ACL_CHANGROUP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2312,
-  serialized_end=2468,
+  serialized_start=2342,
+  serialized_end=2498,
 )
 
 _ACL_CHANACL = _descriptor.Descriptor(
   name='ChanACL',
-  full_name='mumble.ACL.ChanACL',
+  full_name='MumbleProto.ACL.ChanACL',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='apply_here', full_name='mumble.ACL.ChanACL.apply_here', index=0,
+      name='apply_here', full_name='MumbleProto.ACL.ChanACL.apply_here', index=0,
       number=1, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=True,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='apply_subs', full_name='mumble.ACL.ChanACL.apply_subs', index=1,
+      name='apply_subs', full_name='MumbleProto.ACL.ChanACL.apply_subs', index=1,
       number=2, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=True,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='inherited', full_name='mumble.ACL.ChanACL.inherited', index=2,
+      name='inherited', full_name='MumbleProto.ACL.ChanACL.inherited', index=2,
       number=3, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=True,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='user_id', full_name='mumble.ACL.ChanACL.user_id', index=3,
+      name='user_id', full_name='MumbleProto.ACL.ChanACL.user_id', index=3,
       number=4, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='group', full_name='mumble.ACL.ChanACL.group', index=4,
+      name='group', full_name='MumbleProto.ACL.ChanACL.group', index=4,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='grant', full_name='mumble.ACL.ChanACL.grant', index=5,
+      name='grant', full_name='MumbleProto.ACL.ChanACL.grant', index=5,
       number=6, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='deny', full_name='mumble.ACL.ChanACL.deny', index=6,
+      name='deny', full_name='MumbleProto.ACL.ChanACL.deny', index=6,
       number=7, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -1216,47 +1216,47 @@ _ACL_CHANACL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2471,
-  serialized_end=2618,
+  serialized_start=2501,
+  serialized_end=2648,
 )
 
 _ACL = _descriptor.Descriptor(
   name='ACL',
-  full_name='mumble.ACL',
+  full_name='MumbleProto.ACL',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='channel_id', full_name='mumble.ACL.channel_id', index=0,
+      name='channel_id', full_name='MumbleProto.ACL.channel_id', index=0,
       number=1, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='inherit_acls', full_name='mumble.ACL.inherit_acls', index=1,
+      name='inherit_acls', full_name='MumbleProto.ACL.inherit_acls', index=1,
       number=2, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=True,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='groups', full_name='mumble.ACL.groups', index=2,
+      name='groups', full_name='MumbleProto.ACL.groups', index=2,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='acls', full_name='mumble.ACL.acls', index=3,
+      name='acls', full_name='MumbleProto.ACL.acls', index=3,
       number=4, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='query', full_name='mumble.ACL.query', index=4,
+      name='query', full_name='MumbleProto.ACL.query', index=4,
       number=5, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -1273,27 +1273,27 @@ _ACL = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2160,
-  serialized_end=2618,
+  serialized_start=2180,
+  serialized_end=2648,
 )
 
 
 _QUERYUSERS = _descriptor.Descriptor(
   name='QueryUsers',
-  full_name='mumble.QueryUsers',
+  full_name='MumbleProto.QueryUsers',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='ids', full_name='mumble.QueryUsers.ids', index=0,
+      name='ids', full_name='MumbleProto.QueryUsers.ids', index=0,
       number=1, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='names', full_name='mumble.QueryUsers.names', index=1,
+      name='names', full_name='MumbleProto.QueryUsers.names', index=1,
       number=2, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -1310,34 +1310,34 @@ _QUERYUSERS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2620,
-  serialized_end=2660,
+  serialized_start=2650,
+  serialized_end=2690,
 )
 
 
 _CRYPTSETUP = _descriptor.Descriptor(
   name='CryptSetup',
-  full_name='mumble.CryptSetup',
+  full_name='MumbleProto.CryptSetup',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='key', full_name='mumble.CryptSetup.key', index=0,
+      name='key', full_name='MumbleProto.CryptSetup.key', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='client_nonce', full_name='mumble.CryptSetup.client_nonce', index=1,
+      name='client_nonce', full_name='MumbleProto.CryptSetup.client_nonce', index=1,
       number=2, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='server_nonce', full_name='mumble.CryptSetup.server_nonce', index=2,
+      name='server_nonce', full_name='MumbleProto.CryptSetup.server_nonce', index=2,
       number=3, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
@@ -1354,41 +1354,41 @@ _CRYPTSETUP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2662,
-  serialized_end=2731,
+  serialized_start=2692,
+  serialized_end=2761,
 )
 
 
 _CONTEXTACTIONMODIFY = _descriptor.Descriptor(
   name='ContextActionModify',
-  full_name='mumble.ContextActionModify',
+  full_name='MumbleProto.ContextActionModify',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='action', full_name='mumble.ContextActionModify.action', index=0,
+      name='action', full_name='MumbleProto.ContextActionModify.action', index=0,
       number=1, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='text', full_name='mumble.ContextActionModify.text', index=1,
+      name='text', full_name='MumbleProto.ContextActionModify.text', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='context', full_name='mumble.ContextActionModify.context', index=2,
+      name='context', full_name='MumbleProto.ContextActionModify.context', index=2,
       number=3, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='operation', full_name='mumble.ContextActionModify.operation', index=3,
+      name='operation', full_name='MumbleProto.ContextActionModify.operation', index=3,
       number=4, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -1407,34 +1407,34 @@ _CONTEXTACTIONMODIFY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2734,
-  serialized_end=2940,
+  serialized_start=2764,
+  serialized_end=2975,
 )
 
 
 _CONTEXTACTION = _descriptor.Descriptor(
   name='ContextAction',
-  full_name='mumble.ContextAction',
+  full_name='MumbleProto.ContextAction',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='session', full_name='mumble.ContextAction.session', index=0,
+      name='session', full_name='MumbleProto.ContextAction.session', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='channel_id', full_name='mumble.ContextAction.channel_id', index=1,
+      name='channel_id', full_name='MumbleProto.ContextAction.channel_id', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='action', full_name='mumble.ContextAction.action', index=2,
+      name='action', full_name='MumbleProto.ContextAction.action', index=2,
       number=3, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -1451,41 +1451,41 @@ _CONTEXTACTION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2942,
-  serialized_end=3010,
+  serialized_start=2977,
+  serialized_end=3045,
 )
 
 
 _USERLIST_USER = _descriptor.Descriptor(
   name='User',
-  full_name='mumble.UserList.User',
+  full_name='MumbleProto.UserList.User',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='user_id', full_name='mumble.UserList.User.user_id', index=0,
+      name='user_id', full_name='MumbleProto.UserList.User.user_id', index=0,
       number=1, type=13, cpp_type=3, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='name', full_name='mumble.UserList.User.name', index=1,
+      name='name', full_name='MumbleProto.UserList.User.name', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='last_seen', full_name='mumble.UserList.User.last_seen', index=2,
+      name='last_seen', full_name='MumbleProto.UserList.User.last_seen', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='last_channel', full_name='mumble.UserList.User.last_channel', index=3,
+      name='last_channel', full_name='MumbleProto.UserList.User.last_channel', index=3,
       number=4, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -1502,19 +1502,19 @@ _USERLIST_USER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3063,
-  serialized_end=3141,
+  serialized_start=3103,
+  serialized_end=3181,
 )
 
 _USERLIST = _descriptor.Descriptor(
   name='UserList',
-  full_name='mumble.UserList',
+  full_name='MumbleProto.UserList',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='users', full_name='mumble.UserList.users', index=0,
+      name='users', full_name='MumbleProto.UserList.users', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -1531,48 +1531,48 @@ _USERLIST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3013,
-  serialized_end=3141,
+  serialized_start=3048,
+  serialized_end=3181,
 )
 
 
 _VOICETARGET_TARGET = _descriptor.Descriptor(
   name='Target',
-  full_name='mumble.VoiceTarget.Target',
+  full_name='MumbleProto.VoiceTarget.Target',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='session', full_name='mumble.VoiceTarget.Target.session', index=0,
+      name='session', full_name='MumbleProto.VoiceTarget.Target.session', index=0,
       number=1, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='channel_id', full_name='mumble.VoiceTarget.Target.channel_id', index=1,
+      name='channel_id', full_name='MumbleProto.VoiceTarget.Target.channel_id', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='group', full_name='mumble.VoiceTarget.Target.group', index=2,
+      name='group', full_name='MumbleProto.VoiceTarget.Target.group', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='links', full_name='mumble.VoiceTarget.Target.links', index=3,
+      name='links', full_name='MumbleProto.VoiceTarget.Target.links', index=3,
       number=4, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='children', full_name='mumble.VoiceTarget.Target.children', index=4,
+      name='children', full_name='MumbleProto.VoiceTarget.Target.children', index=4,
       number=5, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -1589,26 +1589,26 @@ _VOICETARGET_TARGET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3216,
-  serialized_end=3323,
+  serialized_start=3261,
+  serialized_end=3368,
 )
 
 _VOICETARGET = _descriptor.Descriptor(
   name='VoiceTarget',
-  full_name='mumble.VoiceTarget',
+  full_name='MumbleProto.VoiceTarget',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='id', full_name='mumble.VoiceTarget.id', index=0,
+      name='id', full_name='MumbleProto.VoiceTarget.id', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='targets', full_name='mumble.VoiceTarget.targets', index=1,
+      name='targets', full_name='MumbleProto.VoiceTarget.targets', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -1625,34 +1625,34 @@ _VOICETARGET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3144,
-  serialized_end=3323,
+  serialized_start=3184,
+  serialized_end=3368,
 )
 
 
 _PERMISSIONQUERY = _descriptor.Descriptor(
   name='PermissionQuery',
-  full_name='mumble.PermissionQuery',
+  full_name='MumbleProto.PermissionQuery',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='channel_id', full_name='mumble.PermissionQuery.channel_id', index=0,
+      name='channel_id', full_name='MumbleProto.PermissionQuery.channel_id', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='permissions', full_name='mumble.PermissionQuery.permissions', index=1,
+      name='permissions', full_name='MumbleProto.PermissionQuery.permissions', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='flush', full_name='mumble.PermissionQuery.flush', index=2,
+      name='flush', full_name='MumbleProto.PermissionQuery.flush', index=2,
       number=3, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -1669,41 +1669,41 @@ _PERMISSIONQUERY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3325,
-  serialized_end=3405,
+  serialized_start=3370,
+  serialized_end=3450,
 )
 
 
 _CODECVERSION = _descriptor.Descriptor(
   name='CodecVersion',
-  full_name='mumble.CodecVersion',
+  full_name='MumbleProto.CodecVersion',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='alpha', full_name='mumble.CodecVersion.alpha', index=0,
+      name='alpha', full_name='MumbleProto.CodecVersion.alpha', index=0,
       number=1, type=5, cpp_type=1, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='beta', full_name='mumble.CodecVersion.beta', index=1,
+      name='beta', full_name='MumbleProto.CodecVersion.beta', index=1,
       number=2, type=5, cpp_type=1, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='prefer_alpha', full_name='mumble.CodecVersion.prefer_alpha', index=2,
+      name='prefer_alpha', full_name='MumbleProto.CodecVersion.prefer_alpha', index=2,
       number=3, type=8, cpp_type=7, label=2,
       has_default_value=True, default_value=True,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='opus', full_name='mumble.CodecVersion.opus', index=3,
+      name='opus', full_name='MumbleProto.CodecVersion.opus', index=3,
       number=4, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -1720,41 +1720,41 @@ _CODECVERSION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3407,
-  serialized_end=3499,
+  serialized_start=3452,
+  serialized_end=3544,
 )
 
 
 _USERSTATS_STATS = _descriptor.Descriptor(
   name='Stats',
-  full_name='mumble.UserStats.Stats',
+  full_name='MumbleProto.UserStats.Stats',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='good', full_name='mumble.UserStats.Stats.good', index=0,
+      name='good', full_name='MumbleProto.UserStats.Stats.good', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='late', full_name='mumble.UserStats.Stats.late', index=1,
+      name='late', full_name='MumbleProto.UserStats.Stats.late', index=1,
       number=2, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='lost', full_name='mumble.UserStats.Stats.lost', index=2,
+      name='lost', full_name='MumbleProto.UserStats.Stats.lost', index=2,
       number=3, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='resync', full_name='mumble.UserStats.Stats.resync', index=3,
+      name='resync', full_name='MumbleProto.UserStats.Stats.resync', index=3,
       number=4, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -1771,145 +1771,145 @@ _USERSTATS_STATS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3990,
-  serialized_end=4055,
+  serialized_start=4050,
+  serialized_end=4115,
 )
 
 _USERSTATS = _descriptor.Descriptor(
   name='UserStats',
-  full_name='mumble.UserStats',
+  full_name='MumbleProto.UserStats',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='session', full_name='mumble.UserStats.session', index=0,
+      name='session', full_name='MumbleProto.UserStats.session', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='stats_only', full_name='mumble.UserStats.stats_only', index=1,
+      name='stats_only', full_name='MumbleProto.UserStats.stats_only', index=1,
       number=2, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='certificates', full_name='mumble.UserStats.certificates', index=2,
+      name='certificates', full_name='MumbleProto.UserStats.certificates', index=2,
       number=3, type=12, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='from_client', full_name='mumble.UserStats.from_client', index=3,
+      name='from_client', full_name='MumbleProto.UserStats.from_client', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='from_server', full_name='mumble.UserStats.from_server', index=4,
+      name='from_server', full_name='MumbleProto.UserStats.from_server', index=4,
       number=5, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='udp_packets', full_name='mumble.UserStats.udp_packets', index=5,
+      name='udp_packets', full_name='MumbleProto.UserStats.udp_packets', index=5,
       number=6, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='tcp_packets', full_name='mumble.UserStats.tcp_packets', index=6,
+      name='tcp_packets', full_name='MumbleProto.UserStats.tcp_packets', index=6,
       number=7, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='udp_ping_avg', full_name='mumble.UserStats.udp_ping_avg', index=7,
+      name='udp_ping_avg', full_name='MumbleProto.UserStats.udp_ping_avg', index=7,
       number=8, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='udp_ping_var', full_name='mumble.UserStats.udp_ping_var', index=8,
+      name='udp_ping_var', full_name='MumbleProto.UserStats.udp_ping_var', index=8,
       number=9, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='tcp_ping_avg', full_name='mumble.UserStats.tcp_ping_avg', index=9,
+      name='tcp_ping_avg', full_name='MumbleProto.UserStats.tcp_ping_avg', index=9,
       number=10, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='tcp_ping_var', full_name='mumble.UserStats.tcp_ping_var', index=10,
+      name='tcp_ping_var', full_name='MumbleProto.UserStats.tcp_ping_var', index=10,
       number=11, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='version', full_name='mumble.UserStats.version', index=11,
+      name='version', full_name='MumbleProto.UserStats.version', index=11,
       number=12, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='celt_versions', full_name='mumble.UserStats.celt_versions', index=12,
+      name='celt_versions', full_name='MumbleProto.UserStats.celt_versions', index=12,
       number=13, type=5, cpp_type=1, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='address', full_name='mumble.UserStats.address', index=13,
+      name='address', full_name='MumbleProto.UserStats.address', index=13,
       number=14, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='bandwidth', full_name='mumble.UserStats.bandwidth', index=14,
+      name='bandwidth', full_name='MumbleProto.UserStats.bandwidth', index=14,
       number=15, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='onlinesecs', full_name='mumble.UserStats.onlinesecs', index=15,
+      name='onlinesecs', full_name='MumbleProto.UserStats.onlinesecs', index=15,
       number=16, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='idlesecs', full_name='mumble.UserStats.idlesecs', index=16,
+      name='idlesecs', full_name='MumbleProto.UserStats.idlesecs', index=16,
       number=17, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='strong_certificate', full_name='mumble.UserStats.strong_certificate', index=17,
+      name='strong_certificate', full_name='MumbleProto.UserStats.strong_certificate', index=17,
       number=18, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='opus', full_name='mumble.UserStats.opus', index=18,
+      name='opus', full_name='MumbleProto.UserStats.opus', index=18,
       number=19, type=8, cpp_type=7, label=1,
       has_default_value=True, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -1926,34 +1926,34 @@ _USERSTATS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=3502,
-  serialized_end=4055,
+  serialized_start=3547,
+  serialized_end=4115,
 )
 
 
 _REQUESTBLOB = _descriptor.Descriptor(
   name='RequestBlob',
-  full_name='mumble.RequestBlob',
+  full_name='MumbleProto.RequestBlob',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='session_texture', full_name='mumble.RequestBlob.session_texture', index=0,
+      name='session_texture', full_name='MumbleProto.RequestBlob.session_texture', index=0,
       number=1, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='session_comment', full_name='mumble.RequestBlob.session_comment', index=1,
+      name='session_comment', full_name='MumbleProto.RequestBlob.session_comment', index=1,
       number=2, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='channel_description', full_name='mumble.RequestBlob.channel_description', index=2,
+      name='channel_description', full_name='MumbleProto.RequestBlob.channel_description', index=2,
       number=3, type=13, cpp_type=3, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -1970,55 +1970,55 @@ _REQUESTBLOB = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4057,
-  serialized_end=4149,
+  serialized_start=4117,
+  serialized_end=4209,
 )
 
 
 _SERVERCONFIG = _descriptor.Descriptor(
   name='ServerConfig',
-  full_name='mumble.ServerConfig',
+  full_name='MumbleProto.ServerConfig',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='max_bandwidth', full_name='mumble.ServerConfig.max_bandwidth', index=0,
+      name='max_bandwidth', full_name='MumbleProto.ServerConfig.max_bandwidth', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='welcome_text', full_name='mumble.ServerConfig.welcome_text', index=1,
+      name='welcome_text', full_name='MumbleProto.ServerConfig.welcome_text', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='allow_html', full_name='mumble.ServerConfig.allow_html', index=2,
+      name='allow_html', full_name='MumbleProto.ServerConfig.allow_html', index=2,
       number=3, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='message_length', full_name='mumble.ServerConfig.message_length', index=3,
+      name='message_length', full_name='MumbleProto.ServerConfig.message_length', index=3,
       number=4, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='image_message_length', full_name='mumble.ServerConfig.image_message_length', index=4,
+      name='image_message_length', full_name='MumbleProto.ServerConfig.image_message_length', index=4,
       number=5, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='max_users', full_name='mumble.ServerConfig.max_users', index=5,
+      name='max_users', full_name='MumbleProto.ServerConfig.max_users', index=5,
       number=6, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -2035,34 +2035,34 @@ _SERVERCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4152,
-  serialized_end=4304,
+  serialized_start=4212,
+  serialized_end=4364,
 )
 
 
 _SUGGESTCONFIG = _descriptor.Descriptor(
   name='SuggestConfig',
-  full_name='mumble.SuggestConfig',
+  full_name='MumbleProto.SuggestConfig',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='version', full_name='mumble.SuggestConfig.version', index=0,
+      name='version', full_name='MumbleProto.SuggestConfig.version', index=0,
       number=1, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='positional', full_name='mumble.SuggestConfig.positional', index=1,
+      name='positional', full_name='MumbleProto.SuggestConfig.positional', index=1,
       number=2, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='push_to_talk', full_name='mumble.SuggestConfig.push_to_talk', index=2,
+      name='push_to_talk', full_name='MumbleProto.SuggestConfig.push_to_talk', index=2,
       number=3, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -2079,8 +2079,8 @@ _SUGGESTCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=4306,
-  serialized_end=4380,
+  serialized_start=4366,
+  serialized_end=4440,
 )
 
 _REJECT.fields_by_name['type'].enum_type = _REJECT_REJECTTYPE
@@ -2134,70 +2134,70 @@ DESCRIPTOR.message_types_by_name['SuggestConfig'] = _SUGGESTCONFIG
 Version = _reflection.GeneratedProtocolMessageType('Version', (_message.Message,), dict(
   DESCRIPTOR = _VERSION,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.Version)
+  # @@protoc_insertion_point(class_scope:MumbleProto.Version)
   ))
 _sym_db.RegisterMessage(Version)
 
 UDPTunnel = _reflection.GeneratedProtocolMessageType('UDPTunnel', (_message.Message,), dict(
   DESCRIPTOR = _UDPTUNNEL,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.UDPTunnel)
+  # @@protoc_insertion_point(class_scope:MumbleProto.UDPTunnel)
   ))
 _sym_db.RegisterMessage(UDPTunnel)
 
 Authenticate = _reflection.GeneratedProtocolMessageType('Authenticate', (_message.Message,), dict(
   DESCRIPTOR = _AUTHENTICATE,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.Authenticate)
+  # @@protoc_insertion_point(class_scope:MumbleProto.Authenticate)
   ))
 _sym_db.RegisterMessage(Authenticate)
 
 Ping = _reflection.GeneratedProtocolMessageType('Ping', (_message.Message,), dict(
   DESCRIPTOR = _PING,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.Ping)
+  # @@protoc_insertion_point(class_scope:MumbleProto.Ping)
   ))
 _sym_db.RegisterMessage(Ping)
 
 Reject = _reflection.GeneratedProtocolMessageType('Reject', (_message.Message,), dict(
   DESCRIPTOR = _REJECT,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.Reject)
+  # @@protoc_insertion_point(class_scope:MumbleProto.Reject)
   ))
 _sym_db.RegisterMessage(Reject)
 
 ServerSync = _reflection.GeneratedProtocolMessageType('ServerSync', (_message.Message,), dict(
   DESCRIPTOR = _SERVERSYNC,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.ServerSync)
+  # @@protoc_insertion_point(class_scope:MumbleProto.ServerSync)
   ))
 _sym_db.RegisterMessage(ServerSync)
 
 ChannelRemove = _reflection.GeneratedProtocolMessageType('ChannelRemove', (_message.Message,), dict(
   DESCRIPTOR = _CHANNELREMOVE,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.ChannelRemove)
+  # @@protoc_insertion_point(class_scope:MumbleProto.ChannelRemove)
   ))
 _sym_db.RegisterMessage(ChannelRemove)
 
 ChannelState = _reflection.GeneratedProtocolMessageType('ChannelState', (_message.Message,), dict(
   DESCRIPTOR = _CHANNELSTATE,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.ChannelState)
+  # @@protoc_insertion_point(class_scope:MumbleProto.ChannelState)
   ))
 _sym_db.RegisterMessage(ChannelState)
 
 UserRemove = _reflection.GeneratedProtocolMessageType('UserRemove', (_message.Message,), dict(
   DESCRIPTOR = _USERREMOVE,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.UserRemove)
+  # @@protoc_insertion_point(class_scope:MumbleProto.UserRemove)
   ))
 _sym_db.RegisterMessage(UserRemove)
 
 UserState = _reflection.GeneratedProtocolMessageType('UserState', (_message.Message,), dict(
   DESCRIPTOR = _USERSTATE,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.UserState)
+  # @@protoc_insertion_point(class_scope:MumbleProto.UserState)
   ))
 _sym_db.RegisterMessage(UserState)
 
@@ -2206,12 +2206,12 @@ BanList = _reflection.GeneratedProtocolMessageType('BanList', (_message.Message,
   BanEntry = _reflection.GeneratedProtocolMessageType('BanEntry', (_message.Message,), dict(
     DESCRIPTOR = _BANLIST_BANENTRY,
     __module__ = 'mumble_pb2'
-    # @@protoc_insertion_point(class_scope:mumble.BanList.BanEntry)
+    # @@protoc_insertion_point(class_scope:MumbleProto.BanList.BanEntry)
     ))
   ,
   DESCRIPTOR = _BANLIST,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.BanList)
+  # @@protoc_insertion_point(class_scope:MumbleProto.BanList)
   ))
 _sym_db.RegisterMessage(BanList)
 _sym_db.RegisterMessage(BanList.BanEntry)
@@ -2219,14 +2219,14 @@ _sym_db.RegisterMessage(BanList.BanEntry)
 TextMessage = _reflection.GeneratedProtocolMessageType('TextMessage', (_message.Message,), dict(
   DESCRIPTOR = _TEXTMESSAGE,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.TextMessage)
+  # @@protoc_insertion_point(class_scope:MumbleProto.TextMessage)
   ))
 _sym_db.RegisterMessage(TextMessage)
 
 PermissionDenied = _reflection.GeneratedProtocolMessageType('PermissionDenied', (_message.Message,), dict(
   DESCRIPTOR = _PERMISSIONDENIED,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.PermissionDenied)
+  # @@protoc_insertion_point(class_scope:MumbleProto.PermissionDenied)
   ))
 _sym_db.RegisterMessage(PermissionDenied)
 
@@ -2235,19 +2235,19 @@ ACL = _reflection.GeneratedProtocolMessageType('ACL', (_message.Message,), dict(
   ChanGroup = _reflection.GeneratedProtocolMessageType('ChanGroup', (_message.Message,), dict(
     DESCRIPTOR = _ACL_CHANGROUP,
     __module__ = 'mumble_pb2'
-    # @@protoc_insertion_point(class_scope:mumble.ACL.ChanGroup)
+    # @@protoc_insertion_point(class_scope:MumbleProto.ACL.ChanGroup)
     ))
   ,
 
   ChanACL = _reflection.GeneratedProtocolMessageType('ChanACL', (_message.Message,), dict(
     DESCRIPTOR = _ACL_CHANACL,
     __module__ = 'mumble_pb2'
-    # @@protoc_insertion_point(class_scope:mumble.ACL.ChanACL)
+    # @@protoc_insertion_point(class_scope:MumbleProto.ACL.ChanACL)
     ))
   ,
   DESCRIPTOR = _ACL,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.ACL)
+  # @@protoc_insertion_point(class_scope:MumbleProto.ACL)
   ))
 _sym_db.RegisterMessage(ACL)
 _sym_db.RegisterMessage(ACL.ChanGroup)
@@ -2256,28 +2256,28 @@ _sym_db.RegisterMessage(ACL.ChanACL)
 QueryUsers = _reflection.GeneratedProtocolMessageType('QueryUsers', (_message.Message,), dict(
   DESCRIPTOR = _QUERYUSERS,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.QueryUsers)
+  # @@protoc_insertion_point(class_scope:MumbleProto.QueryUsers)
   ))
 _sym_db.RegisterMessage(QueryUsers)
 
 CryptSetup = _reflection.GeneratedProtocolMessageType('CryptSetup', (_message.Message,), dict(
   DESCRIPTOR = _CRYPTSETUP,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.CryptSetup)
+  # @@protoc_insertion_point(class_scope:MumbleProto.CryptSetup)
   ))
 _sym_db.RegisterMessage(CryptSetup)
 
 ContextActionModify = _reflection.GeneratedProtocolMessageType('ContextActionModify', (_message.Message,), dict(
   DESCRIPTOR = _CONTEXTACTIONMODIFY,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.ContextActionModify)
+  # @@protoc_insertion_point(class_scope:MumbleProto.ContextActionModify)
   ))
 _sym_db.RegisterMessage(ContextActionModify)
 
 ContextAction = _reflection.GeneratedProtocolMessageType('ContextAction', (_message.Message,), dict(
   DESCRIPTOR = _CONTEXTACTION,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.ContextAction)
+  # @@protoc_insertion_point(class_scope:MumbleProto.ContextAction)
   ))
 _sym_db.RegisterMessage(ContextAction)
 
@@ -2286,12 +2286,12 @@ UserList = _reflection.GeneratedProtocolMessageType('UserList', (_message.Messag
   User = _reflection.GeneratedProtocolMessageType('User', (_message.Message,), dict(
     DESCRIPTOR = _USERLIST_USER,
     __module__ = 'mumble_pb2'
-    # @@protoc_insertion_point(class_scope:mumble.UserList.User)
+    # @@protoc_insertion_point(class_scope:MumbleProto.UserList.User)
     ))
   ,
   DESCRIPTOR = _USERLIST,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.UserList)
+  # @@protoc_insertion_point(class_scope:MumbleProto.UserList)
   ))
 _sym_db.RegisterMessage(UserList)
 _sym_db.RegisterMessage(UserList.User)
@@ -2301,12 +2301,12 @@ VoiceTarget = _reflection.GeneratedProtocolMessageType('VoiceTarget', (_message.
   Target = _reflection.GeneratedProtocolMessageType('Target', (_message.Message,), dict(
     DESCRIPTOR = _VOICETARGET_TARGET,
     __module__ = 'mumble_pb2'
-    # @@protoc_insertion_point(class_scope:mumble.VoiceTarget.Target)
+    # @@protoc_insertion_point(class_scope:MumbleProto.VoiceTarget.Target)
     ))
   ,
   DESCRIPTOR = _VOICETARGET,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.VoiceTarget)
+  # @@protoc_insertion_point(class_scope:MumbleProto.VoiceTarget)
   ))
 _sym_db.RegisterMessage(VoiceTarget)
 _sym_db.RegisterMessage(VoiceTarget.Target)
@@ -2314,14 +2314,14 @@ _sym_db.RegisterMessage(VoiceTarget.Target)
 PermissionQuery = _reflection.GeneratedProtocolMessageType('PermissionQuery', (_message.Message,), dict(
   DESCRIPTOR = _PERMISSIONQUERY,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.PermissionQuery)
+  # @@protoc_insertion_point(class_scope:MumbleProto.PermissionQuery)
   ))
 _sym_db.RegisterMessage(PermissionQuery)
 
 CodecVersion = _reflection.GeneratedProtocolMessageType('CodecVersion', (_message.Message,), dict(
   DESCRIPTOR = _CODECVERSION,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.CodecVersion)
+  # @@protoc_insertion_point(class_scope:MumbleProto.CodecVersion)
   ))
 _sym_db.RegisterMessage(CodecVersion)
 
@@ -2330,12 +2330,12 @@ UserStats = _reflection.GeneratedProtocolMessageType('UserStats', (_message.Mess
   Stats = _reflection.GeneratedProtocolMessageType('Stats', (_message.Message,), dict(
     DESCRIPTOR = _USERSTATS_STATS,
     __module__ = 'mumble_pb2'
-    # @@protoc_insertion_point(class_scope:mumble.UserStats.Stats)
+    # @@protoc_insertion_point(class_scope:MumbleProto.UserStats.Stats)
     ))
   ,
   DESCRIPTOR = _USERSTATS,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.UserStats)
+  # @@protoc_insertion_point(class_scope:MumbleProto.UserStats)
   ))
 _sym_db.RegisterMessage(UserStats)
 _sym_db.RegisterMessage(UserStats.Stats)
@@ -2343,21 +2343,21 @@ _sym_db.RegisterMessage(UserStats.Stats)
 RequestBlob = _reflection.GeneratedProtocolMessageType('RequestBlob', (_message.Message,), dict(
   DESCRIPTOR = _REQUESTBLOB,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.RequestBlob)
+  # @@protoc_insertion_point(class_scope:MumbleProto.RequestBlob)
   ))
 _sym_db.RegisterMessage(RequestBlob)
 
 ServerConfig = _reflection.GeneratedProtocolMessageType('ServerConfig', (_message.Message,), dict(
   DESCRIPTOR = _SERVERCONFIG,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.ServerConfig)
+  # @@protoc_insertion_point(class_scope:MumbleProto.ServerConfig)
   ))
 _sym_db.RegisterMessage(ServerConfig)
 
 SuggestConfig = _reflection.GeneratedProtocolMessageType('SuggestConfig', (_message.Message,), dict(
   DESCRIPTOR = _SUGGESTCONFIG,
   __module__ = 'mumble_pb2'
-  # @@protoc_insertion_point(class_scope:mumble.SuggestConfig)
+  # @@protoc_insertion_point(class_scope:MumbleProto.SuggestConfig)
   ))
 _sym_db.RegisterMessage(SuggestConfig)
 
