@@ -212,7 +212,7 @@ class Github(BaseResponder):
             try:
                 self.update()
                 self.stop_event.wait(self.deltatime)
-            except:
+            except Exception as e:
                 on_exception.send(self, e=e)
 
     def update(self):
