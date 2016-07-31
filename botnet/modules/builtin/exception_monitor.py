@@ -1,4 +1,3 @@
-import sys
 import traceback
 from .. import BaseModule
 from ..mixins import ConfigMixin
