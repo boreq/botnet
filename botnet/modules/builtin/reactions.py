@@ -39,6 +39,9 @@ cutelist = [
     '(*･ω･)',
     '(∗•ω•∗)',
     '( ◐ω◐ )'
+]
+
+cutelist_target = [
     '(✿◠‿◠)っ~ ♥ {target}',
     '⊂◉‿◉つ ❤ {target}',
     '( ´・‿-) ~ ♥ {target}',
@@ -65,11 +68,14 @@ magiclist = [
 
 
 class Reactions(BaseResponder):
-    """Defines several commands related to emotional reactions.""" 
+    """Defines several commands related to emotional reactions."""
 
     @parse_command([('target', '*')])
     def command_cute(self, msg, args):
-        self.send_from_list(msg, args, cutelist)
+        if len(args.target) > 0:
+            self.send_from_list(msg, args, cutelist_target)
+        else:
+            self.send_from_list(msg, args, cutelist)
 
     @parse_command([('target', '*')])
     def command_magic(self, msg, args):
