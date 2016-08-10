@@ -29,18 +29,19 @@ class Quotes(BaseResponder):
             }
         }
 
-    """ 
+    """
 
     config_namespace = 'botnet'
     config_name = 'quotes'
 
     def get_all_commands(self):
         rw = super(Quotes, self).get_all_commands()
-        try:
-            for command in self.config['module_config'][self.config_namespace][self.config_name].keys():
-                rw.append(command)
-        except:
-            pass
+        new_commands = set()
+        for command in self.config_get('files', {}).keys():
+            new_commands.add(command)
+        for root, filename in self.get_command_files():
+            new_commands.add(filename)
+        rw.extend(new_commands)
         return rw
 
     def handle_privmsg(self, msg):
@@ -48,18 +49,22 @@ class Quotes(BaseResponder):
             key = self.get_command_name(msg)
 
             # Directories
-            for directory in self.config_get('directories', []):
-                for root, dirs, files in os.walk(directory, followlinks=True):
-                    for filename in files:
-                        if filename == key:
-                            path = os.path.join(root, filename)
-                            self.send_random_line(msg, path)
-                            return
+            for root, filename in self.get_command_files():
+                if filename == key:
+                    path = os.path.join(root, filename)
+                    self.send_random_line(msg, path)
+                    return
 
             # Files
             filename = self.config_get('files.%s' % key, None)
             if filename is not None:
                 self.send_random_line(msg, filename)
+
+    def get_command_files(self):
+        for directory in self.config_get('directories', []):
+            for root, dirs, files in os.walk(directory, followlinks=True):
+                for filename in files:
+                    yield (root, filename)
 
     def send_random_line(self, msg, filepath):
         try:
