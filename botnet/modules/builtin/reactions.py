@@ -38,7 +38,7 @@ cutelist = [
     '╰(　´◔　ω　◔ `)╯',
     '(*･ω･)',
     '(∗•ω•∗)',
-    '( ◐ω◐ )'
+    '( ◐ω◐ )',
 ]
 
 cutelist_target = [
@@ -72,6 +72,11 @@ class Reactions(BaseResponder):
 
     @parse_command([('target', '*')])
     def command_cute(self, msg, args):
+        """Sends a random emoticon. The style of an emoticon changes if the
+        TARGET is defined.
+
+        Syntax: cute [TARGET ...]
+        """
         if len(args.target) > 0:
             self.send_from_list(msg, args, cutelist_target)
         else:
@@ -79,6 +84,10 @@ class Reactions(BaseResponder):
 
     @parse_command([('target', '*')])
     def command_magic(self, msg, args):
+        """Sends a random emoticon.
+
+        Syntax: magic [TARGET ...]
+        """
         self.send_from_list(msg, args, magiclist)
 
     def send_from_list(self, msg, args, reactions_list):
