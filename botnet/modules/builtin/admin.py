@@ -12,7 +12,7 @@ DeferredWhois = namedtuple('DeferredWhois', ['nick', 'on_complete'])
 
 
 class WhoisMixin(object):
-    """Provides a way of requesting and handling WHOIS data received from the 
+    """Provides a way of requesting and handling WHOIS data received from the
     IRC server. WHOIS data should be requested using the function
     WhoisMixin.whois_schedule.
 
@@ -103,7 +103,7 @@ class WhoisMixin(object):
             self._whois_perform(data.nick)
 
     def _whois_run_deferred(self):
-        """Loops over the deferred functions and launched those for which WHOIS
+        """Loops over the deferred functions and launches those for which WHOIS
         data is available.
         """
         for i in reversed(range(len(self._whois_deferred))):
