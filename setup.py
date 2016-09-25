@@ -25,7 +25,6 @@ setup(
         'blinker',
         'Click',
         'requests',
-        'xmltodict',
         'protobuf>=3.0.0b2',
     ],
     entry_points='''
