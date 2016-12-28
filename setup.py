@@ -1,31 +1,26 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    with open(os.path.join(os.path.dirname(__file__), fname)) as f:
+        return f.read()
 
 
 setup(
     name='botnet',
     version='0.1.0',
     author='boreq',
-    author_email='boreq@sourcedrops.com',
     description = ('IRC bot.'),
-    license='BSD',
-    packages=[
-        'botnet',
-        'botnet.modules',
-        'botnet.modules.builtin',
-        'botnet.modules.builtin.mumble',
-        'botnet.modules.lib'
-    ],
     long_description=read('README.md'),
+    url='https://github.com/boreq/botnet/',
+    license='BSD',
+    packages=find_packages(),
     install_requires=[
-        'blinker',
-        'Click',
-        'requests',
-        'protobuf>=3.0.0b2',
+        'blinker>=1.4',
+        'Click>=2.0',
+        'requests>=2.12',
+        'protobuf>=3.0',
     ],
     entry_points='''
         [console_scripts]
