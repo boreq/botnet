@@ -117,6 +117,7 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         self._partial_data = None
         message_out.connect(self.on_message_out)
         self.restart_event = threading.Event()
+        self.send_lock = threading.Lock()
 
     def get_command_prefix(self):
         """This method should return the command prefix."""
@@ -239,17 +240,18 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
 
     def send(self, text):
         """Sends a text to the socket."""
-        # To be honest I have never seen an exception here
-        try:
-            if len(text) > 0 and self.soc:
-                self.logger.debug('Sending:  %s', text)
-                text = '%s\r\n' % text
-                text = text.encode('utf-8')
-                self.soc.send(text)
-                return True
-        except (OSError, ssl.SSLError) as e:
-            on_exception.send(self, e=e)
-        return False
+        with self.send_lock:
+            # To be honest I have never seen an exception here
+            try:
+                if len(text) > 0 and self.soc:
+                    self.logger.debug('Sending:  %s', text)
+                    text = '%s\r\n' % text
+                    text = text.encode('utf-8')
+                    self.soc.send(text)
+                    return True
+            except (OSError, ssl.SSLError) as e:
+                on_exception.send(self, e=e)
+            return False
 
     def connect(self):
         """Initiates the connection."""
