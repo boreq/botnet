@@ -191,6 +191,16 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         """
         self.send(msg.to_string())
 
+    def line_to_message(self, line):
+        """Converts a line received from the server to a message object.
+
+        line: bytes.
+        """
+        line = line.decode()
+        msg = Message()
+        msg.from_string(line)
+        return msg
+
     def process_data(self, data):
         """Processes data received from the servers, partitions it into lines
         and passes each line to process_line.
@@ -210,9 +220,7 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         """
         if not line:
             return
-        line = line.decode()
-        msg = Message()
-        msg.from_string(line)
+        msg = self.line_to_message(line)
         self.handle_message(msg)
 
     def handle_message(self, msg):
