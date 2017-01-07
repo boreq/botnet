@@ -1,6 +1,6 @@
 import pytest
 import time
-from botnet.modules import cache
+from botnet.modules.lib import cache
 
 
 class BaseCacheTests(object):
