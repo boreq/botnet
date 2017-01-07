@@ -15,7 +15,7 @@ def test_quotes(msg_t, make_privmsg):
     message_in.send(None, msg=msg)
     assert not msg_t.msg
 
-    q.config_set('lotr', filename)
+    q.config_set('files.lotr', filename)
     message_in.send(None, msg=msg)
     assert msg_t.msg
 
@@ -24,5 +24,5 @@ def test_quotes_gone(make_privmsg):
     q = Quotes(Config())
     msg = make_privmsg('.gone')
 
-    q.config_set('gone', 'gone')
+    q.config_set('files.gone', 'gone')
     message_in.send(None, msg=msg)
