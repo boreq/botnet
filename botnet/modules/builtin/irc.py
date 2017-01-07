@@ -83,40 +83,26 @@ class InactivityMonitor(object):
 
 
 class Buffer(object):
+    """Buffer ensures that there is no partial command at the end of the data
+    chunk (that can happen if the data does not fit in the socket buffer or
+    just cause). If that happens the partual command will be reconstructed the
+    next time process_data is called.
+    """
 
     def __init__(self):
-        self._partial_data = None
+        self._data = b''
 
-    def process_data(self, data):
-        """Process the data received from the socket.
+    def process_data(self, received_data):
+        """Process the data received from the socket. Returns bytes.
 
-        Ensures that there is no partial command at the end of the data chunk
-        (that can happen if the data does not fit in the socket buffer). If
-        that happens the partual command will be reconstructed the next time
-        this function is called.
-
-        data: bytes.
+        received_data: bytes.
         """
-        if not data:
-            return []
-
-        data = data.decode()
-        lines = data.splitlines()
-
-        # If there is at least one newline in that part this data chunk contains
-        # the end of at least one command. If previous command was stored from
-        # previous the previous chunk then it is complete now
-        if '\n' in data and self._partial_data:
-            lines[0] = self._partial_data + lines[0]
-            self._partial_data = None
-
-        # Store partial data
-        if not data.endswith('\n'):
-            if self._partial_data is None:
-                self._partial_data = ''
-            self._partial_data += lines.pop()
-
-        return lines
+        self._data += received_data
+        while True:
+            if b'\r\n' not in self._data:
+                break
+            line, sep, self._data = self._data.partition(b'\r\n')
+            yield line
 
 
 class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
@@ -206,6 +192,11 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         self.send(msg.to_string())
 
     def process_data(self, data):
+        """Processes data received from the servers, partitions it into lines
+        and passes each line to process_line.
+
+        data: bytes.
+        """
         for line in self.buffer.process_data(data):
             try:
                 self.process_line(line)
@@ -213,9 +204,13 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
                 on_exception.send(self, e=e)
 
     def process_line(self, line):
-        """Process one line received from the server."""
+        """Process one line received from the server.
+
+        line: bytes.
+        """
         if not line:
             return
+        line = line.decode()
         msg = Message()
         msg.from_string(line)
         self.handle_message(msg)

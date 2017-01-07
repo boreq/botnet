@@ -15,12 +15,25 @@ def make_config():
 
 
 def test_process_data():
-    data = [b'data1\n', b'da', b'ta2\nda', b'ta3', b'\n', b'']
+    data = [b'data1\r\n', b'da', b'ta2\r\nda', b'ta3', b'\r\n', b'']
     buf = Buffer()
     lines = []
     for d in data:
         lines.extend(buf.process_data(d))
     assert len(lines) == 3
+    assert lines[0] == b'data1'
+    assert lines[1] == b'data2'
+    assert lines[2] == b'data3'
+
+
+def test_process_invalid_data():
+    msg = bytes.fromhex('3a6e69636b217e7a401f03344a6f796f7573032e03334b77616e7a6161032e1f6e69636b20505249564d534720726f626f746e65745f74657374203a746573740d0a')
+    data = [b'data1\r\n', msg, b'da', b'ta2\r\nda', b'ta3', b'\r\n', b'']
+    buf = Buffer()
+    lines = []
+    for d in data:
+        lines.extend(buf.process_data(d))
+    assert len(lines) == 4
 
 
 def test_inactivity_monitor():
