@@ -1,6 +1,6 @@
 import time
 from botnet.config import Config
-from botnet.modules.builtin.irc import IRC, InactivityMonitor
+from botnet.modules.builtin.irc import IRC, InactivityMonitor, Buffer
 
 
 def make_config():
@@ -16,11 +16,10 @@ def make_config():
 
 def test_process_data():
     data = [b'data1\n', b'da', b'ta2\nda', b'ta3', b'\n', b'']
-    config = make_config()
-    irc = IRC(config)
+    buf = Buffer()
     lines = []
     for d in data:
-        lines.extend(irc.process_data(d))
+        lines.extend(buf.process_data(d))
     assert len(lines) == 3
 
 

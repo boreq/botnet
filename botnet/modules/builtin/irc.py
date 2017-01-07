@@ -82,6 +82,43 @@ class InactivityMonitor(object):
         self.irc_module.restart()
 
 
+class Buffer(object):
+
+    def __init__(self):
+        self._partial_data = None
+
+    def process_data(self, data):
+        """Process the data received from the socket.
+
+        Ensures that there is no partial command at the end of the data chunk
+        (that can happen if the data does not fit in the socket buffer). If
+        that happens the partual command will be reconstructed the next time
+        this function is called.
+
+        data: bytes.
+        """
+        if not data:
+            return []
+
+        data = data.decode()
+        lines = data.splitlines()
+
+        # If there is at least one newline in that part this data chunk contains
+        # the end of at least one command. If previous command was stored from
+        # previous the previous chunk then it is complete now
+        if '\n' in data and self._partial_data:
+            lines[0] = self._partial_data + lines[0]
+            self._partial_data = None
+
+        # Store partial data
+        if not data.endswith('\n'):
+            if self._partial_data is None:
+                self._partial_data = ''
+            self._partial_data += lines.pop()
+
+        return lines
+
+
 class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
     """Connects to an IRC server, sends and receives commands.
 
@@ -114,7 +151,6 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         self.register_config('botnet', 'base_responder')
         self.register_config('botnet', 'irc')
         self.soc = None
-        self._partial_data = None
         message_out.connect(self.on_message_out)
         self.restart_event = threading.Event()
         self.send_lock = threading.Lock()
@@ -170,35 +206,11 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         self.send(msg.to_string())
 
     def process_data(self, data):
-        """Process the data received from the socket.
-
-        Ensures that there is no partial command at the end of the data chunk
-        (that can happen if the data does not fit in the socket buffer). If
-        that happens the partual command will be reconstructed the next time
-        this function is called.
-
-        data: raw data from the socket.
-        """
-        if not data:
-            return []
-
-        data = data.decode()
-        lines = data.splitlines()
-
-        # If there is at least one newline in that part this data chunk contains
-        # the end of at least one command. If previous command was stored from
-        # previous the previous chunk then it is complete now
-        if '\n' in data and self._partial_data:
-            lines[0] = self._partial_data + lines[0]
-            self._partial_data = None
-
-        # Store partial data
-        if not data.endswith('\n'):
-            if self._partial_data is None:
-                self._partial_data = ''
-            self._partial_data += lines.pop()
-
-        return lines
+        for line in self.buffer.process_data(data):
+            try:
+                self.process_line(line)
+            except Exception as e:
+                on_exception.send(self, e=e)
 
     def process_line(self, line):
         """Process one line received from the server."""
@@ -300,6 +312,7 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         with InactivityMonitor(self):
             try:
                 self.restart_event.clear()
+                self.buffer = Buffer()
                 self.connect()
                 self.identify()
                 while not self.stop_event.is_set() and not self.restart_event.is_set():
@@ -307,11 +320,7 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
                         data = self.soc.recv(4096)
                         if not data:
                             break
-                        for line in self.process_data(data):
-                            try:
-                                self.process_line(line)
-                            except Exception as e:
-                                on_exception.send(self, e=e)
+                        self.process_data(data)
                     except (socket.timeout, ssl.SSLWantReadError) as e:
                         pass
             finally:
@@ -324,6 +333,6 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
                 self.update()
                 self.stop_event.wait(self.deltatime)
             except:
-                pass
+                on_exception.send(self, e=e)
 
 mod = IRC
