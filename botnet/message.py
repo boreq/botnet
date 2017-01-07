@@ -67,7 +67,7 @@ class Message(object):
 
         # Load data.
         message = message.strip()
-        message = message.split()
+        message = message.split(' ')
         for index, part in enumerate(message):
             # Prefix.
             if index == 0 and part[0] == ':':
