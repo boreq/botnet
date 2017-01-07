@@ -40,10 +40,10 @@ def test_specific(msg_l):
     re = Responder(Config())
 
     message_in.send(None, msg=msg)
-    assert len(msg_l.msgs) == 1
+    assert len(msg_l.msgs) == 2 # 1 normal 1 admin handler
 
     message_in.send(None, msg=msg)
-    assert len(msg_l.msgs) == 2
+    assert len(msg_l.msgs) == 4
 
 
 def test_respond(msg_t):
