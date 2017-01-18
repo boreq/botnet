@@ -21,6 +21,7 @@ setup(
         'Click>=2.0',
         'requests>=2.12',
         'protobuf>=3.0',
+        'python-twitter>=3.2',
     ],
     entry_points='''
         [console_scripts]

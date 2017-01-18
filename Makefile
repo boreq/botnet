@@ -9,6 +9,12 @@ test_botnet:
 test_examples:
 	py.test examples/tests.py
 
+pyflakes:
+	pyflakes botnet
+
+mypy:
+	mypy --warn-no-return botnet
+
 update_mumble_proto:
 	curl https://raw.githubusercontent.com/mumble-voip/mumble/master/src/Mumble.proto > botnet/modules/builtin/mumble/proto/mumble.proto
 	protoc -I=$(SRC_DIR) --python_out=$(DST_DIR) $(SRC_DIR)/mumble.proto
