@@ -39,7 +39,9 @@ class API(object):
     def iter_lines(self) -> Iterator[Any]:
         try:
             for line in self._response.iter_lines():
-                yield line
+                # Twitter sometimes returns empty lines.
+                if line:
+                    yield line
         except AttributeError as e:
             pass
 
