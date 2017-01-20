@@ -1,39 +1,50 @@
 import threading
-import twitter
+import requests
+import json
+from requests_oauthlib import OAuth1
+from typing import List, Iterator, Any
 from .. import BaseResponder
 from ...signals import on_exception, message_out, config_reloaded
 from ...message import Message
 
 
-class API(twitter.Api):
+class API(object):
+    """Unfortunately *ALL* Python Twitter libraries are literally broken, as in
+    written in a way that is simply wrong and makes it impossible to close the
+    connection in a clean way. It is not some kind of a purity problem, the code
+    written in those libraries is simply invalid.
+    """
 
-    def custom_stream_filter(self, follow=None, track=None, locations=None,
-                             languages=None, delimited=None,
-                             stall_warnings=None):
-        """https://github.com/bear/python-twitter/blob/master/twitter/api.py"""
-        if all((follow is None, track is None, locations is None)):
-            raise ValueError({'message': "No filter parameters specified."})
+    stream_url = 'https://stream.twitter.com/1.1'
+
+    def __init__(self, consumer_key: str, consumer_secret: str,
+                 access_token_key: str, access_token_secret: str,
+                 follow: List[str]) -> None:
+        self._consumer_key = consumer_key
+        self._consumer_secret = consumer_secret
+        self._access_token_key = access_token_key
+        self._access_token_secret = access_token_secret
+        self._response = self._stream_filter(follow)
+
+    def _stream_filter(self, follow: List[str]) -> requests.Response:
         url = '%s/statuses/filter.json' % self.stream_url
-        data = {}
-        if follow is not None:
-            data['follow'] = ','.join(follow)
-        if track is not None:
-            data['track'] = ','.join(track)
-        if locations is not None:
-            data['locations'] = ','.join(locations)
-        if delimited is not None:
-            data['delimited'] = str(delimited)
-        if stall_warnings is not None:
-            data['stall_warnings'] = str(stall_warnings)
-        if languages is not None:
-            data['language'] = ','.join(languages)
-        return self._RequestStream(url, 'POST', data=data)
+        data = {
+            'follow': ','.join(follow),
+            'stall_warnings': 'true',
+        }
+        auth = OAuth1(self._consumer_key, self._consumer_secret,
+                      self._access_token_key, self._access_token_secret)
+        return requests.post(url, data=data, stream=True, auth=auth)
 
-    def yield_lines(self, resp):
-        for line in resp.iter_lines():
-            if line:
-                data = self._ParseAndCheckTwitter(line.decode('utf-8'))
-                yield data
+    def iter_lines(self) -> Iterator[Any]:
+        try:
+            for line in self._response.iter_lines():
+                yield line
+        except AttributeError as e:
+            pass
+
+    def close(self) -> None:
+        self._response.close()
 
 
 class Twitter(BaseResponder):
@@ -63,14 +74,10 @@ class Twitter(BaseResponder):
         super(Twitter, self).__init__(config)
         config_reloaded.connect(self.on_config_reloaded)
         self.stop_event = None
-        self.resp = None
+        self.api = None
 
     def start(self):
         super(Twitter, self).start()
-        self.api = API(consumer_key=self.config_get('consumer_key'),
-                       consumer_secret=self.config_get('consumer_secret'),
-                       access_token_key=self.config_get('access_token_key'),
-                       access_token_secret=self.config_get('access_token_secret'))
         self.start_twitter()
 
     def stop(self):
@@ -79,19 +86,14 @@ class Twitter(BaseResponder):
 
     def start_twitter(self):
         self.stop_event = threading.Event()
-        self.done_event = threading.Event()
-        self.resp = None
         t = threading.Thread(target=self.run)
         t.daemon = True
         t.start()
 
     def stop_twitter(self):
-        if self.stop_event is not None:
-            self.stop_event.set()
-        if self.resp is not None:
-            self.resp.close()
-        if self.done_event is not None:
-            self.done_event.wait()
+        self.stop_event.set()
+        if self.api:
+            self.api.close()
 
     def on_config_reloaded(self, *args, **kwargs):
         self.stop_twitter()
@@ -106,22 +108,29 @@ class Twitter(BaseResponder):
                 on_exception.send(self, e=e)
 
     def work(self):
+        follow = self.config_get('follow', {})
+        if not follow:
+            return
+        self.api = API(consumer_key=self.config_get('consumer_key'),
+                       consumer_secret=self.config_get('consumer_secret'),
+                       access_token_key=self.config_get('access_token_key'),
+                       access_token_secret=self.config_get('access_token_secret'),
+                       follow=list(follow.keys()))
         try:
-            follow = self.config_get('follow', {})
-            if follow:
+            for line in self.api.iter_lines():
                 try:
-                    self.resp = self.api.custom_stream_filter(follow=list(follow.keys()))
-                    for line in self.api.yield_lines(self.resp):
-                        try:
-                            self.handle_line(line)
-                        except Exception as e:
-                            on_exception.send(self, e=e)
-                finally:
-                    self.resp.close()
+                    data = json.loads(line.decode())
+                    self.handle_line(data)
+                except Exception as e:
+                    on_exception.send(self, e=e)
         finally:
-            self.done_event.set()
+            self.api.close()
 
     def handle_line(self, line):
+        if 'warning'in line:
+            self.logger.warning(line)
+            return
+
         follow = self.config_get('follow', {})
         if not 'text' in line \
                 or not 'user' in line \
