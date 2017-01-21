@@ -1,3 +1,4 @@
+import datetime
 import threading
 import requests
 import json
@@ -49,6 +50,34 @@ class API(object):
         self._response.close()
 
 
+class Stats(object):
+
+    stats_age = 60 # [minutes]
+
+    def __init__(self):
+        self._message_times = []
+
+    def update(self):
+        now = datetime.datetime.now()
+        f = lambda t: (now - t).total_seconds() < self.stats_age * 60
+        self._message_times = list(filter(f, self._message_times))
+
+    def add_received_messages(self, n):
+        for i in range(n):
+            self._message_times.append(datetime.datetime.now())
+
+    def get_age(self):
+        """Returns the number of seconds for which the stats are available."""
+        if len(self._message_times) == 0:
+            return 0
+        diff = datetime.datetime.now() - min(self._message_times)
+        return diff.total_seconds()
+
+    def get_received_messages(self):
+        """Returns the number of messages received during the stats age."""
+        return len(self._message_times)
+
+
 class Twitter(BaseResponder):
     """Provides live user feeds from twitter.
 
@@ -77,6 +106,7 @@ class Twitter(BaseResponder):
         config_reloaded.connect(self.on_config_reloaded)
         self.stop_event = None
         self.api = None
+        self.stats = Stats()
 
     def start(self):
         super(Twitter, self).start()
@@ -121,6 +151,8 @@ class Twitter(BaseResponder):
         try:
             for line in self.api.iter_lines():
                 try:
+                    self.stats.add_received_messages(1)
+                    self.stats.update()
                     data = json.loads(line.decode())
                     self.handle_line(data)
                 except Exception as e:
@@ -145,6 +177,16 @@ class Twitter(BaseResponder):
         for channel in follow[line['user']['id_str']]:
             msg = Message(command='PRIVMSG', params=[channel, text])
             message_out.send(self, msg=msg)
+
+    def command_twitter_stats(self, msg):
+        """Displays the number of messages received from Twitter by this module.
+
+        Syntax: twitter_stats
+        """
+        text = 'Received {messages} messages in the last {minutes} minutes.'
+        text = text.format(minutes=int(self.stats.get_age()/60),
+                           messages=self.stats.get_received_messages())
+        self.respond(msg, text)
 
 
 mod = Twitter
