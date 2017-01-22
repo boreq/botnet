@@ -102,18 +102,18 @@ class Twitter(BaseResponder):
     deltatime = 10
 
     def __init__(self, config):
-        super(Twitter, self).__init__(config)
+        super().__init__(config)
         config_reloaded.connect(self.on_config_reloaded)
         self.stop_event = None
         self.api = None
         self.stats = Stats()
 
     def start(self):
-        super(Twitter, self).start()
+        super().start()
         self.start_twitter()
 
     def stop(self):
-        super(Twitter, self).stop()
+        super().stop()
         self.stop_twitter()
 
     def start_twitter(self):
