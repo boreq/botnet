@@ -50,8 +50,8 @@ class MessageStore(object):
 
     def add_message(self, author, target, message):
         """Leaves a `message` for `target` from `author`."""
-        if author == target:
-            return False
+#        if author == target:
+#            return False
         with self.lock:
             # abort if similar message already present
             for m in self._msg_store:
