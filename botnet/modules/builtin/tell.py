@@ -69,7 +69,7 @@ class MessageStore(object):
         rw = []
         with self.lock:
             for i, m in reversed(list(enumerate(self._msg_store))):
-                if m['target'] == target:
+                if m['target'].lower() == target.lower():
                     rw.append(self._msg_store.pop(i))
             self._save()
         return list(reversed(rw))

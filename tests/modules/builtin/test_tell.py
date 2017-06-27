@@ -17,6 +17,18 @@ def test_message_store(tmp_file):
     a = ms.get_messages('target2')
     assert len(a) == 1
 
+def test_message_store_case_insensitive(tmp_file):
+    ms = MessageStore(lambda: tmp_file)
+
+    a = ms.get_messages('target1')
+    assert a == []
+
+    ms.add_message('author', 'tArget1', 'text1')
+    ms.add_message('author', 'taRget1', 'text2')
+
+    a = ms.get_messages('TaRget1')
+    assert len(a) == 2
+
 def test_duplicate(tmp_file):
     ms = MessageStore(lambda: tmp_file)
     ms.add_message('author', 'target', 'text')
