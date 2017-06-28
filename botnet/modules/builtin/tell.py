@@ -14,12 +14,12 @@ def make_msg_entry(author, target, message):
         'time': datetime.datetime.utcnow().timestamp(),
     }
 
-def format_msg_entry(msg_entry):
+def format_msg_entry(target, msg_entry):
     """Converts an object stored by the message store to plaintext."""
     time = datetime.datetime.fromtimestamp(msg_entry['time'])
     time = time.strftime('%H:%M')
-    return '%s: %s <%s> %s' % (msg_entry['target'], time, msg_entry['author'],
-                                msg_entry['message'])
+    return '%s: %s <%s> %s' % (target, time, msg_entry['author'],
+                               msg_entry['message'])
 
 class MessageStore(object):
     """Simple facility for storing and saving messages left users, the messages
@@ -110,7 +110,7 @@ class Tell(BaseResponder):
 
     def handle_privmsg(self, msg):
         for stored_msg in self.ms.get_messages(msg.nickname):
-            self.respond(msg, format_msg_entry(stored_msg))
+            self.respond(msg, format_msg_entry(msg.nickname, stored_msg))
 
 
 mod = Tell
