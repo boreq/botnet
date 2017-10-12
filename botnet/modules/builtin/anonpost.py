@@ -21,7 +21,6 @@ class Anonpost(BaseResponder):
         message = 'ANONPOST: ' + ' '.join(args.message)
 
         if is_channel_name(target):
-            self.logger.info('anonpost: %s => %s: %s' % (msg.nickname, target, message))
             self.send(target, message)
 
     @parse_command([('target', 1), ('message', '+')], launch_invalid=False)
@@ -34,7 +33,6 @@ class Anonpost(BaseResponder):
         message = 'ANONPOST: ' + ' '.join(args.message)
 
         if not is_channel_name(target):
-            self.logger.info('admin anonpost: %s => %s: %s' % (msg.nickname, target, message))
             self.send(target, message)
 
     def send(self, target, message):
