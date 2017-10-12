@@ -13,7 +13,7 @@ pyflakes:
 	pyflakes botnet
 
 mypy:
-	mypy --warn-no-return botnet
+	mypy --warn-no-return --ignore-missing-imports botnet
 
 update_mumble_proto:
 	curl https://raw.githubusercontent.com/mumble-voip/mumble/master/src/Mumble.proto > botnet/modules/builtin/mumble/proto/mumble.proto
