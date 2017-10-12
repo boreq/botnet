@@ -21,8 +21,8 @@ class Anonpost(BaseResponder):
         message = 'ANONPOST: ' + ' '.join(args.message)
 
         if is_channel_name(target):
-            msg = Message(command='PRIVMSG', params=[target, message])
-            message_out.send(self, msg=msg)
+            self.logger.info('anonpost: %s => %s: %s' % (msg.nickname, target, message))
+            self.send(target, message)
 
     @parse_command([('target', 1), ('message', '+')], launch_invalid=False)
     def admin_command_anonpost(self, msg, args):
@@ -34,8 +34,12 @@ class Anonpost(BaseResponder):
         message = 'ANONPOST: ' + ' '.join(args.message)
 
         if not is_channel_name(target):
-            msg = Message(command='PRIVMSG', params=[target, message])
-            message_out.send(self, msg=msg)
+            self.logger.info('admin anonpost: %s => %s: %s' % (msg.nickname, target, message))
+            self.send(target, message)
+
+    def send(self, target, message):
+        msg = Message(command='PRIVMSG', params=[target, message])
+        message_out.send(self, msg=msg)
 
 
 mod = Anonpost
