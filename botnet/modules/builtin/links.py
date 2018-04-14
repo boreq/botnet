@@ -31,7 +31,10 @@ class Links(BaseResponder):
         return '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
 
     def get_title(self, url):
-        r = requests.get(url)
+        headers = {
+            'Accept-Language': 'en-US,en;q=0.5'
+        }
+        r = requests.get(url, headers=headers)
         r.raise_for_status()
         soup = BeautifulSoup(r.content, 'html.parser')
         if soup.title:
