@@ -22,6 +22,7 @@ setup(
         'requests>=2.12',
         'protobuf>=3.0',
         'requests-oauthlib>=0.7.0',
+        'beautifulsoup4>=4.6.0',
     ],
     entry_points='''
         [console_scripts]
