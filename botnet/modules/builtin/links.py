@@ -21,12 +21,25 @@ class Links(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'links'
 
+    character_limit = 80
+
     def __init__(self, config):
         super(Links, self).__init__(config)
 
     def get_domain(self, url):
         parsed_uri = urlparse(url)
         return '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+
+    def get_title(self, url):
+        r = requests.get(url)
+        r.raise_for_status()
+        soup = BeautifulSoup(r.content, 'html.parser')
+        if soup.title:
+            title = soup.title.text
+            if len(title) > self.character_limit:
+                title = title[:self.character_limit] + '...'
+            return title
+        return None
 
     def handle_privmsg(self, msg):
         if not is_channel_name(msg.params[0]):
@@ -35,11 +48,9 @@ class Links(BaseResponder):
         for element in msg.params[1].split():
             if element.startswith('http://') or element.startswith('https://'):
                 try:
-                    r = requests.get(element)
-                    r.raise_for_status()
-                    soup = BeautifulSoup(r.content, 'html.parser')
-                    if soup.title:
-                        text = '[%s - %s]' % (soup.title.string, self.get_domain(element))
+                    title = self.get_title(element)
+                    if title:
+                        text = '[%s - %s]' % (title, self.get_domain(element))
                         self.respond(msg, text)
                 except requests.exceptions.HTTPError as e:
                     pass
