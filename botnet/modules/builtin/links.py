@@ -16,7 +16,7 @@ class Links(BaseResponder):
             "links": {
                 "include_domain": true,
                 "channels": [
-                    "#/g/punk"
+                    "#example"
                 ]
             }
         }
