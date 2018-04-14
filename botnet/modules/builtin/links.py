@@ -14,6 +14,10 @@ class Links(BaseResponder):
 
         "botnet": {
             "links": {
+                "include_domain": true,
+                "channels": [
+                    "#/g/punk"
+                ]
             }
         }
 
@@ -49,14 +53,20 @@ class Links(BaseResponder):
         if not is_channel_name(msg.params[0]):
             return
 
+        if not msg.params[0] in self.config_get('channels', []):
+            return
+
         for element in msg.params[1].split():
             if element.startswith('http://') or element.startswith('https://'):
                 def f():
                     try:
                         title = self.get_title(element)
                         if title:
-                            text = '[%s - %s]' % (title, self.get_domain(element))
-                            self.respond(msg, text)
+                            if self.config_get('include_domain', True):
+                                text = '%s - %s' % (title, self.get_domain(element))
+                            else:
+                                text = title
+                            self.respond(msg, '[%s]' % text)
                     except requests.exceptions.HTTPError as e:
                         pass
                     except Exception as e:
