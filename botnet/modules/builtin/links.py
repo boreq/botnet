@@ -1,3 +1,4 @@
+import threading
 from ...helpers import is_channel_name
 from ...signals import on_exception
 from .. import BaseResponder
@@ -50,14 +51,18 @@ class Links(BaseResponder):
 
         for element in msg.params[1].split():
             if element.startswith('http://') or element.startswith('https://'):
-                try:
-                    title = self.get_title(element)
-                    if title:
-                        text = '[%s - %s]' % (title, self.get_domain(element))
-                        self.respond(msg, text)
-                except requests.exceptions.HTTPError as e:
-                    pass
-                except Exception as e:
-                    on_exception.send(self, e=e)
+                def f():
+                    try:
+                        title = self.get_title(element)
+                        if title:
+                            text = '[%s - %s]' % (title, self.get_domain(element))
+                            self.respond(msg, text)
+                    except requests.exceptions.HTTPError as e:
+                        pass
+                    except Exception as e:
+                        on_exception.send(self, e=e)
+
+                t = threading.Thread(target=f)
+                t.start()
 
 mod = Links
