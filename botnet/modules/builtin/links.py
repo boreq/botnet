@@ -43,7 +43,8 @@ class Links(BaseResponder):
         r.raise_for_status()
         soup = BeautifulSoup(r.content, 'html.parser')
         if soup.title:
-            title = soup.title.text
+            title = ' '.join(soup.title.text.splitlines())
+            title = title.strip()
             if len(title) > self.character_limit:
                 title = title[:self.character_limit] + '...'
             return title
