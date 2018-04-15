@@ -67,7 +67,7 @@ class Links(BaseResponder):
                                 text = '%s - %s' % (title, self.get_domain(element))
                             else:
                                 text = title
-                            self.respond(msg, '[%s]' % text)
+                            self.respond(msg, '[ %s ]' % text)
                     except requests.exceptions.HTTPError as e:
                         pass
                     except Exception as e:
