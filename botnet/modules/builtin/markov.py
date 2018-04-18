@@ -1,3 +1,4 @@
+import threading
 import os
 from ...signals import on_exception
 from .. import BaseResponder
@@ -31,6 +32,12 @@ class Markov(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'markov'
 
+    def __init__(self, config):
+        super(Markov, self).__init__(config)
+        self.cache = {}
+        t = threading.Thread(target=self.cache_chains, daemon=True)
+        t.start()
+
     def get_all_commands(self):
         rw = super(Markov, self).get_all_commands()
         new_commands = set()
@@ -44,18 +51,7 @@ class Markov(BaseResponder):
     def handle_privmsg(self, msg):
         if self.is_command(msg):
             key = self.get_command_name(msg)
-
-            # Directories
-            for root, filename in self.get_command_files():
-                if filename == key:
-                    path = os.path.join(root, filename)
-                    self.send_random_line(msg, path)
-                    return
-
-            # Files
-            filename = self.config_get('files.%s' % key, None)
-            if filename is not None:
-                self.send_random_line(msg, filename)
+            self.send_random_line(msg, key)
 
     def get_command_files(self):
         for directory in self.config_get('directories', []):
@@ -63,17 +59,31 @@ class Markov(BaseResponder):
                 for filename in files:
                     yield (root, filename)
 
-    def send_random_line(self, msg, filepath):
+    def cache_chains(self):
+        # Directories
+        for root, filename in self.get_command_files():
+            path = os.path.join(root, filename)
+            self.load_chain(path, filename)
+
+        # Files
+        for filename, path in self.config_get('files', {}).items():
+            self.load_chain(path, filename)
+
+    def load_chain(self, filepath, key):
+        print(filepath, key)
+        c = Chain()
+        with open(filepath) as f:
+            for line in f:
+                c.grow(line.split())
+        self.cache[key] = c
+
+    def send_random_line(self, msg, key):
         try:
-            c = Chain()
-
-            with open(filepath) as f:
-                for line in f:
-                    c.grow(line.split())
-
-            words = c.generate()
-            line = ' '.join(words)
-            self.respond(msg, line)
+            c = self.cache[key]
+            if c is not None:
+                words = c.generate()
+                line = ' '.join(words)
+                self.respond(msg, line)
         except FileNotFoundError as e:
             on_exception.send(self, e=e)
 
