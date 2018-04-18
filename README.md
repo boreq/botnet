@@ -12,7 +12,7 @@ user-maintained external modules distributed in a form of Python packages.
 
 ## Installation
 
-    pip install git+https://github.com/boreq/botnet
+    pip install --process-dependency-links git+https://github.com/boreq/botnet
 
 ## Usage
 
