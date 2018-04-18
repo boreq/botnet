@@ -23,9 +23,13 @@ setup(
         'protobuf>=3.0',
         'requests-oauthlib>=0.7.0',
         'beautifulsoup4>=4.6.0',
+        'markov==0.0.0',
     ],
     entry_points='''
         [console_scripts]
         botnet=botnet.cli:cli
     ''',
+    dependency_links=[
+        "git+https://github.com/boreq/markov#egg=markov-0.0.0"
+    ]
 )
