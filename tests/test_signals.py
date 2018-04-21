@@ -13,3 +13,7 @@ def test_unsubscribe_from_all(cl):
 
     assert not signals.message_in.receivers
     assert not signals.admin_message_in.receivers
+
+
+def test_clear_state_doesnt_throw():
+    signals.clear_state() 
