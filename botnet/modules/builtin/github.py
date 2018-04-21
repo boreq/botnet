@@ -192,18 +192,18 @@ class Github(BaseResponder):
     deltatime = 300
 
     def __init__(self, config):
-        super(Github, self).__init__(config)
+        super().__init__(config)
         self.api = self.api_class()
 
     def start(self):
-        super(Github, self).start()
+        super().start()
         # run the code checking the events in a separate thread
         self.stop_event = threading.Event()
         self.t = threading.Thread(target=self.run)
         self.t.start()
 
     def stop(self):
-        super(Github, self).stop()
+        super().stop()
         self.stop_event.set()
 
     def run(self):

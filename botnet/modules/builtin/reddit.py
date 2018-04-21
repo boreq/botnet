@@ -55,7 +55,7 @@ class Reddit(BaseResponder):
     api_class = RedditAPI
 
     def __init__(self, config):
-        super(Reddit, self).__init__(config)
+        super().__init__(config)
         self.api = self.api_class()
 
     @catch_other(APIError, 'API error')

@@ -14,6 +14,8 @@ def make_privmsg(text):
 
 class Tester(MessageDispatcherMixin, BaseModule):
 
+    __test__ = False
+
     def __init__(self, config):
         super(Tester, self).__init__(config)
         self.launched_main = False

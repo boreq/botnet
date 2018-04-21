@@ -150,7 +150,7 @@ class Mumble(BaseResponder):
     deltatime = 5
 
     def __init__(self, config):
-        super(Mumble, self).__init__(config)
+        super().__init__(config)
         self.register_config('botnet', 'base_responder')
         self.register_config('botnet', 'mumble')
         self.soc = None
@@ -180,7 +180,7 @@ class Mumble(BaseResponder):
         """To stop correctly it is necessary to disconnect from the server
         because blocking sockets are used.
         """
-        super(Mumble, self).stop()
+        super().stop()
         self.disconnect()
         self.stop_event.set()
         self.t.join()

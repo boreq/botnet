@@ -24,7 +24,7 @@ class ExceptionMonitor(ConfigMixin, BaseModule):
     error_text = '{error}\nTraceback:\n{tb}'
 
     def __init__(self, config):
-        super(ExceptionMonitor, self).__init__(config)
+        super().__init__(config)
         self.register_default_config(self.default_config)
         self.register_config('botnet', 'exception_monitor')
         on_exception.connect(self.on_exception)

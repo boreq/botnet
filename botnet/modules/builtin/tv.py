@@ -163,7 +163,7 @@ class TV(BaseResponder):
     }
 
     def __init__(self, config):
-        super(TV, self).__init__(config)
+        super().__init__(config)
         self.api = TheTVDB(self.config_get)
 
     @parse_command([('series_name', '+')], launch_invalid=False)

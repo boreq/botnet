@@ -10,7 +10,7 @@ class Meta(BaseResponder):
     ibip_repo = 'https://github.com/boreq/botnet'
 
     def __init__(self, config):
-        super(Meta, self).__init__(config)
+        super().__init__(config)
         _list_commands.connect(self.on_list_commands)
 
     def command_git(self, msg):
@@ -30,7 +30,7 @@ class Meta(BaseResponder):
         if len(args.command_names) == 0:
             _request_list_commands.send(self, msg=msg, admin=False)
         else:
-            super(Meta, self).command_help(msg)
+            super().command_help(msg)
 
     @parse_command([('command_names', '*')])
     def admin_command_help(self, msg, args):
@@ -42,7 +42,7 @@ class Meta(BaseResponder):
         if len(args.command_names) == 0:
             _request_list_commands.send(self, msg=msg, admin=True)
         else:
-            super(Meta, self).command_help(msg)
+            super().command_help(msg)
 
     def ibip(self, msg):
         """Makes the bot identify itself as defined by The IRC Bot

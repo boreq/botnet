@@ -38,7 +38,7 @@ class MemoryCache(BaseCache):
     """
 
     def __init__(self, default_timeout=300):
-        super(MemoryCache, self).__init__(default_timeout)
+        super().__init__(default_timeout)
         self._data = {}
 
     def _prepare_key(self, key):

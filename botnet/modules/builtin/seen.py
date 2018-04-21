@@ -76,7 +76,7 @@ class Seen(BaseResponder):
     config_name = 'seen'
 
     def __init__(self, config):
-        super(Seen, self).__init__(config)
+        super().__init__(config)
         self.ms = MessageStore(lambda: self.config_get('message_data'))
 
     @parse_command([('nick', 1)], launch_invalid=False)

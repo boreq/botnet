@@ -45,7 +45,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
     default_config = {}
 
     def __init__(self, config):
-        super(BaseResponder, self).__init__(config)
+        super().__init__(config)
         self.register_default_config(self.base_default_config)
         self.register_default_config(self.default_config)
         self.register_config('botnet', 'base_responder')

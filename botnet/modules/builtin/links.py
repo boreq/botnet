@@ -29,7 +29,7 @@ class Links(BaseResponder):
     character_limit = 80
 
     def __init__(self, config):
-        super(Links, self).__init__(config)
+        super().__init__(config)
 
     def get_domain(self, url):
         parsed_uri = urlparse(url)

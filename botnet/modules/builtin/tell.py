@@ -92,7 +92,7 @@ class Tell(BaseResponder):
     config_name = 'tell'
 
     def __init__(self, config):
-        super(Tell, self).__init__(config)
+        super().__init__(config)
         self.ms = MessageStore(lambda: self.config_get('message_data'))
 
     @parse_command([('target', 1), ('message', '+')], launch_invalid=False)

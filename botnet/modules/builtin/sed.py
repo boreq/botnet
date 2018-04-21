@@ -92,7 +92,7 @@ class Sed(BaseResponder):
     config_name = 'sed'
 
     def __init__(self, config):
-        super(Sed, self).__init__(config)
+        super().__init__(config)
         self.store = MessageStore(lambda: self.config_get('message_data'), lambda c: self.config_get('message_limit', 100))
 
     def handle_privmsg(self, msg):

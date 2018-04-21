@@ -33,13 +33,13 @@ class Markov(BaseResponder):
     config_name = 'markov'
 
     def __init__(self, config):
-        super(Markov, self).__init__(config)
+        super().__init__(config)
         self.cache = {}
         t = threading.Thread(target=self.cache_chains, daemon=True)
         t.start()
 
     def get_all_commands(self):
-        rw = super(Markov, self).get_all_commands()
+        rw = super().get_all_commands()
         new_commands = set()
         for command in self.config_get('files', {}).keys():
             new_commands.add(command)

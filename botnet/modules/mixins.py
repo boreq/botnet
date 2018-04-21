@@ -29,7 +29,7 @@ class ConfigMixin(object):
     """
 
     def __init__(self, config):
-        super(ConfigMixin, self).__init__(config)
+        super().__init__(config)
         # actual Config object
         self.config = config
         # list of dicts with default configuration values
@@ -183,7 +183,7 @@ class StandardMessageDispatcherMixin(BaseMessageDispatcherMixin):
     handler_prefix = 'command_'
 
     def __init__(self, config):
-        super(StandardMessageDispatcherMixin, self).__init__(config)
+        super().__init__(config)
         message_in.connect(self.on_message_in)
 
     def dispatch_message(self, msg):
@@ -235,7 +235,7 @@ class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
     admin_handler_prefix = 'admin_command_'
 
     def __init__(self, config):
-        super(AdminMessageDispatcherMixin, self).__init__(config)
+        super().__init__(config)
         admin_message_in.connect(self.on_admin_message_in)
 
     def dispatch_admin_message(self, msg):

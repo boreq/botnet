@@ -133,7 +133,7 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
     deltatime = 5
 
     def __init__(self, config):
-        super(IRC, self).__init__(config)
+        super().__init__(config)
         self.register_config('botnet', 'base_responder')
         self.register_config('botnet', 'irc')
         self.soc = None
@@ -173,7 +173,7 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         """To stop correctly it is necessary to disconnect from the server
         because blocking sockets are used.
         """
-        super(IRC, self).stop()
+        super().stop()
         self.disconnect()
         self.stop_event.set()
         self.t.join()

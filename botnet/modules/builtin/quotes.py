@@ -35,7 +35,7 @@ class Quotes(BaseResponder):
     config_name = 'quotes'
 
     def get_all_commands(self):
-        rw = super(Quotes, self).get_all_commands()
+        rw = super().get_all_commands()
         new_commands = set()
         for command in self.config_get('files', {}).keys():
             new_commands.add(command)

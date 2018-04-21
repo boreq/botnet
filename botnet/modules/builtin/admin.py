@@ -35,7 +35,7 @@ class WhoisMixin(object):
     whois_cache_timeout = 60
 
     def __init__(self, config):
-        super(WhoisMixin, self).__init__(config)
+        super().__init__(config)
         self._whois_cache = MemoryCache(self.whois_cache_timeout)
         self._whois_deferred = []
         self._whois_current = {}
@@ -154,7 +154,7 @@ class Admin(WhoisMixin, BaseResponder):
     config_name = 'admin'
 
     def __init__(self, config):
-        super(Admin, self).__init__(config)
+        super().__init__(config)
         module_loaded.connect(self.on_module_loaded)
         module_unloaded.connect(self.on_module_unloaded)
         config_reloaded.connect(self.on_config_reloaded)
@@ -238,7 +238,7 @@ class Admin(WhoisMixin, BaseResponder):
             pass
 
     def handle_privmsg(self, msg):
-        super(Admin, self).handle_msg(msg)
+        super().handle_msg(msg)
         admin_list = self.config_get('admins', [])
         if msg.nickname in admin_list:
             def on_complete(whois_data):
