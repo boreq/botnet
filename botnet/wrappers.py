@@ -8,7 +8,6 @@ class ModuleWrapper(object):
     """
 
     def __init__(self, module):
-        super().__init__()
         self.module = module
         self.name = get_ident_string(module.__class__)
         self.logger = get_logger(str(self))
