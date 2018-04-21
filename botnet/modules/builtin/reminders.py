@@ -131,7 +131,7 @@ class Reminders(BaseResponder):
         self.store = RemindersStore(lambda: self.config_get('reminder_data'))
         self.stop_event = threading.Event()
         self.t = threading.Thread(target=self.run)
-        self.t.run()
+        self.t.start()
 
     def stop(self):
         super(Reminders, self).stop()
