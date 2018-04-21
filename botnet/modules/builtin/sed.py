@@ -13,7 +13,7 @@ def make_msg_entry(author, message):
 
 
 def parse_message(message_text):
-    pattern = re.compile('^([^: ]*)[: ]*s/(.*)/(.*)$')
+    pattern = re.compile('^([^:, ]*)[:, ]*s/(.*)/(.*)$')
     result = pattern.search(message_text) 
     if result is None:
         raise ValueError
@@ -102,7 +102,7 @@ class Sed(BaseResponder):
                 if nick is None:
                     nick = msg.nickname
                 for stored_msg in self.store.get_messages(msg.params[0]):
-                    if a in stored_msg['message']:
+                    if a in stored_msg['message'] and stored_msg['author'] == nick:
                         message = stored_msg['message'].replace(a, b)
                         if nick == msg.nickname:
                             text = '%s meant to say: %s' % (nick, message)
