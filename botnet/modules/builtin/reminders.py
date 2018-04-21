@@ -164,7 +164,6 @@ class Reminders(BaseResponder):
                 self.stop_event.wait(self.deltatime)
             except Exception as e:
                 on_exception.send(self, e=e)
-        print('STOPPING!')
 
     def update(self):
         now = datetime.datetime.utcnow().timestamp()
