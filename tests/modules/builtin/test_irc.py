@@ -1,6 +1,7 @@
 import time
 from botnet.config import Config
 from botnet.modules.builtin.irc import IRC, InactivityMonitor, Buffer
+from botnet import Message
 
 
 def make_config():
@@ -101,3 +102,36 @@ def test_inactivity_monitor_repeated():
         time.sleep(1.5)
         assert t.pinged > 3
         assert t.aborted > 0
+
+
+def test_empty_config():
+    config = make_config()
+    irc = IRC(config)
+
+    msg = Message()
+    msg.from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
+    assert not irc.should_ignore(msg)
+
+
+def test_ignore():
+    ignore_list = [
+            "nick!*@*",
+            "*!*@example.com",
+    ]
+
+    config = make_config()
+    config['module_config']['botnet']['irc']['ignore'] = ignore_list
+
+    irc = IRC(config)
+
+    msg = Message()
+    msg.from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
+    assert irc.should_ignore(msg)
+
+    msg = Message()
+    msg.from_string(':othernick!~user@example.com PRIVMSG #channel :lorem ipsum')
+    assert irc.should_ignore(msg)
+
+    msg = Message()
+    msg.from_string(':othernick!~user@example.net PRIVMSG #channel :lorem ipsum')
+    assert not irc.should_ignore(msg)

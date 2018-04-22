@@ -3,6 +3,7 @@ import socket
 import ssl
 import threading
 import time
+import fnmatch
 from ...logging import get_logger
 from ...message import Message
 from ...signals import message_in, message_out, on_exception
@@ -227,6 +228,10 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         """Process the created Message object."""
         self.logger.debug('Received: %s', str(msg))
 
+        # Check if the user should be ignored or not
+        if self.should_ignore(msg):
+            return
+
         # Dispatch the message to the right handler
         # If command is a numeric code convert it to a string
         code = msg.command_code()
@@ -244,6 +249,12 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
             message_in.send(self, msg=msg)
         except Exception as e:
             on_exception.send(self, e=e)
+
+    def should_ignore(self, msg):
+        for ignore_pattern in self.config_get('ignore', '.'):
+            if fnmatch.fnmatch(msg.prefix, ignore_pattern):
+                return True
+        return False
 
     def handler_rpl_endofmotd(self, msg):
         self.autosend()
