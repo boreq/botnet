@@ -27,6 +27,7 @@ class Links(BaseResponder):
     config_name = 'links'
 
     character_limit = 80
+    timeout = 30 # [seconds]
 
     def __init__(self, config):
         super().__init__(config)
@@ -39,7 +40,7 @@ class Links(BaseResponder):
         headers = {
             'Accept-Language': 'en-US,en;q=0.5'
         }
-        r = requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers, timeout=self.timeout)
         r.raise_for_status()
         soup = BeautifulSoup(r.content, 'html.parser')
         if soup.title:
@@ -73,7 +74,7 @@ class Links(BaseResponder):
                     except Exception as e:
                         on_exception.send(self, e=e)
 
-                t = threading.Thread(target=f)
+                t = threading.Thread(target=f, daemon=True)
                 t.start()
 
 mod = Links
