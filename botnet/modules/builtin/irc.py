@@ -6,10 +6,9 @@ import time
 import fnmatch
 from ...logging import get_logger
 from ...message import Message
-from ...signals import message_in, message_out, on_exception
-from .. import BaseModule
+from ...signals import message_in, message_out, on_exception, config_changed
+from .. import BaseResponder
 from ..lib import parse_command
-from ..mixins import AdminMessageDispatcherMixin, ConfigMixin
 
 
 class InactivityMonitor(object):
@@ -106,7 +105,7 @@ class Buffer(object):
             yield line
 
 
-class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
+class IRC(BaseResponder):
     """Connects to an IRC server, sends and receives commands.
 
     Example module config:
@@ -161,6 +160,40 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
         Syntax: channel_part CHANNEL_NAME
         """
         self.part(args.name[0])
+
+    @parse_command([('pattern', 1)], launch_invalid=False)
+    def admin_command_ignore(self, msg, args):
+        """Ignores a user. Pattern should be in the following form with
+        asterisks used as wildcards: nick!user@host.
+
+        Syntax: ignore PATTERN
+        """
+        self.config_append('ignore', args.pattern[0])
+        config_changed.send(self)
+        self.respond(msg, 'Done!')
+
+    @parse_command([('pattern', 1)], launch_invalid=False)
+    def admin_command_unignore(self, msg, args):
+        """Unignores a user. 
+
+        Syntax: unignore PATTERN
+        """
+        try:
+            self.config_get('ignore', auto=[]).remove(args.pattern[0])
+            config_changed.send(self)
+            self.respond(msg, 'Done!')
+        except ValueError:
+            pass
+
+    def admin_command_ignored(self, msg):
+        """Lists ignored patterns.
+
+        Syntax: ignored
+        """
+        patterns = self.config_get('ignore', [])
+        patterns_text = ', '.join(patterns) if len(patterns) > 0 else 'none'
+        text = 'Ignored patterns: %s' % patterns_text
+        self.respond(msg, text)
 
     def get_all_admin_commands(self):
         return ['channel_join', 'channel_part']
@@ -251,9 +284,10 @@ class IRC(AdminMessageDispatcherMixin, ConfigMixin, BaseModule):
             on_exception.send(self, e=e)
 
     def should_ignore(self, msg):
-        for ignore_pattern in self.config_get('ignore', '.'):
-            if fnmatch.fnmatch(msg.prefix, ignore_pattern):
-                return True
+        if msg.prefix:
+            for ignore_pattern in self.config_get('ignore', '.'):
+                if fnmatch.fnmatch(msg.prefix, ignore_pattern):
+                    return True
         return False
 
     def handler_rpl_endofmotd(self, msg):
