@@ -1,5 +1,5 @@
 import pytest
-from botnet.modules.builtin.sed import parse_message
+from botnet.modules.builtin.sed import parse_message, make_msg_entry, replace
 
 
 def test_parse_message():
@@ -22,3 +22,25 @@ def test_parse_message():
 def test_parse_message_invalid():
     with pytest.raises(ValueError):
         parse_message('lorem ipsum')
+
+
+def test_replace_single():
+    messages = [
+        make_msg_entry('nick', 'lorem ipsum lorem'),
+    ]
+    assert replace(messages, *parse_message('nick: s/lorem/test')) == 'test ipsum lorem'
+
+
+def test_replace_multiple():
+    messages = [
+        make_msg_entry('nick', 'lorem ipsum one'),
+        make_msg_entry('nick', 'lorem ipsum two'),
+    ]
+    assert replace(messages, *parse_message('nick: s/lorem/test')) == 'test ipsum one'
+
+
+def test_replace_global():
+    messages = [
+        make_msg_entry('nick', 'lorem ipsum lorem'),
+    ]
+    assert replace(messages, *parse_message('nick: s/lorem/test/g')) == 'test ipsum test'
