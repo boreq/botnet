@@ -13,13 +13,23 @@ def make_msg_entry(author, message):
 
 
 def parse_message(message_text):
-    pattern = re.compile('^([^:, ]*)[:, ]*s/(.*)/(.*)$')
+    pattern = re.compile('^([^:, ]*)[:, ]*s/([^/]*)/([^/]*)(/|/[a-z]+)?$')
     result = pattern.search(message_text) 
     if result is None:
         raise ValueError
     groups = list(result.groups())
+
+    # Nickname
     if groups[0] == '':
         groups[0] = None
+
+    # Flags
+    if groups[3] is not None:
+        groups[3] = groups[3].lstrip('/')
+    else:
+        groups[3] = ''
+    groups[3] = list(groups[3])
+
     return tuple(groups)
 
 
@@ -98,18 +108,23 @@ class Sed(BaseResponder):
     def handle_privmsg(self, msg):
         if is_channel_name(msg.params[0]):
             try:
-                nick, a, b = parse_message(' '.join(msg.params[1:]))
+                nick, a, b, flags = parse_message(' '.join(msg.params[1:]))
+
                 if nick is None:
                     nick = msg.nickname
+
                 for stored_msg in self.store.get_messages(msg.params[0]):
-                    if a in stored_msg['message'] and stored_msg['author'] == nick:
-                        message = stored_msg['message'].replace(a, b)
-                        if nick == msg.nickname:
-                            text = '%s meant to say: %s' % (nick, message)
-                        else:
-                            text = '%s thinks %s meant to say: %s' % (msg.nickname, nick, message)
-                        self.respond(msg, text)
-                        break
+                    if stored_msg['author'] == nick:
+                        count = 0 if 'g' in flags else 1
+                        flags = re.I if 'i' in flags else 0
+                        message = re.sub(a, b, stored_msg['message'], count=count, flags=flags)
+                        if message != stored_msg['message']:
+                            if nick == msg.nickname:
+                                text = '%s meant to say: %s' % (nick, message)
+                            else:
+                                text = '%s thinks %s meant to say: %s' % (msg.nickname, nick, message)
+                            self.respond(msg, text)
+                            break
             except ValueError:
                 self.store.add_message(msg.params[0], msg.nickname, ' '.join(msg.params[1:]))
 
