@@ -1,0 +1,288 @@
+all right all right all right!
+so much for good intentions.
+not quite...
+It's easy to make serious mistakes in that situation.
+I agree with some of the others here that the solution probably lies in external contributions from wise members of the community.
+It's still a race.
+Ditto.
+A program exits when main exits.
+That's just an error I will fix.
+You could just drop the adjective.
+I recommend that you fix your code now and be ready for the next release.
+No.
+I accept the argument about regularity but not the one about utility.
+Every acme user around here uses the plan9port version.
+There is no general solution but we are aware of the desire.
+I'm not sure how that helps.
+It's clumsy, I know, although it could be (and will one day be) done a little better.
+I don't know what that means.
+But what are you really trying to do?
+I thought of a few ways but I refuse to write them down for fear people will use them.
+It may be that another approach altogether is better.
+Your assurances are incorrect.
+When I look at your code I see a lot of unnecessary repetition.
+Exactly.
+Yes.
+Poor choice. You went wrong at step 1.
+Interesting idea, though.
+if crypticness is the complaint, remember you're talking about a C compiler.
+Thought I'd post this to a DOOM group.
+There are no plans for a new release of Plan 9.
+there are no pastel paints in the dungeons and dragons world
+it's fitting that my first tweet had a typo.
+There's nothing in computing that can't be broken by another level of indirection.
+It's all happening.
+I prefer deskside computers over laptops because they're much harder to throw in frustration when dealing with incompetent web sites.
+I hear that C++0x is a substantially upgraded language.
+People get annoyed when they must write two lines of code instead of one, but I don't. It's called programming.
+localization (n.): the property that a program runs globally.
+Fixes welcome.
+The first lines of source code were added to Go in 1972. 
+You can all relax.
+It's not my Mac Air's fault that the web is too damn slow.
+This discussion isn't pin-headed enough yet.
+The name Brazil was chosen because we wanted terminals with Fresnel lenses on goosenecks like the ones in the movie.
+I don't see what the fuss is about.
+when i was on sabbatical the university installed linux on the PC on my desk.
+Apologies for the inconvenience.
+Thanks.
+Legal terminology is not the best medium for subtlety, so I've asked our lawyers for clarification.
+Give us your address and we'll send Ken out to fix it.  That's our technique.
+This won't work.
+Weekends are quiet, good for updating big software packages.
+Web access is very important.  Web browsers are very useful.  But if you stop there, you're missing a lot of opportunity.
+I'll send a fix in a while.
+Plan 9 is non-standard and proud of it.
+Perhaps I should explain better.
+Here's a short version: Avoid complexity.
+Why not?
+Mea culpa.
+Sorry, guys, but it's not quite a pure PC world, at least not yet.
+True again.
+This fixes your example, anyway.
+Ptys were old and obsolete the day they were invented.
+Kick back, relax.  It's the information age.
+Speaking as the portraitist, I believe I captured the personality rather well.
+That's a little simplistic.
+You don't have a user program running when you're trying to boot the kernel.
+The last pieces of this design space have not been explored.
+Feel free to delete it.
+It's surprising what's surprising.
+You should delete some mail.
+Algorithms everywhere, and not a byte to send.
+This is idiocy.
+Yes, precisely.
+Difficult administration results in incorrect or inadequate installation.
+Use something distinctive.
+It's easy if you have the spec.
+Of course it does.
+I've been thinking of sending this information to 9fans for a while.
+I'm a little disturbed by these questions.
+This question has been answered.
+No, there is no solution.
+Other systems claim to have solutions but they are exaggerating.
+I was trying to tell you the way to do it.
+Awful.
+Not exactly.
+In this context, I don't feel it's ambiguous.
+By tradition, the return value of functions report what they did, not what they considered doing.
+Sigh.
+Whoops...  Incomplete instructions.
+I would like to understand this.
+I would think mouse chords would be singularly ineffective on the Mac.
+Anyone willing to help?
+Don't be stupid.
+Unnecessary, anyway.
+Actually I mistyped.
+If it's just between you and your server, go for it.
+I'd really like someone to clean the mess up (hint, hint).
+Hell has nothing to do with it.
+False.
+I think you misrepresent the purpose of security.  Its role is to prevent us getting work done.
+So the rule of security is the following:  if you are able to work on something other than security, your system is insecure.
+Those days [of "one tool doing one job well"] are dead and gone and the eulogy was delivered by Perl.
+I'll alert the media.
+Unix never says `please.'
+The secretaries don't understand me.
+Sometimes when you fill a vacuum, it still sucks.
+If you think awk is the perfect programming language for the problem, you don't understand the problem yet.
+There's no such thing as a simple cache bug.
+A great deal of agonizing and very little decisiveness went into resolving this issue
+Caches aren't architecture, they're just optimization.
+People admire complexity.
+Bite my shiny metal ass.
+iOS4.3 lets you decide whether the side switch is mute or rotate lock. Operating system innovations never cease.
+If you can't do something right, sometimes it's not worth doing at all.
+Once idea that comes to mind is to show us a reproducible example.
+The API has indeed changed.
+I suppose the documentation should mention this.
+I'm a radical here, but I think if a machine is paging, you've lost.
+So again, why?
+I guess I'm dim.
+In the good old days, copyright notices meant something.
+ouch
+It doesn't matter what the bug is, someone will depend on it.
+We're still working on it.
+Write less code.
+Would a Plan 9 user please provide an accurate status report of the state of the Go port to the system?
+I wasn't asking about 9front.
+Your "why bother?" question is a good one.
+Your question is answered by the FAQ entry.
+Hip hip hooray.
+Go gets mocked a lot.
+I am done here.
+What's jQuery?
+It's possible but not by writing a single line of code.
+Your "mathematically more correct" claim sounds fishy.
+This statement demonstrates a profound misunderstanding.
+I guess that wasn't very helpful.
+The proposed fix is perhaps not the best one.
+It's only an issue on mailing lists and discussion groups.
+Let me put in a word about the Apple wireless trackpad.
+Nothing.
+Using Unix is the computing equivalent of listening only to music by David Cassidy.
+I assume that the reader is familiar with the UNIX tools.
+You missed a spot.
+This is Go.
+I didn't violate anything.  I made a suggestion.
+At least in Go the behavior is well defined.
+What is the average length of time the phrase"Time remaining: Less than a minute" lingers on an Apple screen?
+acme is unobtainable at the moment.
+I don't understand what your issue is.
+It's so trivial it could be a few lines of shell script, unless I'm missing something.
+There is no such feature.
+Go is not C.
+I don't understand the bug report.
+The Go 1 compatibility promise holds us back.
+No. The "No" in "no changes" means no.
+Be very careful.
+You almost never need xargs.
+Actually I was hoping to stop at least my end of the dialog.
+I like to think of a function as a function. But that's just me.
+Ummm, don't do that?
+I say not now.
+I don't understand what you're saying here as a response to what I said.
+I defer to the experts.
+It's really not clear what the right long-term solution is.
+Why do by hand what a machine can do just as well or better?
+please don't ask; we're working on it
+I don't understand why you keep beating on this.
+It's nice to be in a position where people apologize because they assume there's humor in your work, based on past experience, but they're not sure where it is.
+all sounds fine to me.
+Oh man, do I miss my red Swiss mouse.
+Of course, this may change.
+The real answer lies in further research.
+please don't e-mail us.
+I just live with unaligned comments.
+Why should I?
+I sense a conspiracy.
+I leave it to you to find a way to correct the problem.
+We'll never agree.
+I suggest a different compromise: you do whatever you want, we ignore you. Deal?
+Read the manuals.
+I disagree.
+My toaster runs KRONOS.
+Why did Peter Weiner register plan9.com?
+Thank you for adding support to my position.  I really appreciate it.
+The only document that claims Plan 9 runs in 4 megabytes is the FAQ on our home page.
+We are using other techniques now.
+What's wrong with forking processes?
+I know what versioning is, it's "vendoring" that I don't recognize as a term.
+Let's leave it at that.
+This conversation has run its course.
+Remember, the language is not the point here, it's the implementation.
+Nothing is worth spending a week with bureaucratic Germans.
+Caches are bugs waiting to happen.
+The hermeneutics of naming yields few insights.
+What difference does it make whether it's an "object-oriented language"?
+Why not just use a URL shortener?
+Remember this?
+three programmers go into a bar. the sam user is there because he's finished the day's work and wants to relax. the vi user is there because he's going to be working all night and needs a break. the emacs user is there because there's nothing else he can do: both his hands are in splints because of carpal tunnel syndrome.
+Oh yeah, great: eye tracking and mind reading.
+Certainly not.
+It's a terrible idea.
+First, check your errors.
+I second that!
+Ha ha.
+Let the machine do the work.
+I'm not going back in there.
+Advertisers.
+I'm not used to success.
+Not needed.
+2106 is a long time from now.
+Why does this matter?
+Does anyone know of a version of sam for Windows that will run on 64-bit installations?
+Great, thanks.
+I used to be a physicist.
+Please file an issue at golang.org/issue/new
+There is no simple definition for what people want.
+One man's toy is another's real system, and every tool adds to the arsenal.
+There is no problem in computer science that cannot be solved by another JSON configuration file.
+Anything important enough to be in a dot-file is important enough not to be in a dot-file.
+Again, please read the blog post I cited.
+Experiment!
+Live and learn.
+Something else may happen one day.
+I don't know what the right answer is.
+If it's not worth doing well, it's not worth doing at all.
+Manual is wrong.
+The Plan 9 FAQ needs work.
+In another 24 years, programmers will learn how to use malloc.
+Use a tool.
+Please define 'trouble'.
+I just noticed that Glenda, the Plan 9 bunny, has a body the same shape as Tor Johnson's head.
+I must admit I find the fissiparous nature of the Open Source/FSF community a little dispiriting.
+Thanks for saying that.
+Is this a bug fix?
+I disagree with the premise.
+I speak from experience here.
+It's not how many features that matter, it's how the features interact.
+Just write the code.
+Looks like a bug.
+And now we have diverged so far from the original question that we can safely ignore it.
+I oversold due to fading memory. But I stand by the fundamental point.
+Although there may be specific examples where generated output is uninteresting, deciding whether to read code based entirely on whether a computer or a human wrote it doesn't seem a good general principle to me.
+Short answer: No.
+None of that is excusable, only true.
+File an issue?
+The documentation is clearly insufficient.
+You don't say anything about the problem beyond "it doesn't work".
+Can you be a little more specific please?
+Working as intended.
+That's a shame.
+Nothing has changed.
+Correct as written. Maybe badly written, but correct.
+Does it make a difference?
+One more thing.
+That's odd.
+Nothing in Go is accidental.
+Go was supposed to be a fresh start.
+Ken and I ported Plan 9 to the SPARC in 6 days over one fun Christmas break.
+I told the truth as I saw it.
+Wait, teletypes are finally gone so we need *pseudo* teletypes?
+I started complaining about this long ago and nobody cared then, either.
+It is very unlikely to change.
+Don't do that.
+This is just me speaking, not the Go team.
+Go doesn't have it.
+Even the simplest changes can be disruptive.
+Feels like the wrong solution to me.
+Copying source just leads to confusion.
+More discussion is required.
+What are you really trying to do?
+I wrote a book about this once; I recommend it.
+I just thought it would be nice.
+My recent incompetence is humbling.  I should quit the industry.
+Three cheers for dropping things that are too complex.
+Great.
+This is one special case.
+This slippery slope is long and steep. I'd prefer not to take the first step.
+All that aside, the rule works very well in practice.
+dot dot dot
+Sounds nice.
+Yes.
+It is legal.
+At MIT the server is the unit of invention.
+Nothing is wrong here.
+Да!
+Noted.
