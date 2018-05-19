@@ -1,75 +1,41 @@
-# Botnet
-IRC bot written in Python.
+cybot
+=====
 
-Botnet implements nearly all core functionality in a form of modules which can
-be loaded and unloaded at will and communicate with one another using signals.
-Thanks to that design a module which encounters serious issues does not affect
-the execution of other modules. Furthermore all features of the bot can be
-enabled and disabled at will and the modules can be updated without restarting
-the entire bot and reconnecting to the IRC network simply by reloading a module.
-It is possible to use built-in modules or create easy to load and integrate
-user-maintained external modules distributed in a form of Python packages.
+*an IRC bot written in something that may resemble python*
 
-## Installation
 
-    pip install --process-dependency-links git+https://github.com/boreq/botnet
+__Features include:__
+* featured in quality channels IRC-wide
+* the subject of much debate and controversy
+* runs on __any hardware__ (that runs python 3.4)
+* fresh, new talent in the bot world
 
-## Usage
+__Reviews:__
+ * *Futanarcharist* __│__ best bot evar
+ * *Leper* __│__ p. good, 8/10, would fork again
+ * *b0tn3t* __│__ ok bub
+ *  newuser │ cybits threatened the president with death
 
-    botnet --help
-    botnet run --help
-    botnet run /path/to/config.json
 
-## Available modules
 
-To see all available modules navigate to `botnet.modules.builtin` directory.
-Each module is provided with a comment containing a description and an example
-config snippet.
+For extensive help, all you have to do is type `.cybhelp` in the channel! Guaranteed to be 100% helpful.
 
-## Configuration
-Config snippets from the module description can be added to the `module_config`
-key in the config file. This is the general structure of the config file:
+For any nerds not running a good shell, to get the bot running:
 
-    {
-        "modules": ["module_name1", "module_name2"],
-        "module_config": {
-            "namespace": {
-                "module_name": {
-                    "config_parameter": "value"
-                }
-            }
-        }
-    }
+```
+cd cybot
+pip install -r requirements.txt
+python irc.py <config.json>
+```
 
-All builtin modules use the namespace `botnet`. Most modules are based on the
-`BaseResponder` module, so to change the default command prefix alter the
-`module_config.botnet.base_responder.command_prefix` configuration key. See the
-example config for details.
-
-## Example config
-
-    {
-        "modules": ["irc", "meta"],
-        "module_config": {
-            "botnet": {
-                "irc": {
-                    "server": "irc.example.com",
-                    "port": 6697,
-                    "ssl": true,
-                    "nick": "my_bot",
-                    "channels": [
-                        {
-                            "name": "#my-channel",
-                            "password": null
-                        }
-                    ],
-                    "autosend": [
-                        "PRIVMSG your_nick :I connected!"
-                    ]
-                },
-                "base_responder": {
-                    "command_prefix": "."
-                }
-            }
-        }
-    }
+Config Syntax
+```
+{
+    "server" : "irc.rizon.net", # server address
+    "port" : 6697, # server port
+    "bot_nick" : "cybot", # nick of bot, 0 for random nick
+    "channels" : ["#bots", "#test"], # list of channels to connect to
+    "password" : "bot123", # password of bot, 0 for no password
+    "prefix" : "." # command prefix so commands start with $prefix
+}
+```

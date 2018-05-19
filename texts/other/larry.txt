@@ -1,0 +1,109 @@
+All language designers are arrogant.  Goes with the territory... :-)
+Although the Perl Slogan is There's More Than One Way to Do It, I hesitate to make 10 ways to do something.  :-)
+And don't tell me there isn't one bit of difference between null and space, because that's exactly how much difference there is.  :-)
+"And I don't like doing silly things (except on purpose)."
+:        And it goes against the grain of building small tools. Innocent, Your Honor.  Perl users build small tools all day long.
+/* And you'll never guess what the dog had */   /*   in its mouth... */
+Because . doesn't match \n.  [\0-\377] is the most efficient way to match everything currently.  Maybe \e should match everything.  And \E would of course match nothing.   :-) 
+Be consistent.
+Besides, including <std_ice_cubes.h> is a fatal error on machines that don't have it yet.  Bad language design, there...  :-)
+Besides, it's good to force C programmers to use the toolbox occasionally.  :-)
+Besides, REAL computers have a rename() system call.    :-)
+break;                          /* don't do magic till later */
+But you have to allow a little for the desire to evangelize when you think you have good news.  
+Chip Salzenberg sent me a complete patch to add System V IPC (msg, sem and shm calls), so I added them.  If that bothers you, you can always undefine them in config.sh.  :-)
+/* dbmrefcnt--;  */     /* doesn't work, rats */
+#define NULL 0           /* silly thing is, we don't even use this */
+#define SIGILL 6         /* blech */
+Does the same as the system call of that name. If you don't know what it does, don't worry about it.
+double value;                /* or your money back! */ short changed;               /* so triple your money back! */
+Down that path lies madness.  On the other hand, the road to hell is paved with melting snowballs. 
+echo "Congratulations.  You aren't running Eunice."
+echo "Hmmm...you don't have Berkeley networking in libc.a..." \ echo "but the Wollongong group seems to have hacked it in."
+echo "ICK, NOTHING WORKED!!!  You may have to diddle the includes.";;
+echo $package has manual pages available in source form. \ echo "However, you don't have nroff, so they're probably useless to you."
+echo "Your stdio isn't very std."
+#else /* !STDSTDIO */     /* The big, slow, and stupid way */
+[End of diatribe.  We now return you to your regularly scheduled programming...]
+Even if you aren't in doubt, consider the mental welfare of the person who has to maintain the code after you, and who will probably put parens in the wrong place.
+"Help save the world!"
+Hey, I had to let awk be better at *something*...  :-)
+I already have too much problem with people thinking the efficiency of a perl construct is related to its length.  On the other hand, I'm perfectly capable of changing my mind next week...  :-)
+I don't know if it's what you want, but it's what you get.  :-)
+I dunno, I dream in Perl sometimes...
+If I allowed "next $label" then I'd also have to allow "goto $label", and I don't think you really want that...  :-) 
+If I don't document something, it's usually either for a good reason, or a bad reason.  In this case it's a good reason.  :-)
+"I find this a nice feature but it is not according to the documentation. Or is it a BUG?" "Let's call it an accidental feature. :-)"
+if (instr(buf,sys_errlist[errno]))  /* you don't see this */
+if (rsfp = mypopen("/bin/mail root","w")) {     /* heh, heh */
+If you consistently take an antagonistic approach, however, people are going to start thinking you're from New York.   :-)
+If you want to program in C, program in C.  It's a nice language.  I use it occasionally...   :-)
+If you want to see useful Perl examples, we can certainly arrange to have comp.lang.misc flooded with them, but I don't think that would help the advance of civilization.  :-)
+If you want your program to be readable, consider supplying the argument.
+I know it's weird, but it does make it easier to write poetry in perl.    :-)
+I'll say it again for the logic impaired.
+I might be able to shoehorn a reference count in on top of the numeric value by disallowing multiple references on scalars with a numeric value, but it wouldn't be as clean.  I do occasionally worry about that.
+I'm sure that that could be indented more readably, but I'm scared of the awk parser.
+In general, if you think something isn't in Perl, try it out, because it usually is.  :-)
+In general, they do what you want, unless you want consistency.
+Interestingly enough, since subroutine declarations can come anywhere, you wouldn't have to put BEGIN {} at the beginning, nor END {} at the end.  Interesting, no?  I wonder if Henry would like it. :-)
+I think it's a new feature.  Don't tell anyone it was an accident.  :-)
+"It is easier to port a shell than a shell script."
+It is, of course, written in Perl.  Translation to C is left as an exercise for the reader.  :-)
+It's all magic.  :-)
+It's documented in The Book, somewhere...
+> (It's sorta like sed, but not.  It's sorta like awk, but not.  etc.) Guilty as charged.  Perl is happily ugly, and happily derivative.
+It's there as a sop to former Ada programmers.  :-)
+It won't be covered in the book.  The source code has to be useful for something, after all...  :-)
+> "I've heard that there is a shell (bourne or csh)  to perl filter, does anyone know of this or where I can get it?" Yeah, you filter it through Tom Christiansen.  :-)
+>"I've tried (in vi) "g/[a-z]\n[a-z]/s//_/"...but that doesn't cut it.  Any ideas?  (I take it that it may be a two-pass sort of solution)." In the first pass, install perl. :-)
+I won't mention any names, because I don't want to get sun4's into trouble...  :-)
+Just don't compare it with a real language, or you'll be unhappy...  :-)
+Just don't create a file called -rf.  :-)
+last|perl -pe '$_ x=/(..:..)...(.*)/&&"'$1'"ge$1&&"'$1'"lt$2' That's gonna be tough for Randal to beat...  :-)
+Let's say the docs present a simplified view of reality...    :-)
+Let us be charitable, and call it a misleading feature  :-)
+Lispers are among the best grads of the Sweep-It-Under-Someone-Else's-Carpet School of Simulated Simplicity.  [Was that sufficiently incendiary?  :-)]
+No, I'm not going to explain it.  If you can't figure it out, you didn't want to know anyway...  :-)
+/* now make a new head in the exact same spot */
+OK, enough hype.
+OOPS!  You naughty creature!  You didn't run Configure with sh! I will attempt to remedy the situation by running sh for you...
+Perl is designed to give you several ways to do anything, so consider picking the most readable one.
+Perl itself is usually pretty good about telling you what you shouldn't do. :-)
+Perl programming is an *empirical* science!  
+pos += screamnext[pos]  /* does this goof up anywhere? */
+Q. Why is this so clumsy? A. The trick is to use Perl's strengths rather than its weaknesses.
+Randal said it would be tough to do in sed.  He didn't say he didn't understand sed.  Randal understands sed quite well.  Which is why he uses Perl.   :-)
+Real programmers can write assembly code in any language.   :-)  
+Remember though that THERE IS NO GENERAL RULE FOR CONVERTING A LIST INTO A SCALAR.
+s = (char*)(long)retval;                /* ouch */
+signal(i, SIG_DFL); /* crunch, crunch, crunch */
+Sorry.  My testing organization is either too small, or too large, depending on how you look at it.  :-)
+stab_val(stab)->str_nok = 1;    /* what a wonderful hack! */
+str->str_pok |= SP_FBM;                     /* deep magic */ s = (unsigned char*)(str->str_ptr);         /* deeper magic */
+Tactical?  TACTICAL!?!?  Hey, buddy, we went from kilotons to megatons several minutes ago.  We don't need no stinkin' tactical nukes. (By the way, do you have change for 10 million people?)
+That means I'll have to use $ans to suppress newlines now.  Life is ridiculous. 
+The autodecrement is not magical.
+The only disadvantage I see is that it would force everyone to get Perl. Horrors.  :-)
+*** The previous line contains the naughty word "$&".\n      if /(ibm|apple|awk)/;      # :-)
+There ain't nothin' in this world that's worth being a snot over.
+There are many times when you want it to ignore the rest of the string just like atof() does.  Oddly enough, Perl calls atof().  How convenient.  :-)
+There are probably better ways to do that, but it would make the parser more complex.  I do, occasionally, struggle feebly against complexity...  :-)
+There are still some other things to do, so don't think if I didn't fix your favorite bug that your bug report is in the bit bucket.  (It may be, but don't think it.  :-)
+There is, however, a strange, musty smell in the air that reminds me of something...hmm...yes...I've got it...there's a VMS nearby, or I'm a Blit.
+/* This bit of chicanery makes a unary function followed by a parenthesis into a function with one argument, highest precedence. */
+"...this does not mean that some of us should not want, in a rather dispassionate sort of way, to put a bullet through csh's head."
+> "This made me wonder, suddenly: can telnet be written in perl?" Of course it can be written in Perl.  Now if you'd said nroff, that would be more challenging...
+Though I'll admit readability suffers slightly... 
+tmps_base = tmps_max;                /* protect our mortal string */
+Unix is like a toll road on which you have to stop every 50 feet to pay another nickel.  But hey!  You only feel 5 cents poorer each time.
+"We all agree on the necessity of compromise.  We just can't agree on when it's necessary to compromise."
+/* we have tried to make this normal case as abnormal as possible */
+What about WRITING it first and rationalizing it afterwords?  :-)
+> "1.  What is the possibility of this being added in the future?" In the near future, the probability is close to zero.  In the distant future, I'll be dead, and posterity can do whatever they like...  :-)
+"What is the sound of Perl?  Is it not the sound of a wall that people have stopped banging their heads against?"
+When in doubt, parenthesize.  At the very least it will let some poor schmuck bounce on the % key in vi.
+You can't have filenames longer than 14 chars. You can't even think about them!
+You have to admit that it's difficult to misplace the Perl sources.  :-)
+Your csh still thinks true is false.  Write to your vendor today and tell them that next year Configure ought to "rm /bin/csh" unless they fix their blasted shell. :-)
+You want it in one line?  Does it have to fit in 80 columns?   :-)

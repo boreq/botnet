@@ -1,0 +1,63 @@
+Portability is for people who cannot write new programs. 
+If you need more than 3 levels of indentation, you're screwed anyway, and should fix your program. 
+Making Linux GPL'd was definitely the best thing I ever did. 
+Hey, that's not a bug, that's a feature!
+I personally just encourage people to switch to KDE.
+Gcc is crap. 
+It has nothing to do with dinosaurs. Good taste doesn't go out of style 
+WE DO NOT BREAK USERSPACE!
+I wish everybody was as nice as I am.
+Nvidia, fuck you!
+I don’t care about you.
+I am a lazy person, which is why I like open source, for other people to do work for me. 
+That's the spirit. Greg has taught you well. You have controlled your fear. Now, release your anger. Only your hatred can destroy me.
+An infinite number of monkeys typing into GNU emacs would never make a good program.
+Your problem has nothing to do with git, and everything to do with emacs.
+It's what I call "mental masturbation", when you engage is some pointless intellectual exercise that has no possible meaning. 
+Your code is shit.. your argument is shit.
+Standards are paper. I use paper to wipe my butt every day.
+I hope I won't end up having to hunt you all down and kill you in your sleep. 
+XML is crap.
+Lookie here, your compiler does some absolutely insane things with the spilling, including spilling a *constant*. For chrissake, that compiler shouldn't have been allowed to graduate from kindergarten. We're talking "sloth that was dropped on the head as a baby" level retardation levels here. 
+I am a lazy person, which is why I like open source, for other people to do work for me. 
+I'm doing a (free) operating system (just a hobby, won't be big and professional like gnu) for 386(486) AT clones.
+Your job is being a professor and researcher: That's one hell of a good excuse for some of the brain-damages of Minix.
+Well, with a subject like this, I'm afraid I'll have to reply. Apologies to minix-users who have heard enough about linux anyway. I'd like to be able to just "ignore the bait", but … time for some serious flamefesting! 
+No. That's it. The cool name, that is. We worked very hard on creating a name that would appeal to the majority of people, and it certainly paid off: thousands of people are using linux just to be able to say "OS/2? Hah. I've got Linux. What a cool name". 386BSD made the mistake of putting a lot of numbers and weird abbreviations into the name, and is scaring away a lot of people just because it sounds too technical. 
+The main reason there are no raw devices [in Linux] is that I personally think that raw devices are a stupid idea. 
+Some people have told me they don't think a fat penguin really embodies the grace of Linux, which just tells me they have never seen an angry penguin charging at them in excess of 100 mph. They'd be a lot more careful about what they say if they had. 
+Only wimps use tape backup: real men just upload their important stuff on ftp, and let the rest of the world mirror it ;) 
+If you still don't like it, that's OK: that's why I'm boss. I simply know better than you do.
+In the extreme case, if it was just you doing all the code, and the rest of the world quietly used it, would it make sense to give it away free? Unless you're particularly grateful for other free things you've got off the Net, would the answer be No?":)
+I'd like to say that I knew this would happen, that it's all part of the plan for world domination. 
+Note that nobody reads every post in linux-kernel. In fact, nobody who expects to have time left over to actually do any real kernel work will read even half. Except Alan Cox, but he's actually not human, but about a thousand gnomes working in under-ground caves in Swansea. None of the individual gnomes read all the postings either, they just work together really well. 
+Once you realize that documentation should be laughed at, peed upon, put on fire, and just ridiculed in general, THEN, and only then, have you reached the level where you can safely read it and try to use it to actually implement a driver. 
+Personally, I'm not interested in making device drivers look like user-level. They aren't, they shouldn't be, and microkernels are just stupid. 
+Those that can, do. Those that can't, complain. 
+They are smoking crack. 
+Anybody who tells me I can't use a program because it's not open source, go suck on rms. I'm not interested. 99% of that I run tends to be open source, but that's my choice, dammit. 
+Oh fuck. If I kill this guy, I'll have millions of nerds on my case. 
+A lot of people still like Solaris, but I'm in active competition with them, and so I hope they die. 
+Which mindset is right? Mine, of course. People who disagree with me are by definition crazy.
+Please, just tell people to use KDE.
+Install gentoo.
+EFI is this other Intel brain-damage (the first one being ACPI). 
+It's one of those rare "perfect" kernels. So if it doesn't happen to compile with your config (or it does compile, but then does unspeakable acts of perversion with your pet dachshund), you can rest easy knowing that it's all your own damn fault, and you should just fix your evil ways.
+I think people can generally trust me, but they can trust me exactly because they know they don't have to. 
+I don't ask for money. I don't ask for sexual favors. I don't ask for access to the hardware you design and sell. I just ask for the thing I gave you: source code that I can use myself. 
+Controlling a laser with Linux is crazy, but everyone in this room is crazy in his own way. So if you want to use Linux to control an industrial welding laser, I have no problem with your using PREEMPT_RT. 
+C++ is a horrible language.
+I'm an egotistical bastard, and I name all my projects after myself. First Linux, now git. 
+Real quality means making sure that people are proud of the code they write, that they're involved and taking it personally. 
+And what's the Internet without the rick-roll? 
+Crying that it's an application bug is like crying over the speed of light: you should deal with reality, not what you wish reality was.
+There are "extremists" in the free software world, but that's one major reason why I don't call what I do "free software" any more. I don't want to be associated with the people for whom it's about exclusion and hatred. 
+Every time I see some piece of medical research saying that caffeine is good for you, I high-five myself. Because I'm going to live forever. 
+Toto, I don't think we're talking white-socks-and-sandals any more. 
+Why don't we write code that just works?
+i cumt at cat, hiss at penis
+Somebody is trying to kill all the kernel developers.
+Of course, I'd also suggest that whoever was the genius who thought it was a good idea to read things ONE F*CKING BYTE AT A TIME with system calls for each byte should be retroactively aborted. Who the f*ck does idiotic things like that? How did they noty die as babies, considering that they were likely too stupid to find a tit to suck on?
+I started Linux as a desktop operating system. And it's the only area where Linux hasn't completely taken over. That just annoys the hell out of me.
+I'd just like to correct you for a moment. What you are calling GNU/Linux is, in fact, Freax, or Linux, as I've recently taken to calling it.
+A "spec" is close to useless. I have never seen a spec that was both big enough to be useful and accurate. And I have seen lots of total crap work that was based on specs. It's the single worst way to write software, because it by definition means that the software was written to match theory, not reality.

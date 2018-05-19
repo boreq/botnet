@@ -1,0 +1,4 @@
+requests
+requests_oauthlib
+nltk
+bs4

@@ -1,0 +1,8 @@
+{
+    "server" : "some.irc.server",
+    "port" : 6667,
+    "bot_nick" : 0,
+    "channels" : ["#server", "#test"],
+    "password" : 0 ,
+    "prefix" : "."
+}
