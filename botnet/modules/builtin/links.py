@@ -15,6 +15,7 @@ class Links(BaseResponder):
         "botnet": {
             "links": {
                 "include_domain": true,
+                "max_links": 5,
                 "channels": [
                     "#example"
                 ]
@@ -28,6 +29,7 @@ class Links(BaseResponder):
 
     character_limit = 80
     timeout = 30 # [seconds]
+    max_links = 5
 
     def __init__(self, config):
         super().__init__(config)
@@ -58,14 +60,19 @@ class Links(BaseResponder):
         if not msg.params[0] in self.config_get('channels', []):
             return
 
+        urls = set()
         for element in msg.params[1].split():
             if element.startswith('http://') or element.startswith('https://'):
+                urls.add(element)
+
+        if len(urls) <= self.config_get('max_links', self.max_links):
+            for url in urls:
                 def f():
                     try:
-                        title = self.get_title(element)
+                        title = self.get_title(url)
                         if title:
                             if self.config_get('include_domain', True):
-                                text = '%s - %s' % (title, self.get_domain(element))
+                                text = '%s - %s' % (title, self.get_domain(url))
                             else:
                                 text = title
                             self.respond(msg, '[ %s ]' % text)
@@ -76,5 +83,6 @@ class Links(BaseResponder):
 
                 t = threading.Thread(target=f, daemon=True)
                 t.start()
+
 
 mod = Links
