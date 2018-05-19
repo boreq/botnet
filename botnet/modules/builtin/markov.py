@@ -79,7 +79,7 @@ class Markov(BaseResponder):
 
     def send_random_line(self, msg, key):
         try:
-            c = self.cache[key]
+            c = self.cache.get(key, None)
             if c is not None:
                 words = c.generate()
                 line = ' '.join(words)
