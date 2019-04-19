@@ -11,6 +11,15 @@ from .. import BaseResponder
 from ..lib import parse_command
 
 
+class NoopWith(object):
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        pass
+
+
 class InactivityMonitor(object):
     """Checks if the connection is still alive.
 
@@ -21,7 +30,11 @@ class InactivityMonitor(object):
 
     # PING command will be sent after that many seconds without communication
     ping_timeout = 60
+
+    # PING command will continue to be be resent in those intervals after the
+    # initial PING command
     ping_repeat = 10
+
     # IRC module will be restarted after that many seconds without communication
     abort_timeout = 240
 
@@ -354,10 +367,18 @@ class IRC(BaseResponder):
         if len(commands) > 0:
             time.sleep(1)
 
+    def get_inactivity_monitor(self):
+        if self.config_get('inactivity_monitor', True):
+            self.logger.debug('InactivityMonitor is being used')
+            return InactivityMonitor(self)
+        else:
+            self.logger.debug('InactivityMonitor is NOT being used')
+            return NoopWith()
+
     def update(self):
         """Main method which should be called."""
         self.logger.debug('Update')
-        with InactivityMonitor(self):
+        with self.get_inactivity_monitor():
             try:
                 self.restart_event.clear()
                 self.buffer = Buffer()
