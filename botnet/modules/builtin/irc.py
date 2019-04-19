@@ -1,3 +1,4 @@
+import select
 import datetime
 import socket
 import ssl
@@ -384,18 +385,20 @@ class IRC(BaseResponder):
                 self.buffer = Buffer()
                 self.connect()
                 self.identify()
-                while not self.stop_event.is_set() and not self.restart_event.is_set():
-                    try:
-                        data = self.soc.recv(4096)
-                        if not data:
-                            break
-                        self.process_data(data)
-                    except (socket.timeout, ssl.SSLWantReadError) as e:
-                        self.logger.debug('exception receiving data')
-                        on_exception.send(self, e=e)
+                self.loop()
             finally:
                 if self.soc:
                     self.soc.close()
+
+    def loop(self):
+        while not self.stop_event.is_set() and not self.restart_event.is_set():
+            reads, writes, errors = select.select([self.soc], [], [], self.deltatime)
+            for sock in reads:
+                if sock == self.soc:
+                    data = self.soc.recv(4096)
+                    if not data:
+                        return
+                    self.process_data(data)
 
     def run(self):
         while not self.stop_event.is_set():
