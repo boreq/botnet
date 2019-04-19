@@ -335,7 +335,7 @@ class IRC(BaseResponder):
         else:
             self.logger.warning('SSL disabled')
         self.soc.connect((self.config_get('server'), self.config_get('port')))
-        self.soc.settimeout(1)
+        self.soc.settimeout(5)
 
     def disconnect(self):
         self.send('QUIT :Disconnecting')
