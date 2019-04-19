@@ -391,7 +391,8 @@ class IRC(BaseResponder):
                             break
                         self.process_data(data)
                     except (socket.timeout, ssl.SSLWantReadError) as e:
-                        pass
+                        self.logged.debug('exception receiving data')
+                        on_exception.send(self, e=e)
             finally:
                 if self.soc:
                     self.soc.close()
