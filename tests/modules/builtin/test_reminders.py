@@ -17,11 +17,13 @@ def test_parse_seconds():
 def test_parse_minutes():
     assert parse_message('1.5m lorem ipsum') == (90, 'lorem ipsum')
     assert parse_message('1.5min lorem ipsum') == (90, 'lorem ipsum')
+    assert parse_message('1.5mins lorem ipsum') == (90, 'lorem ipsum')
     assert parse_message('1.5minute lorem ipsum') == (90, 'lorem ipsum')
     assert parse_message('1.5minutes lorem ipsum') == (90, 'lorem ipsum')
 
     assert parse_message('1.5 m lorem ipsum') == (90, 'lorem ipsum')
     assert parse_message('1.5 min lorem ipsum') == (90, 'lorem ipsum')
+    assert parse_message('1.5 mins lorem ipsum') == (90, 'lorem ipsum')
     assert parse_message('1.5 minute lorem ipsum') == (90, 'lorem ipsum')
     assert parse_message('1.5 minutes lorem ipsum') == (90, 'lorem ipsum')
 
@@ -44,6 +46,14 @@ def test_parse_days():
     assert parse_message('1.5 d lorem ipsum') == (60 * 60 * 24 * 1.5, 'lorem ipsum')
     assert parse_message('1.5 day lorem ipsum') == (60 * 60 * 24 * 1.5, 'lorem ipsum')
     assert parse_message('1.5 days lorem ipsum') == (60 * 60 * 24 * 1.5, 'lorem ipsum')
+
+
+def test_parse_months():
+    assert parse_message('1.5month lorem ipsum') == (60 * 60 * 24 * 30 * 1.5, 'lorem ipsum')
+    assert parse_message('1.5months lorem ipsum') == (60 * 60 * 24 * 30 * 1.5, 'lorem ipsum')
+
+    assert parse_message('1.5 month lorem ipsum') == (60 * 60 * 24 * 30 * 1.5, 'lorem ipsum')
+    assert parse_message('1.5 months lorem ipsum') == (60 * 60 * 24 * 30 * 1.5, 'lorem ipsum')
 
 
 def test_parse_years():

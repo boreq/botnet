@@ -28,9 +28,10 @@ def format_msg_entry(msg_entry):
 def get_amount_of_seconds(amount, unit):
     units = [
         [1,  ['s', 'sec', 'second', 'seconds']],
-        [60,  ['m', 'min', 'minute', 'minutes']],
+        [60,  ['m', 'min', 'mins', 'minute', 'minutes']],
         [60 * 60,  ['h', 'hour', 'hours']],
         [60 * 60 * 24,  ['d', 'day', 'days']],
+        [60 * 60 * 24 * 30,  ['month', 'months']],
         [60 * 60 * 24 * 365,  ['y', 'year', 'years']],
     ]
     for u in units:
