@@ -1,16 +1,17 @@
 import datetime
 import os
 import threading
-from ...helpers import save_json, load_json
+from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder
 from ..lib import parse_command
 
-def make_msg_entry(author, target, message):
+def make_msg_entry(author, target, message, channel):
     """Creates an object stored by the message_store."""
     return {
         'author':author,
         'target': target,
         'message': message,
+        'channel': channel,
         'time': datetime.datetime.utcnow().timestamp(),
     }
 
@@ -48,35 +49,52 @@ class MessageStore(object):
     def _save(self):
         save_json(self._path(), self._msg_store)
 
-    def add_message(self, author, target, message):
+    def add_message(self, author, target, message, channel):
         """Leaves a `message` for `target` from `author`."""
         with self.lock:
             # abort if similar message already present
             for m in self._msg_store:
                 if m['author'] == author \
-                    and m['target'] == target \
+                    and m['target'].lower() == target.lower() \
+                    and m['channel'] == channel \
                     and m['message'] == message:
                     return False
             # add the new message
-            self._msg_store.append(make_msg_entry(author, target, message))
+            self._msg_store.append(make_msg_entry(author, target, message, channel))
             self._save()
         return True
 
-    def get_messages(self, target):
+    def get_channel_messages(self, target, channel):
         """Returns a list of messages for `target`."""
         # This could be a generator to ensure that not all messages are lost in
         # case of an error.
         rw = []
         with self.lock:
             for i, m in reversed(list(enumerate(self._msg_store))):
-                if m['target'].lower() == target.lower():
+                if m['target'].lower() == target.lower() and m['channel'].lower() == channel.lower():
+                    rw.append(self._msg_store.pop(i))
+            self._save()
+        return list(reversed(rw))
+
+    def get_private_messages(self, target):
+        """Returns a list of messages for `target`."""
+        # This could be a generator to ensure that not all messages are lost in
+        # case of an error.
+        rw = []
+        with self.lock:
+            for i, m in reversed(list(enumerate(self._msg_store))):
+                if m['target'].lower() == target.lower() and m['channel'] is None:
                     rw.append(self._msg_store.pop(i))
             self._save()
         return list(reversed(rw))
 
 
 class Tell(BaseResponder):
-    """Allows users to leave messages.
+    """Allows users to leave messages for each other. If this command is
+    executed in a channel then the bot will pass on the message in the same
+    channel. If this command is sent in a privmsg then a bot will pass on the
+    message in a privmsg once the target user sends a message in one of the
+    channel the bot is in.
     
     Example module config:
 
@@ -105,12 +123,17 @@ class Tell(BaseResponder):
         author = msg.nickname
         target = args.target[0]
         message = ' '.join(args.message)
-        if self.ms.add_message(author, target, message):
+        channel = msg.params[0] if is_channel_name(msg.params[0]) else None
+        if self.ms.add_message(author, target, message, channel):
             self.respond(msg, 'Will do!')
 
     def handle_privmsg(self, msg):
-        for stored_msg in self.ms.get_messages(msg.nickname):
-            self.respond(msg, format_msg_entry(msg.nickname, stored_msg))
+        for stored_msg in self.ms.get_private_messages(msg.nickname):
+            self.respond(msg, format_msg_entry(msg.nickname, stored_msg), pm=True)
+
+        if is_channel_name(msg.params[0]):
+            for stored_msg in self.ms.get_channel_messages(msg.nickname, msg.params[0]):
+                self.respond(msg, format_msg_entry(msg.nickname, stored_msg))
 
 
 mod = Tell

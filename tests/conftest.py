@@ -63,8 +63,8 @@ def msg_l():
 @pytest.fixture()
 def make_privmsg():
     """Provides a PRIVMSG message factory."""
-    def f(text, nick='nick'):
-        text = ':%s!~user@1-2-3-4.example.com PRIVMSG #channel :%s' % (nick, text)
+    def f(text, nick='nick', target='#channel'):
+        text = ':%s!~user@1-2-3-4.example.com PRIVMSG %s :%s' % (nick, target, text)
         msg = Message()
         msg.from_string(text)
         return msg
