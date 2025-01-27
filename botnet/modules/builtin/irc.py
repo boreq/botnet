@@ -332,7 +332,7 @@ class IRC(BaseResponder):
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.config_get('ssl'):
             context = ssl.create_default_context()
-            self.soc = context.wrap_socket(self.soc)
+            self.soc = context.wrap_socket(self.soc, server_hostname=self.config_get('server'))
         else:
             self.logger.warning('SSL disabled')
         self.soc.connect((self.config_get('server'), self.config_get('port')))
