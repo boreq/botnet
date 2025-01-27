@@ -51,9 +51,6 @@ def test_countdown_summary(cl, msg_t, make_privmsg, rec_msg):
     mng = Manager()
     re = Countdown(config)
 
-    #config['module_config']['countdown'] = {
-    #}
-
     rec_msg(msg)
     assert 'camp' in msg_t.msg.to_string()
     assert 'congress' in msg_t.msg.to_string()
