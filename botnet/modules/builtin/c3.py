@@ -22,6 +22,8 @@ class C3(BaseResponder):
             congress = congress.replace(year = congress.year + 1)
 
         number = congress.year - self.FIRST_CONGRESS_YEAR + 1
+        if number > 36:
+            number = number - 3
         days = (congress - now).days
 
         text = 'Time to {number}C3: {days} days'.format(number=number, days=days)
