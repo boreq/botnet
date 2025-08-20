@@ -24,6 +24,7 @@ setup(
         'requests-oauthlib>=0.7.0',
         'beautifulsoup4>=4.6.0',
         'markov @ git+https://github.com/boreq/markov#egg=markov-0.0.0',
+        'Mastodon.py==2.1.1',
     ],
     entry_points='''
         [console_scripts]
