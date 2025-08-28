@@ -10,7 +10,7 @@ class Vatsim(BaseResponder):
 
         "botnet": {
             "vatsim": {
-                "metar_api_url": "http://metar.vatsim.net/metar.php?id=%s",
+                "metar_api_url": "https://metar.vatsim.net/metar.php?id=%s",
             }
         }
 
@@ -20,7 +20,7 @@ class Vatsim(BaseResponder):
     config_name = 'vatsim'
 
     default_config = {
-        'metar_api_url': 'http://metar.vatsim.net/metar.php?id=%s',
+        'metar_api_url': 'https://metar.vatsim.net/metar.php?id=%s',
     }
 
     @parse_command([('icao', 1)], launch_invalid=False)

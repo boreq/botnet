@@ -1,8 +1,8 @@
 """
     Contains objects related to interpreting messages received from a server.
 
-    http://tools.ietf.org/html/rfc2812#section-2.3
-    http://tools.ietf.org/html/rfc2812#section-2.3.1
+    https://tools.ietf.org/html/rfc2812#section-2.3
+    https://tools.ietf.org/html/rfc2812#section-2.3.1
 """
 
 
