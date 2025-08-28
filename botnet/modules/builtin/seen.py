@@ -18,7 +18,7 @@ def make_msg_entry(channel, message):
 def format_msg_entry(nick, msg_entry):
     """Converts an object stored by the message store to plaintext."""
     time = datetime.datetime.fromtimestamp(msg_entry['time'])
-    time = time.strftime('%Y-%m-%d %H:%M')
+    time = time.strftime('%Y-%m-%d %H:%MZ')
     return '%s was last seen on %s' % (nick, time)
 
 
