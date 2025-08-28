@@ -140,7 +140,7 @@ class TheTVDB(object):
 
 class TV(BaseResponder):
     """Various TV related features. To use this module you need to acquire the
-    API key from http://thetvdb.com/.
+    API key from https://thetvdb.com/.
 
     Example module config:
 
