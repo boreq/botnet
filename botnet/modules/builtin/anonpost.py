@@ -25,7 +25,7 @@ class Anonpost(BaseResponder):
 
     @parse_command([('target', 1), ('message', '+')], launch_invalid=False)
     def admin_command_anonpost(self, msg, args):
-        """Send a message to a target channel anonymously.
+        """Send a message to a target user anonymously.
 
         Syntax: anonpost TARGET MESSAGE
         """
