@@ -6,7 +6,7 @@ test_botnet:
 test_examples:
 	py.test examples/tests.py
 
-pyflakes:
+lint:
 	pyflakes botnet
 
 mypy:

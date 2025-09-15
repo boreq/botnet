@@ -14,13 +14,14 @@ class Countdown(BaseResponder):
         "botnet": {
             "countdown": {
                 "summary_command": "summary",
-                "commands": {
-                    "camp": {
+                "commands": [
+                    {
+                        "names": ["ccc", "congress"],
                         "year": 2023,
                         "month": 8,
                         "day": 15
                     }
-                }
+                ]
             }
         }
 
@@ -37,16 +38,17 @@ class Countdown(BaseResponder):
             key = self.get_command_name(msg)
             if key == self.config_get('summary_command'):
                 responses = []
-                for name, date in self.config_get('commands', {}).items():
-                    time_left = self.generate_response(date)
-                    responses.append('{}: {}'.format(name, time_left))
+                for entry in self.config_get('commands', []):
+                    time_left = self.generate_response(entry)
+                    responses.append('{}: {}'.format(entry['names'][0], time_left))
                 if len(responses) > 0:
                     self.respond(msg, ', '.join(responses))
             else:
-                target_date = self.config_get('commands').get(key, None)
-                if target_date is not None:
-                    response = self.generate_response(target_date) + '!'
-                    self.respond(msg, response)
+                for entry in self.config_get('commands', []):
+                    if key.lower() in [name.lower() for name in entry['names']]:
+                        response = self.generate_response(entry) + '!'
+                        self.respond(msg, response)
+                        break
 
     def generate_response(self, target_date):
         year = int(target_date['year'])
