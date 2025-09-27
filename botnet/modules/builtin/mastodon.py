@@ -25,7 +25,7 @@ class Mastodon(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'mastodon'
 
-    max_toot_len = 100
+    max_toot_len = 250
 
     def get_all_commands(self):
         rw = super().get_all_commands()
