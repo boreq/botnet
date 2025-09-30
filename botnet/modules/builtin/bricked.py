@@ -11,7 +11,7 @@ class Bricked(BaseResponder):
             "bricked": {
                 "statuses": [
                     {
-                        "command": "status",
+                        "commands": ["status"],
                         "channels": ["#channel"],
                         "instance": "https://example.com"
                     }
@@ -28,7 +28,8 @@ class Bricked(BaseResponder):
         rw = super().get_all_commands()
         new_commands = set()
         for entry in self.config_get('statuses', []):
-            new_commands.add(entry['command'])
+            for command in entry['commands']:
+                new_commands.add(command)
         rw.extend(new_commands)
         return rw
 
@@ -39,7 +40,7 @@ class Bricked(BaseResponder):
         command_name = self.get_command_name(msg)
 
         for entry in self.config_get('statuses', []):
-            if entry['command'] != command_name: 
+            if not command_name in entry['commands']: 
                 continue
 
             if msg.params[0] not in entry['channels']:
