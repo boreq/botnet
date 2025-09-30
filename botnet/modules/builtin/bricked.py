@@ -24,12 +24,13 @@ class Bricked(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'bricked'
 
-    def get_all_commands(self):
-        rw = super().get_all_commands()
+    def get_all_commands(self, msg_target):
+        rw = super().get_all_commands(msg_target)
         new_commands = set()
         for entry in self.config_get('statuses', []):
-            for command in entry['commands']:
-                new_commands.add(command)
+            if msg_target in entry['channels']:
+                for command in entry['commands']:
+                    new_commands.add(command)
         rw.extend(new_commands)
         return rw
 

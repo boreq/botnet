@@ -34,8 +34,8 @@ class Quotes(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'quotes'
 
-    def get_all_commands(self):
-        rw = super().get_all_commands()
+    def get_all_commands(self, msg_target):
+        rw = super().get_all_commands(msg_target)
         new_commands = set()
         for command in self.config_get('files', {}).keys():
             new_commands.add(command)

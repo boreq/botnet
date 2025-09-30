@@ -27,11 +27,12 @@ class Mastodon(BaseResponder):
 
     max_toot_len = 250
 
-    def get_all_commands(self):
-        rw = super().get_all_commands()
+    def get_all_commands(self, msg_target):
+        rw = super().get_all_commands(msg_target)
         new_commands = set()
         for entry in self.config_get('tooting', []):
-            new_commands.add(entry['command'])
+            if msg_target in entry['channels']:
+                new_commands.add(entry['command'])
         rw.extend(new_commands)
         return rw
 

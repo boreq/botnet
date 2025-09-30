@@ -8,9 +8,11 @@ class BaseModule(object):
     def __init__(self, config):
         self._logger = None
 
-    def get_all_commands(self):
+    def get_all_commands(self, msg_target):
         """Should return a list of strings containing all commands supported by
         this module. Used to generate a help message.
+
+        msg_target: target of the PRIVMSG requesting help e.g. '#channel' or 'nick'.
         """
         return []
 

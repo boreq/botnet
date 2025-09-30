@@ -101,9 +101,11 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
         response = Message(command='PRIVMSG', params=[target, text])
         message_out.send(self, msg=response)
 
-    def get_all_commands(self):
+    def get_all_commands(self, msg_target):
         """Should return a list of strings containing all commands supported by
         this module.
+
+        msg_target: target of the PRIVMSG requesting help e.g. '#channel' or 'nick'.
         """
         return self._get_commands_from_handlers(self.handler_prefix)
 

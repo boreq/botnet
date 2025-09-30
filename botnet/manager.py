@@ -67,7 +67,7 @@ class Manager(object):
                 if admin:
                     commands.extend(wrapper.module.get_all_admin_commands())
                 else:
-                    commands.extend(wrapper.module.get_all_commands())
+                    commands.extend(wrapper.module.get_all_commands(msg.params[0]))
         _list_commands.send(self, msg=msg, admin=admin, commands=commands)
 
     def on_config_changed(self, sender):
