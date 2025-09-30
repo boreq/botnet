@@ -41,18 +41,17 @@ class Mastodon(BaseResponder):
 
         command_name = self.get_command_name(msg)
 
-
-        parts = msg.params[-1].split(" ", 1)
-        text = parts[1].strip()
-        if len(text) > self.max_toot_len:
-            return
-
         for entry in self.config_get('tooting', []):
             if entry['command'] != command_name: 
                 continue
 
             if msg.params[0] not in entry['channels']:
                 continue
+
+            parts = msg.params[-1].split(" ", 1)
+            text = parts[1].strip()
+            if len(text) > self.max_toot_len:
+                return
 
             mastodon = MastodonLib(access_token=entry['access_token'], api_base_url=entry['instance'])
             toot = mastodon.toot(text)
