@@ -13,7 +13,8 @@ class Bricked(BaseResponder):
                     {
                         "commands": ["status"],
                         "channels": ["#channel"],
-                        "instance": "https://example.com"
+                        "instance": "https://example.com",
+                        "id": "person_id"
                     }
                 ]
             }
@@ -47,7 +48,7 @@ class Bricked(BaseResponder):
             if msg.params[0] not in entry['channels']:
                 continue
 
-            url = entry['instance'].rstrip('/') + '/api/status'
+            url = entry['instance'].rstrip('/') + '/api/status/' + entry['id']
             r = get_url(url)
             r.raise_for_status()
             j = r.json()
