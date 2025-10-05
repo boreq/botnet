@@ -33,6 +33,15 @@ class Countdown(BaseResponder):
     def __init__(self, config):
         super().__init__(config)
 
+    def get_all_commands(self, msg_target):
+        rw = super().get_all_commands(msg_target)
+        new_commands = set()
+        new_commands.add(self.config_get('summary_command'))
+        for command in self.config_get('commands', []):
+            new_commands.add(command['names'][0])
+        rw.extend(new_commands)
+        return rw
+
     def handle_privmsg(self, msg):
         if self.is_command(msg):
             key = self.get_command_name(msg)
