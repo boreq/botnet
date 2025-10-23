@@ -118,7 +118,7 @@ class GithubAPI(object):
             r = get_url(url, params=params)
             r.raise_for_status()
             return r.json()
-        except Exception as e:
+        except Exception:
             raise APIError('API error')
 
     def search_repositories(self, q):

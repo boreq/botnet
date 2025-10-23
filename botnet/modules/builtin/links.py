@@ -76,7 +76,7 @@ class Links(BaseResponder):
                             else:
                                 text = title
                             self.respond(msg, '[ %s ]' % text)
-                    except requests.exceptions.HTTPError as e:
+                    except requests.exceptions.HTTPError:
                         pass
                     except Exception as e:
                         on_exception.send(self, e=e)

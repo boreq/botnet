@@ -1,9 +1,5 @@
-from ...signals import message_out
-from ...message import Message
 from .. import BaseResponder
-from ..lib import parse_command
-from ...helpers import is_channel_name
-from datetime import date, datetime
+from datetime import date
 
 
 class Countdown(BaseResponder):

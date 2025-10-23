@@ -220,21 +220,21 @@ class Admin(WhoisMixin, BaseResponder):
         try:
             msg = self.load_commands.pop()
             self.respond(msg, 'Loaded module %s' % cls)
-        except IndexError as e:
+        except IndexError:
             pass
 
     def on_module_unloaded(self, sender, cls):
         try:
             msg = self.unload_commands.pop()
             self.respond(msg, 'Unloaded module %s' % cls)
-        except IndexError as e:
+        except IndexError:
             pass
 
     def on_config_reloaded(self, sender):
         try:
             msg = self.config_reload.pop()
             self.respond(msg, 'Config reloaded')
-        except IndexError as e:
+        except IndexError:
             pass
 
     def handle_privmsg(self, msg):
