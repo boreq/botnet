@@ -1,4 +1,5 @@
 import json
+import os
 
 
 def load_json(file_path):
@@ -7,8 +8,10 @@ def load_json(file_path):
 
 
 def save_json(file_path, data, **kwargs):
-    with open(file_path, 'w') as f:
+    tmp_file_path = file_path + '.tmp'
+    with open(tmp_file_path, 'w') as f:
         json.dump(data, f, **kwargs)
+    os.replace(tmp_file_path, file_path)
 
 
 def is_channel_name(text):
