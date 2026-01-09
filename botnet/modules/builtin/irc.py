@@ -135,9 +135,6 @@ class IRC(BaseResponder):
                         "name": "#my-channel",
                         "password": null
                     }
-                ],
-                "autosend": [
-                    "PRIVMSG NickServ :IDENTIFY pass"
                 ]
             }
         }
@@ -305,7 +302,6 @@ class IRC(BaseResponder):
         return False
 
     def handler_rpl_endofmotd(self, msg):
-        self.autosend()
         self.join_from_config()
 
     def handler_ping(self, msg):
@@ -360,14 +356,6 @@ class IRC(BaseResponder):
     def part(self, channel_name):
             msg = 'PART ' + channel_name
             self.send(msg)
-
-    def autosend(self):
-        """Automatically sends commands to a server before joining channels."""
-        commands = self.config_get('autosend', [])
-        for command in commands:
-            self.send(command)
-        if len(commands) > 0:
-            time.sleep(1)
 
     def get_inactivity_monitor(self):
         if self.config_get('inactivity_monitor', True):
