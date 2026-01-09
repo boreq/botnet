@@ -135,7 +135,11 @@ class IRC(BaseResponder):
                         "name": "#my-channel",
                         "password": null
                     }
-                ]
+                ],
+                "cert": {
+                    "certfile": "bot.crt",
+                    "keyfile": "bot.key"
+                },
             }
         }
 
@@ -328,6 +332,9 @@ class IRC(BaseResponder):
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.config_get('ssl'):
             context = ssl.create_default_context()
+            certconf = self.config_get('cert', None)
+            if certconf is not None:
+                context.load_cert_chain(certfile=certconf['certfile'], keyfile=certconf['keyfile'])
             self.soc = context.wrap_socket(self.soc, server_hostname=self.config_get('server'))
         else:
             self.logger.warning('SSL disabled')
