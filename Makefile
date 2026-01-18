@@ -17,8 +17,8 @@ lint: flake8 mypy
 
 .PHONY: flake8
 flake8:
-	flake8 botnet
+	flake8 src
 
 .PHONY: mypy
 mypy:
-	mypy --warn-no-return --ignore-missing-imports botnet
+	mypy --warn-no-return --ignore-missing-imports src

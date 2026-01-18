@@ -34,8 +34,9 @@ dev = [
 [project.scripts]
 botnet = "botnet.cli:cli"
 
-[tool.setuptools]
-packages = ["botnet"]
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
 
 [tool.mypy]
 ignore_missing_imports = true
