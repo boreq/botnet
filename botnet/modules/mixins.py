@@ -1,4 +1,4 @@
-from ..signals import admin_message_in, auth_message_in, message_in, on_exception, config_changed
+from ..signals import auth_message_in, message_in, on_exception, config_changed
 
 
 _senti = object()
@@ -219,10 +219,10 @@ class StandardMessageDispatcherMixin(BaseMessageDispatcherMixin):
 
 
 class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
-    """Dispatches all messages received via `admin_message_in` signal to the
-    proper methods.
+    """Dispatches all messages received via `auth_message_in` signal with group
+    'admin' to the proper methods.
 
-    When a message is received via the `admin_message_in` signal:
+    When a message is received via the `auth_message_in` signal and has a group 'admin':
         Each incomming PRIVMSG is dispatched to the `handle_admin_privmsg`
         method. If a message starts with a command_prefix defined in the config
         it will be also sent to a proper handler, for example
@@ -236,7 +236,7 @@ class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
 
     def __init__(self, config):
         super().__init__(config)
-        admin_message_in.connect(self.on_admin_message_in)
+        auth_message_in.connect(self.on_admin_auth_message_in)
 
     def dispatch_admin_message(self, msg):
         """Dispatches a message originating from an admin to all handlers."""
@@ -251,12 +251,13 @@ class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
                 if func is not None:
                     func(msg)
 
-    def on_admin_message_in(self, sender, msg):
-        """Handler for an admin_message_in signal. Dispatches the message to the
+    def on_admin_auth_message_in(self, sender, msg, auth):
+        """Handler for an auth_message_in signal. Dispatches the message to the
         per-command handlers and the main handler.
         """
         try:
-            self.dispatch_admin_message(msg)
+            if auth.group == 'admin':
+                self.dispatch_admin_message(msg)
         except Exception as e:
             on_exception.send(self, e=e)
 
@@ -285,7 +286,7 @@ class AuthMessageDispatcherMixin(BaseMessageDispatcherMixin):
 
     def __init__(self, config):
         super().__init__(config)
-        auth_message_in.connect(self.on_auth_message_in)
+        auth_message_in.connect(self.on_auth_auth_message_in)
 
     def dispatch_auth_message(self, msg, auth):
         """Dispatches a message originating from an authorised user to all handlers."""
@@ -300,7 +301,7 @@ class AuthMessageDispatcherMixin(BaseMessageDispatcherMixin):
                 if func is not None:
                     func(msg)
 
-    def on_auth_message_in(self, sender, msg, auth):
+    def on_auth_auth_message_in(self, sender, msg, auth):
         """Handler for an auth_message_in signal. Dispatches the message to the
         per-command handlers and the main handler.
         """
@@ -317,6 +318,7 @@ class AuthMessageDispatcherMixin(BaseMessageDispatcherMixin):
 
 
 class MessageDispatcherMixin(AuthMessageDispatcherMixin, AdminMessageDispatcherMixin, StandardMessageDispatcherMixin):
-    """Dispatches all messages received via `message_in`, `admin_message_in`,
-    and 'auth_message_in' signals to the proper methods."""
+    """Dispatches all messages received via `message_in` and 'auth_message_in'
+    signals to the proper methods.
+    """
     pass

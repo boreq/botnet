@@ -15,12 +15,6 @@ _signals = Namespace()
 # kwargs: Message msg
 message_in = _signals.signal('message-in')
 
-# Sent when a message is confirmed to originate from a bot admin
-# (That means that a message originating from an admin will be picked up as a
-# message_in signal first and after that as a admin_message_in signal)
-# kwargs: Message msg
-admin_message_in = _signals.signal('admin-message-in')
-
 # Sent when a message is processed by the auth module.
 # (That means that each message will be picked up as a message_in signal first
 # and after that as an auth_message_in signal)
