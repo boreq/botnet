@@ -172,8 +172,8 @@ class Auth(WhoisMixin, BaseResponder):
         def on_complete(whois_data):
             for (group_name, group_data) in self.config_get('groups', {}).items():
                 nicks = group_data.get('nicks', [])
-                auth_context = AuthContext(group_name, nicks)
                 for nick_data in nicks:
+                    auth_context = AuthContext(group_name, nick_data)
                     match nick_data['kind']:
                         case 'irc':
                             if whois_data.get('nick_identified', None) != nick_data['nick']:
@@ -194,7 +194,7 @@ class Auth(WhoisMixin, BaseResponder):
 @dataclass
 class AuthContext:
     group: str
-    nicks: list[Nick]
+    nick: Nick
 
 
 @dataclass
