@@ -1,4 +1,4 @@
-from ..signals import admin_message_in, message_in, on_exception, config_changed
+from ..signals import admin_message_in, auth_message_in, message_in, on_exception, config_changed
 
 
 _senti = object()
@@ -267,7 +267,56 @@ class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
         pass
 
 
-class MessageDispatcherMixin(AdminMessageDispatcherMixin, StandardMessageDispatcherMixin):
-    """Dispatches all messages received via `message_in` and `admin_message_in`
-    signals to the proper methods."""
+class AuthMessageDispatcherMixin(BaseMessageDispatcherMixin):
+    """Dispatches all messages received via `auth_message_in` signal to the
+    proper methods.
+
+    When a message is received via the `auth_message_in` signal:
+        Each incomming PRIVMSG is dispatched to the `handle_auth_privmsg`
+        method. If a message starts with a command_prefix defined in the config
+        it will be also sent to a proper handler, for example
+        `auth_command_help`.
+    """
+
+    # Prefix for auth command handlers. For example a method
+    # `auth_command_help` would be a handler for messages starting with .help
+    # received from an authorised user
+    auth_handler_prefix = 'auth_command_'
+
+    def __init__(self, config):
+        super().__init__(config)
+        auth_message_in.connect(self.on_auth_message_in)
+
+    def dispatch_auth_message(self, msg, auth):
+        """Dispatches a message originating from an authorised user to all handlers."""
+        # Main handler
+        if msg.command == 'PRIVMSG':
+            # PRIVMSG handler
+            self.handle_auth_privmsg(msg, auth)
+            # Command-specific handler
+            if self.is_command(msg):
+                cmd_name = self.get_command_name(msg)
+                func = self._get_command_handler(self.auth_handler_prefix, cmd_name)
+                if func is not None:
+                    func(msg)
+
+    def on_auth_message_in(self, sender, msg, auth):
+        """Handler for an auth_message_in signal. Dispatches the message to the
+        per-command handlers and the main handler.
+        """
+        try:
+            self.dispatch_auth_message(msg, auth)
+        except Exception as e:
+            on_exception.send(self, e=e)
+
+    def handle_auth_privmsg(self, msg, auth):
+        """Called when a message with a PRIVMSG command originating from an
+        authorised user is received.
+        """
+        pass
+
+
+class MessageDispatcherMixin(AuthMessageDispatcherMixin, AdminMessageDispatcherMixin, StandardMessageDispatcherMixin):
+    """Dispatches all messages received via `message_in`, `admin_message_in`,
+    and 'auth_message_in' signals to the proper methods."""
     pass
