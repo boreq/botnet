@@ -56,15 +56,16 @@ example config for details.
                     "server": "irc.example.com",
                     "port": 6697,
                     "ssl": true,
+                    "cert": {
+                        "certfile": "my_bot.crt",
+                        "keyfile": "my_bot.key"
+                    },
                     "nick": "my_bot",
                     "channels": [
                         {
                             "name": "#my-channel",
                             "password": null
                         }
-                    ],
-                    "autosend": [
-                        "PRIVMSG your_nick :I connected!"
                     ]
                 },
                 "base_responder": {
