@@ -33,8 +33,8 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
 
     # A module is expected to store the config in
     # config['module_config'][config_namespace][config_name]
-    config_namespace = None
-    config_name = None
+    config_namespace: str | None = None
+    config_name: str | None = None
 
     # This is the default config for this class
     base_default_config = {
@@ -42,7 +42,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
     }
 
     # Default config for the class which inherits from BaseResponder
-    default_config = {}
+    default_config: dict = {}
 
     def __init__(self, config):
         super().__init__(config)

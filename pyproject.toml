@@ -28,6 +28,7 @@ dev = [
     "pytest",
     "flake8",
     "mypy",
+    "types-requests",
 ]
 
 [project.scripts]
@@ -35,3 +36,8 @@ botnet = "botnet.cli:cli"
 
 [tool.setuptools]
 packages = ["botnet"]
+
+[tool.mypy]
+ignore_missing_imports = true
+check_untyped_defs = false
+disallow_untyped_defs = false

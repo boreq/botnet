@@ -13,7 +13,7 @@ test_examples:
 	py.test examples/tests.py
 
 .PHONY: lint
-lint: flake8
+lint: flake8 mypy
 
 .PHONY: flake8
 flake8:
