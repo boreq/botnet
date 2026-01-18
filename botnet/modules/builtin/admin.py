@@ -53,7 +53,7 @@ class WhoisMixin(object):
     def handler_rpl_whoischannels(self, msg):
         """WHOIS channels."""
         if msg.params[1] in self._whois_current:
-            if not 'channels' in self._whois_current[msg.params[1]]:
+            if 'channels' not in self._whois_current[msg.params[1]]:
                 self._whois_current[msg.params[1]]['channels'] = []
             self._whois_current[msg.params[1]]['channels'].extend(msg.params[2:])
 
@@ -80,7 +80,7 @@ class WhoisMixin(object):
 
     def handler_rpl_endofwhois(self, msg):
         """End of WHOIS."""
-        if not msg.params[1] in self._whois_current:
+        if msg.params[1] not in self._whois_current:
             return
         self._whois_cache.set(msg.params[1], self._whois_current.pop(msg.params[1]))
         self._whois_run_deferred()

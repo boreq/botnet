@@ -2,14 +2,14 @@ import threading
 from ...helpers import is_channel_name
 from ...signals import on_exception
 from .. import BaseResponder
-from urllib.parse import urlparse 
+from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
 
 class Links(BaseResponder):
     """Reads titles of the links posted by the users.
-    
+
     Example module config:
 
         "botnet": {
@@ -28,7 +28,7 @@ class Links(BaseResponder):
     config_name = 'links'
 
     character_limit = 80
-    timeout = 30 # [seconds]
+    timeout = 30  # [seconds]
     max_links = 5
 
     def __init__(self, config):

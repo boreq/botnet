@@ -27,17 +27,17 @@ def format_msg_entry(msg_entry):
 
 def get_amount_of_seconds(amount, unit):
     units = [
-        [1,  ['s', 'sec', 'second', 'seconds']],
-        [60,  ['m', 'min', 'mins', 'minute', 'minutes']],
-        [60 * 60,  ['h', 'hour', 'hours']],
-        [60 * 60 * 24,  ['d', 'day', 'days']],
-        [60 * 60 * 24 * 30,  ['month', 'months']],
-        [60 * 60 * 24 * 365,  ['y', 'year', 'years']],
+        [1, ['s', 'sec', 'second', 'seconds']],
+        [60, ['m', 'min', 'mins', 'minute', 'minutes']],
+        [60 * 60, ['h', 'hour', 'hours']],
+        [60 * 60 * 24, ['d', 'day', 'days']],
+        [60 * 60 * 24 * 30, ['month', 'months']],
+        [60 * 60 * 24 * 365, ['y', 'year', 'years']],
     ]
     for u in units:
         if unit in u[1]:
             return amount * u[0]
-    raise ValueError 
+    raise ValueError
 
 
 def parse_message(message_text):
@@ -46,7 +46,7 @@ def parse_message(message_text):
         raise ValueError
 
     pattern = re.compile('^([0-9.]+)([a-z]*)$')
-    result = pattern.search(parts[0]) 
+    result = pattern.search(parts[0])
     if result is None:
         raise ValueError
     groups = result.groups()
@@ -112,7 +112,7 @@ class RemindersStore(object):
 
 class Reminders(BaseResponder):
     """Allows users to leave reminders.
-    
+
     Example module config:
 
         "botnet": {
@@ -125,7 +125,7 @@ class Reminders(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'reminders'
-    deltatime = 1 # [s]
+    deltatime = 1  # [s]
 
     def __init__(self, config):
         super().__init__(config)

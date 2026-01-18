@@ -9,7 +9,7 @@ from .lib import parse_command
 
 class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
     """Inherit from this class to quickly create a module which reacts to users'
-    messages. 
+    messages.
 
     Example module config:
 

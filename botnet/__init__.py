@@ -1,3 +1,5 @@
+# flake8: noqa: F401
+
 from .codes import Code
 from .helpers import is_channel_name
 from .logging import get_logger

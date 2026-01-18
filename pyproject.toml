@@ -23,6 +23,13 @@ dependencies = [
     "Mastodon.py==2.1.1",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "flake8",
+    "mypy",
+]
+
 [project.scripts]
 botnet = "botnet.cli:cli"
 

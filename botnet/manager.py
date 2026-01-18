@@ -97,7 +97,7 @@ class Manager(object):
             result = self.load_module_by_name(name)
             if result:
                 with self.config.lock:
-                    if not 'modules' in self.config:
+                    if 'modules' not in self.config:
                         self.config['modules'] = []
                     self.config['modules'].append(name)
                 config_changed.send(self)

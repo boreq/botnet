@@ -19,7 +19,7 @@ class C3(BaseResponder):
                                      month=self.CONGRESS_MONTH,
                                      day=self.CONGRESS_DAY)
         if congress < now:
-            congress = congress.replace(year = congress.year + 1)
+            congress = congress.replace(year=congress.year + 1)
 
         number = congress.year - self.FIRST_CONGRESS_YEAR + 1
         if number > 36:

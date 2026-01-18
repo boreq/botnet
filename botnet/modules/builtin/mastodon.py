@@ -43,7 +43,7 @@ class Mastodon(BaseResponder):
         command_name = self.get_command_name(msg)
 
         for entry in self.config_get('tooting', []):
-            if entry['command'] != command_name: 
+            if entry['command'] != command_name:
                 continue
 
             if msg.params[0] not in entry['channels']:

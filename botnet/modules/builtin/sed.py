@@ -14,7 +14,7 @@ def make_msg_entry(author, message):
 
 def parse_message(message_text):
     pattern = re.compile('^([^:, ]*)[:, ]*s/([^/]*)/([^/]*)(/|/[a-z]+)?$')
-    result = pattern.search(message_text) 
+    result = pattern.search(message_text)
     if result is None:
         raise ValueError
     groups = list(result.groups())
@@ -78,7 +78,7 @@ class MessageStore(object):
 
     def add_message(self, channel, author, message):
         with self.lock:
-            if not channel in self._store:
+            if channel not in self._store:
                 self._store[channel] = []
             self._store[channel].insert(0, make_msg_entry(author, message))
             while len(self._store[channel]) > self._limit(channel):
@@ -96,7 +96,7 @@ class MessageStore(object):
 
 class Sed(BaseResponder):
     """Allows users to use sed.
-    
+
     Example module config:
 
         "botnet": {

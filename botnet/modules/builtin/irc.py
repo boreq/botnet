@@ -3,7 +3,6 @@ import datetime
 import socket
 import ssl
 import threading
-import time
 import fnmatch
 from ...logging import get_logger
 from ...message import Message
@@ -189,7 +188,7 @@ class IRC(BaseResponder):
 
     @parse_command([('pattern', 1)], launch_invalid=False)
     def admin_command_unignore(self, msg, args):
-        """Unignores a user. 
+        """Unignores a user.
 
         Syntax: unignore PATTERN
         """
@@ -355,14 +354,14 @@ class IRC(BaseResponder):
             self.join(channel['name'], channel['password'])
 
     def join(self, channel_name, channel_password):
-            msg = 'JOIN ' + channel_name
-            if channel_password is not None:
-                msg += ' ' + channel_password
-            self.send(msg)
+        msg = 'JOIN ' + channel_name
+        if channel_password is not None:
+            msg += ' ' + channel_password
+        self.send(msg)
 
     def part(self, channel_name):
-            msg = 'PART ' + channel_name
-            self.send(msg)
+        msg = 'PART ' + channel_name
+        self.send(msg)
 
     def get_inactivity_monitor(self):
         if self.config_get('inactivity_monitor', True):
@@ -403,5 +402,6 @@ class IRC(BaseResponder):
                 self.stop_event.wait(self.deltatime)
             except Exception as e:
                 on_exception.send(self, e=e)
+
 
 mod = IRC

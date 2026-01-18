@@ -53,19 +53,19 @@ class Code(Enum):
     RPL_ENDOFWHOIS = 318
 
     # <nick> :*( ( "@" / "+" ) <channel> " " )
-    RPL_WHOISCHANNELS  = 319
+    RPL_WHOISCHANNELS = 319
 
     # <nick> <user> <host> * :<real name>
     RPL_WHOWASUSER = 314
 
     # <nick> :End of WHOWAS
-    RPL_ENDOFWHOWAS  = 369
+    RPL_ENDOFWHOWAS = 369
 
     # Obsolete. Not used.
     RPL_LISTSTART = 321
 
     # <channel> <# visible> :<topic>
-    RPL_LIST =  322
+    RPL_LIST = 322
 
     # :End of LIST
     RPL_LISTEND = 323
@@ -74,7 +74,7 @@ class Code(Enum):
     RPL_UNIQOPIS = 325
 
     # <channel> <mode> <mode params>
-    RPL_CHANNELMODEIS  = 324
+    RPL_CHANNELMODEIS = 324
 
     # <channel> :No topic is set
     RPL_NOTOPIC = 331
@@ -103,9 +103,9 @@ class Code(Enum):
     # <version>.<debuglevel> <server> :<comments>
     RPL_VERSION = 351
 
-    #"<channel> <user> <host> <server> <nick>
-    #( "H" / "G" > ["*"] [ ( "@" / "+" ) ]
-    #:<hopcount> <real name>"
+    # "<channel> <user> <host> <server> <nick>
+    # ( "H" / "G" > ["*"] [ ( "@" / "+" ) ]
+    # :<hopcount> <real name>"
     RPL_WHOREPLY = 352
 
     # <name> :End of WHO list
@@ -429,7 +429,6 @@ class Code(Enum):
 
     # :Cannot change mode for other users
     ERR_USERSDONTMATCH = 502
-
 
     # CODES BELOW ARE NOT DEFINED IN THE RFC
 

@@ -5,15 +5,17 @@ from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder
 from ..lib import parse_command
 
+
 def make_msg_entry(author, target, message, channel):
     """Creates an object stored by the message_store."""
     return {
-        'author':author,
+        'author': author,
         'target': target,
         'message': message,
         'channel': channel,
         'time': datetime.datetime.utcnow().timestamp(),
     }
+
 
 def format_msg_entry(target, msg_entry):
     """Converts an object stored by the message store to plaintext."""
@@ -21,6 +23,7 @@ def format_msg_entry(target, msg_entry):
     time = time.strftime('%H:%M')
     return '%s: %s <%s> %s' % (target, time, msg_entry['author'],
                                msg_entry['message'])
+
 
 class MessageStore(object):
     """Simple facility for storing and saving messages left users, the messages
@@ -55,9 +58,9 @@ class MessageStore(object):
             # abort if similar message already present
             for m in self._msg_store:
                 if m['author'] == author \
-                    and m['target'].lower() == target.lower() \
-                    and m['channel'] == channel \
-                    and m['message'] == message:
+                   and m['target'].lower() == target.lower() \
+                   and m['channel'] == channel \
+                   and m['message'] == message:
                     return False
             # add the new message
             self._msg_store.append(make_msg_entry(author, target, message, channel))
@@ -95,7 +98,7 @@ class Tell(BaseResponder):
     channel. If this command is sent in a privmsg then a bot will pass on the
     message in a privmsg once the target user sends a message in one of the
     channel the bot is in.
-    
+
     Example module config:
 
         "botnet": {

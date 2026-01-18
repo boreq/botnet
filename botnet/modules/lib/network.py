@@ -21,7 +21,7 @@ def get_url(*args, **kwargs):
         method = 'GET'
     method = method.upper()
 
-    if not 'headers' in kwargs:
+    if 'headers' not in kwargs:
         kwargs['headers'] = {}
     kwargs['headers']['User-Agent'] = _uagent
 

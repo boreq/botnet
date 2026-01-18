@@ -61,7 +61,7 @@ class EventParser(object):
 
     def parse_PushEvent(self, events):
         texts = []
-        for e in  events:
+        for e in events:
             text = '%s commits to %s' % (e['payload']['size'], e['payload']['ref'])
             texts.append(text)
         return texts
@@ -126,14 +126,14 @@ class GithubAPI(object):
         if rw is None:
             rw = self._get('/search/repositories', q=q)
             self._repo_cache.set(q, rw)
-        return  rw
+        return rw
 
     def search_users(self, q):
         rw = self._user_cache.get(q)
         if rw is None:
             rw = self._get('/search/users', q=q)
             self._user_cache.set(q, rw)
-        return  rw
+        return rw
 
     def get_raw_repo_events(self, owner, repo):
         """Gets the fresh event data directly from the API."""
@@ -355,12 +355,14 @@ class Github(BaseResponder):
         Syntax: github PHRASE
         """
         phrase = ' '.join(args.phrase)
+
         def f():
             try:
                 r = self.get_repo(phrase)
                 self.respond(msg, r)
             except Exception as e:
                 self.respond(msg, str(e))
+
         self.in_background(f)
 
     @parse_command([('phrase', '+')], launch_invalid=False)
@@ -370,12 +372,14 @@ class Github(BaseResponder):
         Syntax: github_user PHRASE
         """
         phrase = ' '.join(args.phrase)
+
         def f():
             try:
                 r = self.get_user(phrase)
                 self.respond(msg, r)
             except Exception as e:
                 self.respond(msg, str(e))
+
         self.in_background(f)
 
 

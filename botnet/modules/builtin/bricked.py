@@ -42,7 +42,7 @@ class Bricked(BaseResponder):
         command_name = self.get_command_name(msg)
 
         for entry in self.config_get('statuses', []):
-            if not command_name in entry['commands']: 
+            if command_name not in entry['commands']:
                 continue
 
             if msg.params[0] not in entry['channels']:

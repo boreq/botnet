@@ -51,7 +51,7 @@ class NewsStore(object):
 
 class News(BaseResponder):
     """Allows users to publish and read news.
-    
+
     Example module config:
 
         "botnet": {

@@ -81,11 +81,11 @@ class ConfigMixin(object):
             except KeyError:
                 continue
 
-        if not auto is _senti:
+        if auto is not _senti:
             self.config_set(key, auto)
             return self.config_get(key)
 
-        if not default is _senti:
+        if default is not _senti:
             return default
 
         raise KeyError
@@ -103,7 +103,7 @@ class ConfigMixin(object):
             parts = actual_key.split('.')
             for i, part in enumerate(parts[:-1]):
                 if isinstance(location, dict):
-                    if not part in location:
+                    if part not in location:
                         location[part] = {}
                     location = location[part]
                 else:
