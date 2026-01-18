@@ -299,7 +299,7 @@ class AuthMessageDispatcherMixin(BaseMessageDispatcherMixin):
                 cmd_name = self.get_command_name(msg)
                 func = self._get_command_handler(self.auth_handler_prefix, cmd_name)
                 if func is not None:
-                    func(msg)
+                    func(msg, auth)
 
     def on_auth_auth_message_in(self, sender, msg, auth):
         """Handler for an auth_message_in signal. Dispatches the message to the
