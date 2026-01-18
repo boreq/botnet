@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "botnet"
+version = "0.1.0"
+authors = [
+  { name="boreq" },
+]
+description = "IRC bot."
+readme = "README.md"
+license = { text = "BSD" }
+requires-python = ">=3.14"
+dependencies = [
+    "blinker>=1.4",
+    "Click>=2.0",
+    "requests>=2.12",
+    "protobuf>=3.0",
+    "requests-oauthlib>=0.7.0",
+    "beautifulsoup4>=4.6.0",
+    "markov @ git+https://github.com/boreq/markov",
+    "Mastodon.py==2.1.1",
+]
+
+[project.scripts]
+botnet = "botnet.cli:cli"
+
+[tool.setuptools]
+packages = ["botnet"]
