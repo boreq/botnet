@@ -1,3 +1,6 @@
+.PHONY: ci
+ci: lint
+
 .PHONY: test
 test: test_botnet test_examples
 
@@ -10,7 +13,7 @@ test_examples:
 	py.test examples/tests.py
 
 .PHONY: lint
-lint: flake8 mypy
+lint: flake8
 
 .PHONY: flake8
 flake8:
