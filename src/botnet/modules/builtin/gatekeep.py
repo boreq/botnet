@@ -33,7 +33,7 @@ class NamesMixin(BaseModule):
         channel = msg.params[2]
         if channel not in self._current:
             self._current[channel] = []
-        self._current[channel].extend(msg.params[3].split(' '))
+        self._current[channel].extend([cleanup_nick(v) for v in msg.params[3].split(' ')])
 
     def handler_rpl_endofnames(self, msg) -> None:
         """End of WHOIS."""
@@ -130,7 +130,6 @@ class Gatekeep(NamesMixin, BaseResponder):
             return
 
         def on_complete(names) -> None:
-            names = [cleanup_nick(name) for name in names]
             report = self.store.generate_minority_report(names)
 
             need_to_be_endorsed: list[PersonaReport] = []
@@ -166,9 +165,15 @@ class Gatekeep(NamesMixin, BaseResponder):
         if not self._is_authorised_and_sent_a_privmsg(msg, auth):
             return
 
-        nick = cleanup_nick(args.nick[0])
-        self.store.endorse(auth, nick)
-        self.respond(msg, 'You endorsed {}!'.format(nick))
+        def on_complete(names) -> None:
+            nick = cleanup_nick(args.nick[0])
+            if nick in names:
+                self.store.endorse(auth, nick)
+                self.respond(msg, 'You endorsed {}!'.format(nick))
+            else:
+                self.respond(msg, 'There is no {} in the channel.'.format(nick))
+
+        self.request_names(self.config_get('channel'), on_complete)
 
     @parse_command([('nick', 1)], launch_invalid=False)
     def auth_command_unendorse(self, msg: Message, auth: AuthContext, args) -> None:
@@ -180,8 +185,10 @@ class Gatekeep(NamesMixin, BaseResponder):
             return
 
         nick = cleanup_nick(args.nick[0])
-        self.store.unendorse(auth, nick)
-        self.respond(msg, 'You unendorsed {}!'.format(nick))
+        if self.store.unendorse(auth, nick):
+            self.respond(msg, 'You unendorsed {}!'.format(nick))
+        else:
+            self.respond(msg, 'You never endorsed {}.'.format(nick))
 
     @parse_command([('nick1', 1), ('nick2', 1)], launch_invalid=False)
     def auth_command_merge_personas(self, msg: Message, auth: AuthContext, args) -> None:
@@ -226,10 +233,11 @@ class Store(object):
             self._state.endorse(endorser, endorsee_nick)
             self._save()
 
-    def unendorse(self, unendorser: AuthContext, unendorsee_nick: str) -> None:
+    def unendorse(self, unendorser: AuthContext, unendorsee_nick: str) -> bool:
         with self.lock:
-            self._state.unendorse(unendorser, unendorsee_nick)
+            rv = self._state.unendorse(unendorser, unendorsee_nick)
             self._save()
+            return rv
 
     def merge_personas(self, nick1: str, nick2: str) -> None:
         with self.lock:
@@ -273,10 +281,10 @@ class State:
             return
         self.nick_infos[endorsee_nick].endorse(endorser)
 
-    def unendorse(self, unendorser: AuthContext, unendorsee_nick: str) -> None:
+    def unendorse(self, unendorser: AuthContext, unendorsee_nick: str) -> bool:
         if unendorsee_nick not in self.nick_infos:
-            return
-        self.nick_infos[unendorsee_nick].unendorse(unendorser)
+            return False
+        return self.nick_infos[unendorsee_nick].unendorse(unendorser)
 
     def merge_personas(self, nick1: str, nick2: str) -> None:
         for persona in self.personas:
@@ -337,8 +345,11 @@ class NickInfo:
         if endorser.uuid not in self.endorsements:
             self.endorsements.append(endorser.uuid)
 
-    def unendorse(self, unendorser: AuthContext) -> None:
-        self.endorsements = [endorser for endorser in self.endorsements if endorser != unendorser.uuid]
+    def unendorse(self, unendorser: AuthContext) -> bool:
+        if unendorser.uuid in self.endorsements:
+            self.endorsements = [endorser for endorser in self.endorsements if endorser != unendorser.uuid]
+            return True
+        return False
 
 
 @dataclass
