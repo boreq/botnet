@@ -42,7 +42,7 @@ class NamesMixin(BaseModule):
         self._cache.set(msg.params[1], self._current.pop(msg.params[1]))
         self._run_deferred()
 
-    def request_names(self, channel, on_complete) -> None:
+    def request_names(self, channel, on_complete) -> NoneP
         """Schedules an action to be completed when the names for the channel
         are available.
 
@@ -155,7 +155,7 @@ class Gatekeep(NamesMixin, BaseResponder):
             self.respond(msg, 'People with fewest endorsements which were NOT endorsed by you:'.format(self.config_get('channel')))
             self.respond(msg, ', '.join([v.for_display() for v in need_to_be_endorsed]))
 
-            self.respond(msg, 'If you know any of those people and would like to endorse them then you can privately use the \'endorse their_nick\' command in this buffer.')
+            self.respond(msg, 'If you would like to endorse anyone then you can privately use the \'endorse their_nick\' command in this buffer.')
 
         self.request_names(self.config_get('channel'), on_complete)
 
