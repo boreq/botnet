@@ -10,37 +10,38 @@ from ...message import Message
 from .. import BaseResponder
 from ..lib import MemoryCache, parse_command
 from .auth import AuthContext
+from ..base import BaseModule
 
 
 DeferredAction = namedtuple('DeferredAction', ['channel', 'on_complete'])
 
 
-class NamesMixin(object):
+class NamesMixin(BaseModule):
     """Provides a way of requesting and handling names that are in the channel."""
 
     cache_timeout = 60
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self._cache = MemoryCache(self.cache_timeout)
-        self._deferred = []
-        self._current = {}
+        self._deferred: list[DeferredAction] = []
+        self._current: dict[str, list[str]] = {}
 
-    def handler_rpl_namreply(self, msg):
+    def handler_rpl_namreply(self, msg) -> None:
         """Names reply."""
         channel = msg.params[2]
         if channel not in self._current:
             self._current[channel] = []
         self._current[channel].extend(msg.params[3].split(' '))
 
-    def handler_rpl_endofnames(self, msg):
+    def handler_rpl_endofnames(self, msg) -> None:
         """End of WHOIS."""
         if msg.params[1] not in self._current:
             return
         self._cache.set(msg.params[1], self._current.pop(msg.params[1]))
         self._run_deferred()
 
-    def request_names(self, channel, on_complete):
+    def request_names(self, channel, on_complete) -> None:
         """Schedules an action to be completed when the names for the channel
         are available.
 
@@ -57,7 +58,7 @@ class NamesMixin(object):
             self._deferred.append(data)
             self._request(data.channel)
 
-    def _run_deferred(self):
+    def _run_deferred(self) -> None:
         """Loops over the deferred functions and launches those for which NAMES
         data is available.
         """
@@ -65,16 +66,15 @@ class NamesMixin(object):
             d = self._deferred[i]
             data = self._cache.get(d.channel)
             if data is not None:
-                self.logger.debug('Running deferred %s', d.on_complete)
                 d.on_complete(data)
                 self._deferred.pop(i)
 
-    def _request(self, channel):
+    def _request(self, channel) -> None:
         """Sends a message with the NAMES command."""
         msg = Message(command='NAMES', params=[channel])
         message_out.send(self, msg=msg)
 
-    def handle_msg(self, msg):
+    def handle_msg(self, msg) -> None:
         # Dispatch to the handlers
         code = msg.command_code()
         if code is not None:
@@ -134,19 +134,43 @@ class Gatekeep(NamesMixin, BaseResponder):
 
     @parse_command([('nick', 1)], launch_invalid=False)
     def auth_command_endorse(self, msg: Message, auth: AuthContext, args):
+        """Adds your endorsement for a nick.
+
+        Syntax: endorse NICK
+        """
         if not self._is_authorised_and_sent_a_privmsg(msg, auth):
             return
 
-        self.store.endorse(auth, args.nick[0])
-        self.respond(msg, 'You endorsed {}!'.format(args.nick[0]))
+        nick = cleanup_nick(args.nick[0])
+        self.store.endorse(auth, nick)
+        self.respond(msg, 'You endorsed {}!'.format(nick))
 
     @parse_command([('nick', 1)], launch_invalid=False)
     def auth_command_unendorse(self, msg: Message, auth: AuthContext, args):
+        """Removes your endorsement for a nick.
+
+        Syntax: unendorse NICK
+        """
         if not self._is_authorised_and_sent_a_privmsg(msg, auth):
             return
 
-        self.store.unendorse(auth, args.nick[0])
-        self.respond(msg, 'You unendorsed {}!'.format(args.nick[0]))
+        nick = cleanup_nick(args.nick[0])
+        self.store.unendorse(auth, nick)
+        self.respond(msg, 'You unendorsed {}!'.format(nick))
+
+    @parse_command([('nick1', 1), ('nick2', 1)], launch_invalid=False)
+    def auth_command_merge_personas(self, msg: Message, auth: AuthContext, args):
+        """Merges two personas (use if one physical person has multiple clients in the channel).
+
+        Syntax: merge_personas NICK1 NICK2
+        """
+        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
+            return
+
+        nick1 = cleanup_nick(args.nick1[0])
+        nick2 = cleanup_nick(args.nick2[0])
+        self.store.merge_personas(nick1, nick2)
+        self.respond(msg, 'You merged {} and {}!'.format(nick1, nick2))
 
     def _is_authorised_and_sent_a_privmsg(self, msg: Message, auth: AuthContext):
         authorised_group = self.config_get('authorised_group')
@@ -164,7 +188,7 @@ class Store(object):
     def __init__(self, path):
         self.lock = threading.Lock()
         self._set_path(path)
-        self._state = State({})
+        self._state = State([], {})
         self._load()
 
     def on_privmsg(self, nick: str) -> None:
@@ -180,6 +204,11 @@ class Store(object):
     def unendorse(self, unendorser: AuthContext, unendorsee_nick: str) -> None:
         with self.lock:
             self._state.unendorse(unendorser, unendorsee_nick)
+            self._save()
+
+    def merge_personas(self, nick1: str, nick2: str) -> None:
+        with self.lock:
+            self._state.merge_personas(nick1, nick2)
             self._save()
 
     def _set_path(self, path):
@@ -200,6 +229,7 @@ class Store(object):
 
 @dataclass
 class State:
+    personas: list[Persona]
     nick_infos: dict[str, NickInfo]
 
     def on_privmsg(self, nick):
@@ -218,6 +248,27 @@ class State:
         if unendorsee_nick not in self.nick_infos:
             return
         self.nick_infos[unendorsee_nick].unendorse(unendorser)
+
+    def merge_personas(self, nick1: str, nick2: str) -> None:
+        for persona in self.personas:
+            if nick1 in persona.nicks or nick2 in persona.nicks:
+                persona.add_nick(nick1)
+                persona.add_nick(nick2)
+                return
+        self.personas.append(Persona.new(nick1, nick2))
+
+
+@dataclass
+class Persona:
+    nicks: list[str]
+
+    @classmethod
+    def new(cls, nick1: str, nick2: str) -> Persona:
+        return cls([nick1, nick2])
+
+    def add_nick(self, nick: str) -> None:
+        if nick not in self.nicks:
+            self.nicks.append(nick)
 
 
 @dataclass
