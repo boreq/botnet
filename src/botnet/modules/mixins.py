@@ -1,4 +1,6 @@
 from ..signals import auth_message_in, message_in, on_exception, config_changed
+from ..config import Config
+from .base import BaseModule
 
 
 _senti = object()
@@ -18,7 +20,7 @@ def iterate_dict(d, key):
                              '''Failed for key "{}"'''.format(key))
 
 
-class ConfigMixin(object):
+class ConfigMixin(BaseModule):
     """Adds various config related methods to a module. Allows the user to
     access config keys by passing a string delimited by dots.
 
@@ -28,8 +30,13 @@ class ConfigMixin(object):
         self.config_get('one.two.three')
     """
 
-    def __init__(self, config):
+    config: Config
+    _config_defaults: list[Config]
+    _config_locations: list[tuple[str, str]]
+
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
+
         # actual Config object
         self.config = config
         # list of dicts with default configuration values
@@ -40,7 +47,7 @@ class ConfigMixin(object):
     def _get_config_key(self, config, key):
         return 'module_config.{}.{}.{}'.format(config[0], config[1], key)
 
-    def register_default_config(self, config):
+    def register_default_config(self, config: Config):
         """Adds a default config. Default configs are queried for requested
         values in a reverse order in which they were registered in case a value
         is missing from the actual config.
@@ -126,7 +133,7 @@ class ConfigMixin(object):
         return True
 
 
-class BaseMessageDispatcherMixin(object):
+class BaseMessageDispatcherMixin(BaseModule):
 
     def get_command_name(self, priv_msg):
         """Extracts the used command name from a PRIVMSG message."""

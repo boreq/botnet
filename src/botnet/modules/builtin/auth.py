@@ -5,12 +5,13 @@ from ...message import Message
 from ...signals import message_out, auth_message_in
 from .. import BaseResponder
 from ..lib import MemoryCache
+from ..base import BaseModule
 
 
 DeferredWhois = namedtuple('DeferredWhois', ['nick', 'on_complete'])
 
 
-class WhoisMixin(object):
+class WhoisMixin(BaseModule):
     """Provides a way of requesting and handling WHOIS data received from the
     IRC server. WHOIS data should be requested using the function
     WhoisMixin.whois_schedule.
