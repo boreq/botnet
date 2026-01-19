@@ -132,7 +132,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
 
                 # get help
                 lines = []
-                for prefix in [self.handler_prefix, self.admin_handler_prefix]:
+                for prefix in [self.handler_prefix, self.admin_handler_prefix, self.auth_handler_prefix]:
                     text = self._get_help_for_command(prefix, name)
                     if text:
                         lines.append(text)

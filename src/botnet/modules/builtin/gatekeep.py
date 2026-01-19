@@ -121,7 +121,7 @@ class Gatekeep(NamesMixin, BaseResponder):
 
     def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
         rw = set()
-        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
+        if self._is_authorised_and_sent_a_privmsg(msg_target, auth):
             rw.add('gatekeep')
             rw.add('endorse')
             rw.add('unendorse')
@@ -133,7 +133,7 @@ class Gatekeep(NamesMixin, BaseResponder):
             self.store.on_privmsg(msg.nickname)
 
     def auth_command_gatekeep(self, msg: Message, auth: AuthContext) -> None:
-        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
+        if not self._is_authorised_and_sent_a_privmsg(msg.params[0], auth):
             return
 
         def on_complete(names) -> None:
@@ -157,7 +157,7 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         Syntax: endorse NICK
         """
-        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
+        if not self._is_authorised_and_sent_a_privmsg(msg.params[0], auth):
             return
 
         def on_complete(names) -> None:
@@ -176,7 +176,7 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         Syntax: unendorse NICK
         """
-        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
+        if not self._is_authorised_and_sent_a_privmsg(msg.params[0], auth):
             return
 
         nick = cleanup_nick(args.nick[0])
@@ -191,7 +191,7 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         Syntax: merge_personas NICK1 NICK2
         """
-        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
+        if not self._is_authorised_and_sent_a_privmsg(msg.params[0], auth):
             return
 
         nick1 = cleanup_nick(args.nick1[0])
@@ -206,12 +206,12 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         self.request_names(self.config_get('channel'), on_complete)
 
-    def _is_authorised_and_sent_a_privmsg(self, msg: Message, auth: AuthContext) -> bool:
+    def _is_authorised_and_sent_a_privmsg(self, msg_target: str, auth: AuthContext) -> bool:
         authorised_group = self.config_get('authorised_group')
         if authorised_group not in auth.groups:
             return False
 
-        if is_channel_name(msg.params[0]):
+        if is_channel_name(msg_target):
             return False
 
         return True
