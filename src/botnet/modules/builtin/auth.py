@@ -143,6 +143,7 @@ class Auth(WhoisMixin, BaseResponder):
             "auth": {
                 "people": [
                         {
+                            "uuid": "someperson",
                             "nicks": [
                                 {
                                     "kind": "irc",
@@ -173,32 +174,34 @@ class Auth(WhoisMixin, BaseResponder):
 
         def on_complete(whois_data):
             for person in self.config_get('people', []):
+                uuid = person.get('uuid')
                 groups = person.get('groups')
                 for nick_data in person.get('nicks', []):
                     match nick_data['kind']:
                         case 'irc':
                             if whois_data.get('nick_identified', None) != nick_data['nick']:
                                 continue
-                            self._emit_auth_message_in(msg, nick, groups)
+                            self._emit_auth_message_in(msg, uuid, nick_data, groups)
                         case 'matrix':
                             if whois_data.get('server', None) != 'matrix.hackint.org':
                                 continue
                             if whois_data.get('real_name', None) != nick_data['nick']:
                                 continue
-                            self._emit_auth_message_in(msg, nick, groups)
+                            self._emit_auth_message_in(msg, uuid, nick_data, groups)
                         case _:
                             raise Exception('unknown nick kind: {}'.format(nick_data['kind']))
 
         self.whois_schedule(msg.nickname, on_complete)
 
-    def _emit_auth_message_in(self, msg, nick: Nick, groups: list[str]) -> None:
+    def _emit_auth_message_in(self, msg, uuid: str, nick: Nick, groups: list[str]) -> None:
         for group in groups:
-            auth_context = AuthContext(group, nick)
+            auth_context = AuthContext(uuid, group, nick)
             auth_message_in.send(self, msg=msg, auth=auth_context)
 
 
 @dataclass
 class AuthContext:
+    uuid: str
     group: str
     nick: Nick
 
