@@ -115,8 +115,6 @@ class Gatekeep(NamesMixin, BaseResponder):
 
     store: Store
 
-    nicks_per_message = 10
-
     def __init__(self, config):
         super().__init__(config)
         self.store = Store(lambda: self.config_get('data'))
@@ -132,26 +130,14 @@ class Gatekeep(NamesMixin, BaseResponder):
         def on_complete(names) -> None:
             report = self.store.generate_minority_report(names)
 
-            need_to_be_endorsed: list[PersonaReport] = []
+            not_endorsed: list[PersonaReport] = []
             for persona_report in report.persona_reports:
-                if len(need_to_be_endorsed) >= self.nicks_per_message:
-                    break
                 if auth.uuid in persona_report.endorsements:
                     continue
-                need_to_be_endorsed.append(persona_report)
+                not_endorsed.append(persona_report)
 
-            with_few_endorsements: list[PersonaReport] = []
-            for persona_report in report.persona_reports:
-                if len(with_few_endorsements) >= self.nicks_per_message:
-                    break
-                with_few_endorsements.append(persona_report)
-
-            self.respond(msg, 'People with fewest endorsements in general:')
-            self.respond(msg, ', '.join([v.for_display() for v in with_few_endorsements]))
-
-            self.respond(msg, 'People with fewest endorsements which were NOT endorsed by you:')
-            self.respond(msg, ', '.join([v.for_display() for v in need_to_be_endorsed]))
-
+            self.respond(msg, 'Everyone: {}'.format(', '.join([v.for_display() for v in reversed(report.persona_reports)])))
+            self.respond(msg, 'People who were NOT endorsed by you: {}'.format(', '.join([v.for_display() for v in reversed(not_endorsed)])))
             self.respond(msg, 'If you would like to endorse anyone then you can privately use the \'endorse their_nick\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'unendorse\'.')
 
         self.request_names(self.config_get('channel'), on_complete)
