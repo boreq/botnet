@@ -119,6 +119,15 @@ class Gatekeep(NamesMixin, BaseResponder):
         super().__init__(config)
         self.store = Store(lambda: self.config_get('data'))
 
+    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
+        rw = set()
+        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
+            rw.add('gatekeep')
+            rw.add('endorse')
+            rw.add('unendorse')
+            rw.add('merge_personas')
+        return list(rw)
+
     def handle_privmsg(self, msg: Message) -> None:
         if is_channel_name(msg.params[0]) and msg.params[0] == self.config_get('channel'):
             self.store.on_privmsg(msg.nickname)
