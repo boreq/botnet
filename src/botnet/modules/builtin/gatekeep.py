@@ -152,7 +152,7 @@ class Gatekeep(NamesMixin, BaseResponder):
             self.respond(msg, 'People with fewest endorsements which were NOT endorsed by you:')
             self.respond(msg, ', '.join([v.for_display() for v in need_to_be_endorsed]))
 
-            self.respond(msg, 'If you would like to endorse anyone then you can privately use the \'endorse their_nick\' command in this buffer.')
+            self.respond(msg, 'If you would like to endorse anyone then you can privately use the \'endorse their_nick\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'unendorse\'.')
 
         self.request_names(self.config_get('channel'), on_complete)
 
