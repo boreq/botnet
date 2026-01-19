@@ -266,7 +266,7 @@ class State:
         if nick not in self.nick_infos:
             self.nick_infos[nick] = NickInfo.new_due_to_privmsg()
             return
-        self.nick_infos[nick].update_last_message()
+        self.nick_infos[nick].on_privmsg()
 
     def endorse(self, endorser: AuthContext, endorsee_nick: str) -> None:
         if endorsee_nick not in self.nick_infos:
@@ -331,7 +331,9 @@ class NickInfo:
     def new_due_to_endorsement(cls, endorser: AuthContext) -> NickInfo:
         return cls(None, None, [endorser.uuid])
 
-    def update_last_message(self) -> None:
+    def on_privmsg(self) -> None:
+        if self.first_message is None:
+            self.first_message = datetime.datetime.now().timestamp()
         self.last_message = datetime.datetime.now().timestamp()
 
     def endorse(self, endorser: AuthContext) -> None:
