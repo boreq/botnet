@@ -141,19 +141,21 @@ class Auth(WhoisMixin, BaseResponder):
 
         "botnet": {
             "auth": {
-                "groups": {
-                    "admin": {
-                        "nicks": [
-                            {
-                                "kind": "irc",
-                                "nick": "nick"
-                            },
-                            {
-                                "kind": "matrix",
-                                "nick": "@nick:example.com"
-                            }
-                        ]
-                    }
+                "people": [
+                        {
+                            "nicks": [
+                                {
+                                    "kind": "irc",
+                                    "nick": "nick"
+                                },
+                                {
+                                    "kind": "matrix",
+                                    "nick": "@nick:example.com"
+                                }
+                            ],
+                            groups: ["admin"]
+                        }
+                    ]
                 }
             }
         }
@@ -170,25 +172,29 @@ class Auth(WhoisMixin, BaseResponder):
         super().handle_privmsg(msg)
 
         def on_complete(whois_data):
-            for (group_name, group_data) in self.config_get('groups', {}).items():
-                nicks = group_data.get('nicks', [])
-                for nick_data in nicks:
-                    auth_context = AuthContext(group_name, nick_data)
+            for person in self.config_get('people', []):
+                groups = person.get('groups')
+                for nick_data in person.get('nicks', []):
                     match nick_data['kind']:
                         case 'irc':
                             if whois_data.get('nick_identified', None) != nick_data['nick']:
                                 continue
-                            auth_message_in.send(self, msg=msg, auth=auth_context)
+                            self._emit_auth_message_in(msg, nick, groups)
                         case 'matrix':
                             if whois_data.get('server', None) != 'matrix.hackint.org':
                                 continue
                             if whois_data.get('real_name', None) != nick_data['nick']:
                                 continue
-                            auth_message_in.send(self, msg=msg, auth=auth_context)
+                            self._emit_auth_message_in(msg, nick, groups)
                         case _:
                             raise Exception('unknown nick kind: {}'.format(nick_data['kind']))
 
         self.whois_schedule(msg.nickname, on_complete)
+
+    def _emit_auth_message_in(self, msg, nick: Nick, groups: list[str]) -> None:
+        for group in groups:
+            auth_context = AuthContext(group, nick)
+            auth_message_in.send(self, msg=msg, auth=auth_context)
 
 
 @dataclass
