@@ -1,10 +1,14 @@
 import re
+import textwrap
 from ..helpers import is_channel_name
 from ..message import Message
 from ..signals import message_out
 from .base import BaseModule
 from .mixins import ConfigMixin, MessageDispatcherMixin
 from .lib import parse_command
+
+
+_BREAK_PRIVMSG_EVERY = 400
 
 
 class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
@@ -98,8 +102,9 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
             target = priv_msg.nickname
         else:
             target = priv_msg.params[0]
-        response = Message(command='PRIVMSG', params=[target, text])
-        message_out.send(self, msg=response)
+        for part in textwrap.wrap(text, width=_BREAK_PRIVMSG_EVERY):
+            response = Message(command='PRIVMSG', params=[target, part])
+            message_out.send(self, msg=response)
 
     def get_all_commands(self, msg_target):
         """Should return a list of strings containing all commands supported by
