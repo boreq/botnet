@@ -147,7 +147,7 @@ class Gatekeep(NamesMixin, BaseResponder):
 
             self.respond(msg, 'Everyone: {}'.format(', '.join([v.for_display() for v in reversed(report.persona_reports)])))
             self.respond(msg, 'People who were NOT endorsed by you: {}'.format(', '.join([v.for_display() for v in reversed(not_endorsed)])))
-            self.respond(msg, 'If you would like to endorse anyone then you can privately use the \'endorse their_nick\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'unendorse\'.')
+            self.respond(msg, 'If you would like to endorse anyone then you can privately use the \'endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'unendorse NICK\'.')
 
         self.request_names(self.config_get('channel'), on_complete)
 
