@@ -132,8 +132,6 @@ class Gatekeep(NamesMixin, BaseResponder):
         def on_complete(names) -> None:
             names = [cleanup_nick(name) for name in names]
             report = self.store.generate_minority_report(names)
-            for persona_report in report.persona_reports:
-                print(persona_report)
 
             need_to_be_endorsed: list[PersonaReport] = []
             for persona_report in report.persona_reports:
