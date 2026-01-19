@@ -240,10 +240,10 @@ class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
 
     def dispatch_admin_message(self, msg):
         """Dispatches a message originating from an admin to all handlers."""
-        # Main handler
         if msg.command == 'PRIVMSG':
             # PRIVMSG handler
             self.handle_admin_privmsg(msg)
+
             # Command-specific handler
             if self.is_command(msg):
                 cmd_name = self.get_command_name(msg)
@@ -290,10 +290,10 @@ class AuthMessageDispatcherMixin(BaseMessageDispatcherMixin):
 
     def dispatch_auth_message(self, msg, auth):
         """Dispatches a message originating from an authorised user to all handlers."""
-        # Main handler
         if msg.command == 'PRIVMSG':
             # PRIVMSG handler
             self.handle_auth_privmsg(msg, auth)
+
             # Command-specific handler
             if self.is_command(msg):
                 cmd_name = self.get_command_name(msg)

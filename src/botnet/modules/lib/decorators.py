@@ -22,7 +22,7 @@ def parse_command(params, launch_invalid=True):
 
     def decorator(f):
         @wraps(f)
-        def decorated_function(self, msg):
+        def decorated_function(self, msg, *orgargs):
             args = msg.params[-1].split()
             try:
                 args = parser.parse_args(args)
@@ -30,7 +30,7 @@ def parse_command(params, launch_invalid=True):
                 args = None
             if not launch_invalid and args is None:
                 return
-            f(self, msg, args)
+            f(self, msg, *orgargs, args)
         return decorated_function
     return decorator
 
