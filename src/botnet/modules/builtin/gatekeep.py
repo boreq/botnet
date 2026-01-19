@@ -149,11 +149,11 @@ class Gatekeep(NamesMixin, BaseResponder):
                     break
                 with_few_endorsements.append(persona_report)
 
-            self.respond(msg, 'Here is your latest minority report for {}, what follows is a randomised list of people with fewest endorsements which were not endorsed by you:'.format(self.config_get('channel')))
-            self.respond(msg, ', '.join([v.for_display() for v in need_to_be_endorsed]))
-
-            self.respond(msg, 'Here are people with fewest endorsements in general:')
+            self.respond(msg, 'People with fewest endorsements in general:')
             self.respond(msg, ', '.join([v.for_display() for v in with_few_endorsements]))
+
+            self.respond(msg, 'People with fewest endorsements which were NOT endorsed by you:'.format(self.config_get('channel')))
+            self.respond(msg, ', '.join([v.for_display() for v in need_to_be_endorsed]))
 
             self.respond(msg, 'If you know any of those people and would like to endorse them then you can privately use the \'endorse their_nick\' command in this buffer.')
 
