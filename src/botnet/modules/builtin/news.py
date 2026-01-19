@@ -1,7 +1,7 @@
 import os
 import threading
 from ...helpers import save_json, load_json, is_channel_name
-from .. import BaseResponder
+from .. import BaseResponder, AuthContext
 from ..lib import parse_command
 
 
@@ -70,7 +70,7 @@ class News(BaseResponder):
         super().__init__(config)
         self.store = NewsStore(lambda: self.config_get('news_data'))
 
-    def get_all_commands(self, msg_target):
+    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
         rw = set()
         if msg_target in self.config_get('channels', []):
             rw.add('news')
@@ -78,7 +78,7 @@ class News(BaseResponder):
             rw.add('news_push')
             rw.add('news_pop')
             rw.add('news_update')
-        return rw
+        return list(rw)
 
     def command_news(self, msg):
         """List news for the current channel.

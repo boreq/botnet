@@ -1,9 +1,11 @@
 from ..signals import auth_message_in, message_in, on_exception, config_changed
 from ..config import Config
-from .base import BaseModule
+from .base import BaseModule, AuthContext
+from ..message import Message
 
 
 _senti = object()
+_ADMIN_GROUP_NAME = 'admin'
 
 
 def iterate_dict(d, key):
@@ -258,12 +260,12 @@ class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
                 if func is not None:
                     func(msg)
 
-    def on_admin_auth_message_in(self, sender, msg, auth):
+    def on_admin_auth_message_in(self, sender, msg: Message, auth: AuthContext) -> None:
         """Handler for an auth_message_in signal. Dispatches the message to the
         per-command handlers and the main handler.
         """
         try:
-            if auth.group == 'admin':
+            if _ADMIN_GROUP_NAME in auth.groups:
                 self.dispatch_admin_message(msg)
         except Exception as e:
             on_exception.send(self, e=e)

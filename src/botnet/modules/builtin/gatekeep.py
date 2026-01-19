@@ -115,15 +115,15 @@ class Gatekeep(NamesMixin, BaseResponder):
 
     store: Store
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.store = Store(lambda: self.config_get('data'))
 
-    def handle_privmsg(self, msg):
+    def handle_privmsg(self, msg: Message) -> None:
         if is_channel_name(msg.params[0]) and msg.params[0] == self.config_get('channel'):
             self.store.on_privmsg(msg.nickname)
 
-    def auth_command_gatekeep(self, msg, auth: AuthContext) -> None:
+    def auth_command_gatekeep(self, msg: Message, auth: AuthContext) -> None:
         if not self._is_authorised_and_sent_a_privmsg(msg, auth):
             return
 
@@ -199,7 +199,7 @@ class Gatekeep(NamesMixin, BaseResponder):
 
     def _is_authorised_and_sent_a_privmsg(self, msg: Message, auth: AuthContext) -> bool:
         authorised_group = self.config_get('authorised_group')
-        if auth.group != authorised_group:
+        if authorised_group not in auth.groups:
             return False
 
         if is_channel_name(msg.params[0]):

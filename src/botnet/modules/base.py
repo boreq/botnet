@@ -1,5 +1,12 @@
 from .. import signals
 from ..logging import get_logger
+from dataclasses import dataclass
+
+
+@dataclass
+class AuthContext:
+    uuid: str
+    groups: list[str]
 
 
 class BaseModule(object):
@@ -8,17 +15,12 @@ class BaseModule(object):
     def __init__(self, config):
         self._logger = None
 
-    def get_all_commands(self, msg_target):
+    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
         """Should return a list of strings containing all commands supported by
         this module. Used to generate a help message.
 
         msg_target: target of the PRIVMSG requesting help e.g. '#channel' or 'nick'.
-        """
-        return []
-
-    def get_all_admin_commands(self):
-        """Should return a list of strings containing all admin commands
-        supported by this module. Used to generate a help message.
+        auth: the auth context for the user which requested help.
         """
         return []
 

@@ -1,7 +1,7 @@
 import threading
 import os
 from ...signals import on_exception
-from .. import BaseResponder
+from .. import BaseResponder, AuthContext
 from markov import Chain
 
 
@@ -38,8 +38,8 @@ class Markov(BaseResponder):
         t = threading.Thread(target=self.cache_chains, daemon=True)
         t.start()
 
-    def get_all_commands(self, msg_target):
-        rw = super().get_all_commands(msg_target)
+    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
+        rw = super().get_all_commands(msg_target, auth)
         new_commands = set()
         for command in self.config_get('files', {}).keys():
             new_commands.add(command)

@@ -1,5 +1,6 @@
 from ...signals import _request_list_commands, _list_commands
-from .. import BaseResponder
+from ...message import Message
+from .. import BaseResponder, AuthContext
 from ..lib import parse_command
 
 
@@ -21,26 +22,14 @@ class Meta(BaseResponder):
         self.ibip(msg)
 
     @parse_command([('command_names', '*')])
-    def command_help(self, msg, args):
+    def auth_command_help(self, msg: Message, auth: AuthContext, args) -> None:
         """Sends a list of commands. If COMMAND is specified sends detailed help
         in a private message.
 
         Syntax: help [COMMAND ...]
         """
         if len(args.command_names) == 0:
-            _request_list_commands.send(self, msg=msg, admin=False)
-        else:
-            super().command_help(msg)
-
-    @parse_command([('command_names', '*')])
-    def admin_command_help(self, msg, args):
-        """Sends a list of commands. If COMMAND is specified sends detailed help
-        in a private message.
-
-        Syntax: help [COMMAND ...]
-        """
-        if len(args.command_names) == 0:
-            _request_list_commands.send(self, msg=msg, admin=True)
+            _request_list_commands.send(self, msg=msg, auth=auth)
         else:
             super().command_help(msg)
 
@@ -54,12 +43,9 @@ class Meta(BaseResponder):
         )
         self.respond(msg, text)
 
-    def on_list_commands(self, sender, msg, admin, commands):
+    def on_list_commands(self, sender, msg: Message, auth: AuthContext, commands: list[str]) -> None:
         """Sends a list of commands received from the Manager."""
-        if admin:
-            text = 'Supported admin commands: %s' % ', '.join(commands)
-        else:
-            text = 'Supported commands: %s' % ', '.join(commands)
+        text = 'Supported commands: %s' % ', '.join(commands)
         self.respond(msg, text)
 
     def handle_privmsg(self, msg):

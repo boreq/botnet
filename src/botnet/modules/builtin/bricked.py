@@ -1,4 +1,4 @@
-from .. import BaseResponder
+from .. import BaseResponder, AuthContext
 from ..lib import get_url
 
 
@@ -25,8 +25,8 @@ class Bricked(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'bricked'
 
-    def get_all_commands(self, msg_target):
-        rw = super().get_all_commands(msg_target)
+    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
+        rw = super().get_all_commands(msg_target, auth)
         new_commands = set()
         for entry in self.config_get('statuses', []):
             if msg_target in entry['channels']:

@@ -3,8 +3,8 @@ import textwrap
 from ..helpers import is_channel_name
 from ..message import Message
 from ..signals import message_out
-from .base import BaseModule
-from .mixins import ConfigMixin, MessageDispatcherMixin
+from .base import BaseModule, AuthContext
+from .mixins import ConfigMixin, MessageDispatcherMixin, _ADMIN_GROUP_NAME
 from .lib import parse_command
 
 
@@ -106,19 +106,16 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
             response = Message(command='PRIVMSG', params=[target, part])
             message_out.send(self, msg=response)
 
-    def get_all_commands(self, msg_target):
+    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
         """Should return a list of strings containing all commands supported by
         this module.
 
         msg_target: target of the PRIVMSG requesting help e.g. '#channel' or 'nick'.
         """
-        return self._get_commands_from_handlers(self.handler_prefix)
-
-    def get_all_admin_commands(self):
-        """Should return a list of strings containing all admin commands
-        supported by this module.
-        """
-        return self._get_commands_from_handlers(self.admin_handler_prefix)
+        commands = self._get_commands_from_handlers(self.handler_prefix)
+        if _ADMIN_GROUP_NAME in auth.groups:
+            commands.extend(self._get_commands_from_handlers(self.admin_handler_prefix))
+        return commands
 
     @parse_command([('command_names', '*')])
     def command_help(self, msg, args):

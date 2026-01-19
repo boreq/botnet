@@ -1,9 +1,8 @@
 import datetime
 from collections import namedtuple
-from dataclasses import dataclass
 from ...message import Message
 from ...signals import message_out, auth_message_in
-from .. import BaseResponder
+from .. import AuthContext, BaseResponder
 from ..lib import MemoryCache
 from ..base import BaseModule
 
@@ -170,10 +169,10 @@ class Auth(WhoisMixin, BaseResponder):
     def __init__(self, config):
         super().__init__(config)
 
-    def handle_privmsg(self, msg):
+    def handle_privmsg(self, msg: Message) -> None:
         super().handle_privmsg(msg)
 
-        def on_complete(whois_data):
+        def on_complete(whois_data) -> None:
             for person in self.config_get('people', []):
                 uuid = person.get('uuid')
                 groups = person.get('groups')
@@ -182,35 +181,21 @@ class Auth(WhoisMixin, BaseResponder):
                         case 'irc':
                             if whois_data.get('nick_identified', None) != nick_data['nick']:
                                 continue
-                            self._emit_auth_message_in(msg, uuid, nick_data, groups)
+                            self._emit_auth_message_in(msg, uuid, groups)
                         case 'matrix':
                             if whois_data.get('server', None) != 'matrix.hackint.org':
                                 continue
                             if whois_data.get('real_name', None) != nick_data['nick']:
                                 continue
-                            self._emit_auth_message_in(msg, uuid, nick_data, groups)
+                            self._emit_auth_message_in(msg, uuid, groups)
                         case _:
                             raise Exception('unknown nick kind: {}'.format(nick_data['kind']))
 
         self.whois_schedule(msg.nickname, on_complete)
 
-    def _emit_auth_message_in(self, msg, uuid: str, nick: Nick, groups: list[str]) -> None:
-        for group in groups:
-            auth_context = AuthContext(uuid, group, nick)
-            auth_message_in.send(self, msg=msg, auth=auth_context)
-
-
-@dataclass
-class AuthContext:
-    uuid: str
-    group: str
-    nick: Nick
-
-
-@dataclass
-class Nick:
-    kind: str
-    nick: str
+    def _emit_auth_message_in(self, msg: Message, uuid: str, groups: list[str]) -> None:
+        auth_context = AuthContext(uuid, groups)
+        auth_message_in.send(self, msg=msg, auth=auth_context)
 
 
 mod = Auth

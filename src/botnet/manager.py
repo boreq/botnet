@@ -1,6 +1,8 @@
 import threading
 from .config import Config
 from .logging import get_logger
+from .message import Message
+from .modules import AuthContext
 from .modules.utils import get_module, reload_module, get_ident_string
 from .signals import module_loaded, module_unloaded, module_load, module_unload, \
     _request_list_commands, _list_commands, config_changed, on_exception, \
@@ -59,16 +61,13 @@ class Manager(object):
                 return wrapper
         return None
 
-    def on_request_list_commands(self, sender, msg, admin):
+    def on_request_list_commands(self, sender, msg: Message, auth: AuthContext):
         """Handler for the _request_list_commands signal."""
         commands = []
         with self.wrappers_lock:
             for wrapper in self.module_wrappers:
-                if admin:
-                    commands.extend(wrapper.module.get_all_admin_commands())
-                else:
-                    commands.extend(wrapper.module.get_all_commands(msg.params[0]))
-        _list_commands.send(self, msg=msg, admin=admin, commands=commands)
+                commands.extend(wrapper.module.get_all_commands(msg.params[0], auth))
+        _list_commands.send(self, msg=msg, auth=auth, commands=commands)
 
     def on_config_changed(self, sender):
         """Handler for the config_changed signal."""

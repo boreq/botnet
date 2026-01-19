@@ -1,4 +1,4 @@
-from .. import BaseResponder
+from .. import BaseResponder, AuthContext
 from datetime import date
 
 
@@ -29,8 +29,8 @@ class Countdown(BaseResponder):
     def __init__(self, config):
         super().__init__(config)
 
-    def get_all_commands(self, msg_target):
-        rw = super().get_all_commands(msg_target)
+    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
+        rw = super().get_all_commands(msg_target, auth)
         new_commands = set()
         new_commands.add(self.config_get('summary_command'))
         for command in self.config_get('commands', []):

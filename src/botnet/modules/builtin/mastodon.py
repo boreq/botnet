@@ -1,4 +1,4 @@
-from .. import BaseResponder
+from .. import BaseResponder, AuthContext
 from mastodon import Mastodon as MastodonLib
 
 
@@ -27,8 +27,8 @@ class Mastodon(BaseResponder):
 
     max_toot_len = 250
 
-    def get_all_commands(self, msg_target):
-        rw = super().get_all_commands(msg_target)
+    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
+        rw = super().get_all_commands(msg_target, auth)
         new_commands = set()
         for entry in self.config_get('tooting', []):
             if msg_target in entry['channels']:
