@@ -1,4 +1,5 @@
 import datetime
+import random
 import os
 import threading
 import dacite
@@ -114,6 +115,8 @@ class Gatekeep(NamesMixin, BaseResponder):
 
     store: Store
 
+    nicks_per_message = 10
+
     def __init__(self, config):
         super().__init__(config)
         self.store = Store(lambda: self.config_get('data'))
@@ -122,18 +125,42 @@ class Gatekeep(NamesMixin, BaseResponder):
         if is_channel_name(msg.params[0]) and msg.params[0] == self.config_get('channel'):
             self.store.on_privmsg(msg.nickname)
 
-    def auth_command_gatekeep(self, msg, auth: AuthContext):
+    def auth_command_gatekeep(self, msg, auth: AuthContext) -> None:
         if not self._is_authorised_and_sent_a_privmsg(msg, auth):
             return
 
-        def on_complete(names):
+        def on_complete(names) -> None:
             names = [cleanup_nick(name) for name in names]
-            self.respond(msg, 'Names: {}'.format(names))
+            report = self.store.generate_minority_report(names)
+            for persona_report in report.persona_reports:
+                print(persona_report)
+
+            need_to_be_endorsed: list[PersonaReport] = []
+            for persona_report in report.persona_reports:
+                if len(need_to_be_endorsed) >= self.nicks_per_message:
+                    break
+                if auth.uuid in persona_report.endorsements:
+                    continue
+                need_to_be_endorsed.append(persona_report)
+
+            with_few_endorsements: list[PersonaReport] = []
+            for persona_report in report.persona_reports:
+                if len(with_few_endorsements) >= self.nicks_per_message:
+                    break
+                with_few_endorsements.append(persona_report)
+
+            self.respond(msg, 'Here is your latest minority report for {}, what follows is a randomised list of people with fewest endorsements which were not endorsed by you:'.format(self.config_get('channel')))
+            self.respond(msg, ', '.join([v.for_display() for v in need_to_be_endorsed]))
+
+            self.respond(msg, 'Here are people with fewest endorsements in general:')
+            self.respond(msg, ', '.join([v.for_display() for v in with_few_endorsements]))
+
+            self.respond(msg, 'If you know any of those people and would like to endorse them then you can privately use the \'endorse their_nick\' command in this buffer.')
 
         self.request_names(self.config_get('channel'), on_complete)
 
     @parse_command([('nick', 1)], launch_invalid=False)
-    def auth_command_endorse(self, msg: Message, auth: AuthContext, args):
+    def auth_command_endorse(self, msg: Message, auth: AuthContext, args) -> None:
         """Adds your endorsement for a nick.
 
         Syntax: endorse NICK
@@ -146,7 +173,7 @@ class Gatekeep(NamesMixin, BaseResponder):
         self.respond(msg, 'You endorsed {}!'.format(nick))
 
     @parse_command([('nick', 1)], launch_invalid=False)
-    def auth_command_unendorse(self, msg: Message, auth: AuthContext, args):
+    def auth_command_unendorse(self, msg: Message, auth: AuthContext, args) -> None:
         """Removes your endorsement for a nick.
 
         Syntax: unendorse NICK
@@ -159,7 +186,7 @@ class Gatekeep(NamesMixin, BaseResponder):
         self.respond(msg, 'You unendorsed {}!'.format(nick))
 
     @parse_command([('nick1', 1), ('nick2', 1)], launch_invalid=False)
-    def auth_command_merge_personas(self, msg: Message, auth: AuthContext, args):
+    def auth_command_merge_personas(self, msg: Message, auth: AuthContext, args) -> None:
         """Merges two personas (use if one physical person has multiple clients in the channel).
 
         Syntax: merge_personas NICK1 NICK2
@@ -172,7 +199,7 @@ class Gatekeep(NamesMixin, BaseResponder):
         self.store.merge_personas(nick1, nick2)
         self.respond(msg, 'You merged {} and {}!'.format(nick1, nick2))
 
-    def _is_authorised_and_sent_a_privmsg(self, msg: Message, auth: AuthContext):
+    def _is_authorised_and_sent_a_privmsg(self, msg: Message, auth: AuthContext) -> bool:
         authorised_group = self.config_get('authorised_group')
         if auth.group != authorised_group:
             return False
@@ -210,6 +237,10 @@ class Store(object):
         with self.lock:
             self._state.merge_personas(nick1, nick2)
             self._save()
+
+    def generate_minority_report(self, nicks: list[str]) -> MinorityReport:
+        with self.lock:
+            return MinorityReport.generate(self._state, nicks)
 
     def _set_path(self, path):
         with self.lock:
@@ -257,6 +288,22 @@ class State:
                 return
         self.personas.append(Persona.new(nick1, nick2))
 
+    def all_nicks_of(self, nick: str) -> list[str]:
+        all_nicks = set([nick])
+        for persona in self.personas:
+            if nick in persona.nicks:
+                all_nicks.update(persona.nicks)
+        return list(all_nicks)
+
+    def get_endorsements(self, nick: str) -> list[str]:
+        all_nicks = self.all_nicks_of(nick)
+        endorsements: set[str] = set()
+        for possible_nick in all_nicks:
+            info = self.nick_infos.get(possible_nick)
+            if info is not None:
+                endorsements.update(info.endorsements)
+        return list(endorsements)
+
 
 @dataclass
 class Persona:
@@ -294,6 +341,52 @@ class NickInfo:
 
     def unendorse(self, unendorser: AuthContext) -> None:
         self.endorsements = [endorser for endorser in self.endorsements if endorser != unendorser.uuid]
+
+
+@dataclass
+class MinorityReport:
+    persona_reports: list[PersonaReport]
+
+    @classmethod
+    def generate(cls, state: State, nicks: list[str]) -> MinorityReport:
+        report = cls([])
+
+        for nick in nicks:
+            existing = report._find_existing_persona_report(state, nick)
+            if existing is not None:
+                existing.add_nick(nick)
+            else:
+                new = PersonaReport.new(state, nick)
+                report.persona_reports.append(new)
+
+        random.shuffle(report.persona_reports)
+        report.persona_reports.sort(key=lambda x: len(x.endorsements))
+
+        return report
+
+    def _find_existing_persona_report(self, state: State, nick: str) -> PersonaReport | None:
+        all_nicks = state.all_nicks_of(nick)
+        for persona_report in self.persona_reports:
+            for possible_nick in all_nicks:
+                if possible_nick in persona_report.nicks:
+                    return persona_report
+        return None
+
+
+@dataclass
+class PersonaReport:
+    nicks: list[str]
+    endorsements: list[str]
+
+    @classmethod
+    def new(cls, state: State, nick: str) -> PersonaReport:
+        return PersonaReport([nick], state.get_endorsements(nick))
+
+    def add_nick(self, nick: str) -> None:
+        self.nicks.append(nick)
+
+    def for_display(self) -> str:
+        return '{} ({} endorsements)'.format('/'.join(self.nicks), len(self.endorsements))
 
 
 mod = Gatekeep
