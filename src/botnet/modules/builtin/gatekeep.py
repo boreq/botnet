@@ -8,8 +8,8 @@ from ...helpers import save_json, load_json, is_channel_name, cleanup_nick
 from ...signals import message_out
 from ...message import Message
 from .. import BaseResponder
-from ..lib import MemoryCache
-from . import auth
+from ..lib import MemoryCache, parse_command
+from .auth import AuthContext
 
 
 DeferredAction = namedtuple('DeferredAction', ['channel', 'on_complete'])
@@ -95,7 +95,7 @@ class Gatekeep(NamesMixin, BaseResponder):
             "gatekeep": {
                 "data": "/path/to/data_file.json",
                 "channel": "#channel",
-                "admin_group": "somegroup",
+                "authorised_group": "somegroup",
                 "people": [
                     {
                         "nicks": [
@@ -112,6 +112,8 @@ class Gatekeep(NamesMixin, BaseResponder):
     config_namespace = 'botnet'
     config_name = 'gatekeep'
 
+    store: Store
+
     def __init__(self, config):
         super().__init__(config)
         self.store = Store(lambda: self.config_get('data'))
@@ -120,30 +122,67 @@ class Gatekeep(NamesMixin, BaseResponder):
         if is_channel_name(msg.params[0]) and msg.params[0] == self.config_get('channel'):
             self.store.on_privmsg(msg.nickname)
 
-    def auth_command_gatekeep(self, msg, auth):
-        authorised_group = self.config_get('authorised_group')
-        if auth.group != authorised_group:
-            return
-
-        if is_channel_name(msg.params[0]):
+    def auth_command_gatekeep(self, msg, auth: AuthContext):
+        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
             return
 
         def on_complete(names):
             names = [cleanup_nick(name) for name in names]
-            print('names', names)
+            self.respond(msg, 'Names: {}'.format(names))
 
         self.request_names(self.config_get('channel'), on_complete)
+
+    @parse_command([('nick', 1)], launch_invalid=False)
+    def auth_command_endorse(self, msg: Message, auth: AuthContext, args):
+        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
+            return
+
+        self.store.endorse(auth, args.nick[0])
+        self.respond(msg, 'You endorsed {}!'.format(args.nick[0]))
+
+    @parse_command([('nick', 1)], launch_invalid=False)
+    def auth_command_unendorse(self, msg: Message, auth: AuthContext, args):
+        if not self._is_authorised_and_sent_a_privmsg(msg, auth):
+            return
+
+        self.store.unendorse(auth, args.nick[0])
+        self.respond(msg, 'You unendorsed {}!'.format(args.nick[0]))
+
+    def _is_authorised_and_sent_a_privmsg(self, msg: Message, auth: AuthContext):
+        authorised_group = self.config_get('authorised_group')
+        if auth.group != authorised_group:
+            return False
+
+        if is_channel_name(msg.params[0]):
+            return False
+
+        return True
 
 
 class Store(object):
 
     def __init__(self, path):
         self.lock = threading.Lock()
-        self.set_path(path)
+        self._set_path(path)
         self._state = State({})
         self._load()
 
-    def set_path(self, path):
+    def on_privmsg(self, nick: str) -> None:
+        with self.lock:
+            self._state.on_privmsg(nick)
+            self._save()
+
+    def endorse(self, endorser: AuthContext, endorsee_nick: str) -> None:
+        with self.lock:
+            self._state.endorse(endorser, endorsee_nick)
+            self._save()
+
+    def unendorse(self, unendorser: AuthContext, unendorsee_nick: str) -> None:
+        with self.lock:
+            self._state.unendorse(unendorser, unendorsee_nick)
+            self._save()
+
+    def _set_path(self, path):
         with self.lock:
             self._path = path
 
@@ -158,28 +197,52 @@ class Store(object):
     def _save(self) -> None:
         save_json(self._path(), asdict(self._state))
 
-    def on_privmsg(self, nick: str) -> None:
-        with self.lock:
-            self._state.on_privmsg(nick)
-            self._save()
-
 
 @dataclass
 class State:
-    message_info: dict[str, NickInfo]
+    nick_infos: dict[str, NickInfo]
 
     def on_privmsg(self, nick):
-        if nick in self.message_info:
-            self.message_info[nick].last_message = datetime.datetime.now().timestamp()
-        else:
-            self.message_info[nick] = NickInfo(datetime.datetime.now().timestamp(), datetime.datetime.now().timestamp(), [])
+        if nick not in self.nick_infos:
+            self.nick_infos[nick] = NickInfo.new_due_to_privmsg()
+            return
+        self.nick_infos[nick].update_last_message()
+
+    def endorse(self, endorser: AuthContext, endorsee_nick: str) -> None:
+        if endorsee_nick not in self.nick_infos:
+            self.nick_infos[endorsee_nick] = NickInfo.new_due_to_endorsement(endorser)
+            return
+        self.nick_infos[endorsee_nick].endorse(endorser)
+
+    def unendorse(self, unendorser: AuthContext, unendorsee_nick: str) -> None:
+        if unendorsee_nick not in self.nick_infos:
+            return
+        self.nick_infos[unendorsee_nick].unendorse(unendorser)
 
 
 @dataclass
 class NickInfo:
-    first_message: float
-    last_message: float
-    endorsements: list[auth.Nick]
+    first_message: None | float
+    last_message: None | float
+    endorsements: list[str]
+
+    @classmethod
+    def new_due_to_privmsg(cls) -> NickInfo:
+        return cls(datetime.datetime.now().timestamp(), datetime.datetime.now().timestamp(), [])
+
+    @classmethod
+    def new_due_to_endorsement(cls, endorser: AuthContext) -> NickInfo:
+        return cls(None, None, [endorser.uuid])
+
+    def update_last_message(self) -> None:
+        self.last_message = datetime.datetime.now().timestamp()
+
+    def endorse(self, endorser: AuthContext) -> None:
+        if endorser.uuid not in self.endorsements:
+            self.endorsements.append(endorser.uuid)
+
+    def unendorse(self, unendorser: AuthContext) -> None:
+        self.endorsements = [endorser for endorser in self.endorsements if endorser != unendorser.uuid]
 
 
 mod = Gatekeep
