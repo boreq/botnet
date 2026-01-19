@@ -201,8 +201,15 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         nick1 = cleanup_nick(args.nick1[0])
         nick2 = cleanup_nick(args.nick2[0])
-        self.store.merge_personas(nick1, nick2)
-        self.respond(msg, 'You merged {} and {}!'.format(nick1, nick2))
+
+        def on_complete(names) -> None:
+            if nick1 in names and nick2 in names:
+                self.store.merge_personas(nick1, nick2)
+                self.respond(msg, 'You merged {} and {}!'.format(nick1, nick2))
+            else:
+                self.respond(msg, 'At least one of those nicks isn\'t in the channel!')
+
+        self.request_names(self.config_get('channel'), on_complete)
 
     def _is_authorised_and_sent_a_privmsg(self, msg: Message, auth: AuthContext) -> bool:
         authorised_group = self.config_get('authorised_group')
