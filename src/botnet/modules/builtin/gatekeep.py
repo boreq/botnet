@@ -402,7 +402,7 @@ class PersonaReport:
         self.nicks.append(nick)
 
     def for_display(self) -> str:
-        return '{} ({} endorsements)'.format('/'.join(self.nicks), len(self.endorsements))
+        return '{} ({})'.format('/'.join(self.nicks), len(self.endorsements))
 
 
 mod = Gatekeep
