@@ -2,7 +2,7 @@ import datetime
 import os
 import threading
 from ...helpers import save_json, load_json, is_channel_name
-from .. import BaseResponder
+from .. import BaseResponder, command
 from ..lib import parse_command
 
 
@@ -79,8 +79,9 @@ class Seen(BaseResponder):
         super().__init__(config)
         self.ms = MessageStore(lambda: self.config_get('message_data'))
 
-    @parse_command([('nick', 1)], launch_invalid=False)
-    def command_seen(self, msg, args):
+    @command('seen')
+    @parse_command([('nick', 1)])
+    def command_seen(self, msg, auth, args):
         """Check when was the last time someone said something.
 
         Syntax: seen NICK

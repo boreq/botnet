@@ -7,7 +7,7 @@ import fnmatch
 from ...logging import get_logger
 from ...message import Message
 from ...signals import message_in, message_out, on_exception, config_changed
-from .. import BaseResponder
+from .. import BaseResponder, command, only_admins
 from ..lib import parse_command
 
 
@@ -159,7 +159,9 @@ class IRC(BaseResponder):
         """This method should return the command prefix."""
         return self.config_get('command_prefix', '.')
 
-    @parse_command([('name', 1), ('password', '?')], launch_invalid=False)
+    @command('channel_join')
+    @only_admins()
+    @parse_command([('name', 1), ('password', '?')])
     def admin_command_channel_join(self, msg, args):
         """Joins a channel.
 
@@ -167,7 +169,9 @@ class IRC(BaseResponder):
         """
         self.join(args.name[0], args.password)
 
-    @parse_command([('name', 1)], launch_invalid=False)
+    @command('channel_part')
+    @only_admins()
+    @parse_command([('name', 1)])
     def admin_command_channel_part(self, msg, args):
         """Parts a channel.
 
@@ -175,7 +179,9 @@ class IRC(BaseResponder):
         """
         self.part(args.name[0])
 
-    @parse_command([('pattern', 1)], launch_invalid=False)
+    @command('ignore')
+    @only_admins()
+    @parse_command([('pattern', 1)])
     def admin_command_ignore(self, msg, args):
         """Ignores a user. Pattern should be in the following form with
         asterisks used as wildcards: nick!user@host.
@@ -186,7 +192,9 @@ class IRC(BaseResponder):
         config_changed.send(self)
         self.respond(msg, 'Done!')
 
-    @parse_command([('pattern', 1)], launch_invalid=False)
+    @command('unignore')
+    @only_admins()
+    @parse_command([('pattern', 1)])
     def admin_command_unignore(self, msg, args):
         """Unignores a user.
 
@@ -199,6 +207,8 @@ class IRC(BaseResponder):
         except ValueError:
             pass
 
+    @command('ignored')
+    @only_admins()
     def admin_command_ignored(self, msg):
         """Lists ignored patterns.
 

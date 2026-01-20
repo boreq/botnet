@@ -3,12 +3,13 @@ import random
 import os
 import threading
 import dacite
+from typing import Any, cast
 from collections import namedtuple
 from dataclasses import dataclass, asdict
 from ...helpers import save_json, load_json, is_channel_name, cleanup_nick
 from ...signals import message_out
 from ...message import Message
-from .. import BaseResponder
+from .. import BaseResponder, predicates, command
 from ..lib import MemoryCache, parse_command
 from .auth import AuthContext
 from ..base import BaseModule
@@ -87,6 +88,23 @@ class NamesMixin(BaseModule):
             func(msg)
 
 
+def _is_authorised_has_uuid_and_sent_a_privmsg():
+    def predicate(module: Any, msg: Message, auth: AuthContext) -> bool:
+        authorised_group = module.config_get('authorised_group')
+        if authorised_group not in auth.groups:
+            return False
+
+        if not auth.uuid:
+            return False
+
+        if is_channel_name(msg.params[0]):
+            return False
+
+        return True
+
+    return predicates([predicate])
+
+
 class Gatekeep(NamesMixin, BaseResponder):
     """Allows users to see when was the last time someone said something.
 
@@ -119,22 +137,17 @@ class Gatekeep(NamesMixin, BaseResponder):
         super().__init__(config)
         self.store = Store(lambda: self.config_get('data'))
 
-    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
-        rw = set()
-        if self._is_authorised_and_sent_a_privmsg(msg_target, auth):
-            rw.add('gatekeep')
-            rw.add('endorse')
-            rw.add('unendorse')
-            rw.add('merge_personas')
-        return list(rw)
-
     def handle_privmsg(self, msg: Message) -> None:
         if is_channel_name(msg.params[0]) and msg.params[0] == self.config_get('channel'):
             self.store.on_privmsg(msg.nickname)
 
+    @command('gatekeep')
+    @_is_authorised_has_uuid_and_sent_a_privmsg()
     def auth_command_gatekeep(self, msg: Message, auth: AuthContext) -> None:
-        if not self._is_authorised_and_sent_a_privmsg(msg.params[0], auth):
-            return
+        """Prints a report containing the number of endorsements and other information.
+
+        Syntax: gatekeep
+        """
 
         def on_complete(names) -> None:
             report = self.store.generate_minority_report(names)
@@ -151,15 +164,14 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         self.request_names(self.config_get('channel'), on_complete)
 
-    @parse_command([('nick', 1)], launch_invalid=False)
+    @command('endorse')
+    @_is_authorised_has_uuid_and_sent_a_privmsg()
+    @parse_command([('nick', 1)])
     def auth_command_endorse(self, msg: Message, auth: AuthContext, args) -> None:
         """Adds your endorsement for a nick.
 
         Syntax: endorse NICK
         """
-        if not self._is_authorised_and_sent_a_privmsg(msg.params[0], auth):
-            return
-
         def on_complete(names) -> None:
             nick = cleanup_nick(args.nick[0])
             if nick in names:
@@ -170,30 +182,28 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         self.request_names(self.config_get('channel'), on_complete)
 
-    @parse_command([('nick', 1)], launch_invalid=False)
+    @command('unendorse')
+    @_is_authorised_has_uuid_and_sent_a_privmsg()
+    @parse_command([('nick', 1)])
     def auth_command_unendorse(self, msg: Message, auth: AuthContext, args) -> None:
         """Removes your endorsement for a nick.
 
         Syntax: unendorse NICK
         """
-        if not self._is_authorised_and_sent_a_privmsg(msg.params[0], auth):
-            return
-
         nick = cleanup_nick(args.nick[0])
         if self.store.unendorse(auth, nick):
             self.respond(msg, 'You unendorsed {}!'.format(nick))
         else:
             self.respond(msg, 'You never endorsed {}.'.format(nick))
 
-    @parse_command([('nick1', 1), ('nick2', 1)], launch_invalid=False)
+    @command('merge_personas')
+    @_is_authorised_has_uuid_and_sent_a_privmsg()
+    @parse_command([('nick1', 1), ('nick2', 1)])
     def auth_command_merge_personas(self, msg: Message, auth: AuthContext, args) -> None:
         """Merges two personas (use if one physical person has multiple clients in the channel).
 
         Syntax: merge_personas NICK1 NICK2
         """
-        if not self._is_authorised_and_sent_a_privmsg(msg.params[0], auth):
-            return
-
         nick1 = cleanup_nick(args.nick1[0])
         nick2 = cleanup_nick(args.nick2[0])
 
@@ -205,16 +215,6 @@ class Gatekeep(NamesMixin, BaseResponder):
                 self.respond(msg, 'At least one of those nicks isn\'t in the channel!')
 
         self.request_names(self.config_get('channel'), on_complete)
-
-    def _is_authorised_and_sent_a_privmsg(self, msg_target: str, auth: AuthContext) -> bool:
-        authorised_group = self.config_get('authorised_group')
-        if authorised_group not in auth.groups:
-            return False
-
-        if is_channel_name(msg_target):
-            return False
-
-        return True
 
 
 class Store(object):
@@ -338,7 +338,8 @@ class NickInfo:
 
     @classmethod
     def new_due_to_endorsement(cls, endorser: AuthContext) -> NickInfo:
-        return cls(None, None, [endorser.uuid])
+        assert endorser.uuid is not None
+        return cls(None, None, [cast(str, endorser.uuid)])
 
     def on_privmsg(self) -> None:
         if self.first_message is None:
@@ -346,6 +347,7 @@ class NickInfo:
         self.last_message = datetime.datetime.now().timestamp()
 
     def endorse(self, endorser: AuthContext) -> None:
+        assert endorser.uuid is not None
         if endorser.uuid not in self.endorsements:
             self.endorsements.append(endorser.uuid)
 

@@ -1,4 +1,5 @@
 from .. import BaseResponder, AuthContext
+from ...message import Message
 from ..lib import get_url
 
 
@@ -25,21 +26,21 @@ class Bricked(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'bricked'
 
-    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
-        rw = super().get_all_commands(msg_target, auth)
+    def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
+        rw = super().get_all_commands(msg, auth)
         new_commands = set()
         for entry in self.config_get('statuses', []):
-            if msg_target in entry['channels']:
+            if msg.params[0] in entry['channels']:
                 for command in entry['commands']:
                     new_commands.add(command)
         rw.extend(new_commands)
         return rw
 
     def handle_privmsg(self, msg):
-        if not self.is_command(msg):
-            return
-
         command_name = self.get_command_name(msg)
+
+        if command_name is None:
+            return
 
         for entry in self.config_get('statuses', []):
             if command_name not in entry['commands']:

@@ -1,11 +1,19 @@
 import argparse
+import inspect
 from functools import wraps
+from typing import Protocol, Any
+from ...message import Message
+from ..base import AuthContext
 
 
-def parse_command(params, launch_invalid=True):
-    """Decorator. Automatically parses the last argument of PRIVMSG, which is
-    the message itself, using argparse. If launch_invalid is True the function
-    will be launched if the parameters are invalid.
+class CommandHandlerWithArguments(Protocol):
+    def __call__(self, instance: Any, msg: Message, auth: AuthContext, args: Any) -> None:
+        ...
+
+
+def parse_command(params):
+    """Decorator which parses the last argument of PRIVMSG, which is the
+    message itself, using argparse.
 
         class TestResponder(BaseResponder):
             @parse_command([('person', '?'), ('colors', '+')])
@@ -20,17 +28,23 @@ def parse_command(params, launch_invalid=True):
     for name, nargs in params:
         parser.add_argument(name, nargs=nargs)
 
-    def decorator(f):
+    def decorator(f: CommandHandlerWithArguments):
+        sig = inspect.signature(f)
+        if 'args' not in sig.parameters.keys():
+            raise Exception('function signature is missing args')
+        new_params = [p for name, p in sig.parameters.items() if name != 'args']
+
         @wraps(f)
-        def decorated_function(self, msg, *orgargs):
+        def decorated_function(self, msg: Message, auth: AuthContext):
             args = msg.params[-1].split()
             try:
                 args = parser.parse_args(args)
             except SystemExit:
-                args = None
-            if not launch_invalid and args is None:
                 return
-            f(self, msg, *orgargs, args)
+
+            f(self, msg, auth, args)
+
+        setattr(decorated_function, '__signature__', sig.replace(parameters=new_params))
         return decorated_function
     return decorator
 

@@ -1,6 +1,8 @@
 import threading
-from .. import BaseResponder
+from ...message import Message
+from .. import BaseResponder, command
 from ..lib import parse_command, get_url
+from ..base import AuthContext
 
 
 class Vatsim(BaseResponder):
@@ -23,8 +25,9 @@ class Vatsim(BaseResponder):
         'metar_api_url': 'https://metar.vatsim.net/metar.php?id=%s',
     }
 
-    @parse_command([('icao', 1)], launch_invalid=False)
-    def command_metar(self, msg, args):
+    @command('metar')
+    @parse_command([('icao', 1)])
+    def command_metar(self, msg: Message, auth: AuthContext, args) -> None:
         """Returns a METAR for the given aiport.
 
         Syntax: metar ICAO

@@ -1,6 +1,6 @@
 from ...signals import message_out
 from ...message import Message
-from .. import BaseResponder
+from .. import BaseResponder, command, only_admins
 from ..lib import parse_command
 from ...helpers import is_channel_name
 
@@ -11,7 +11,8 @@ class Anonpost(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'anonpost'
 
-    @parse_command([('target', 1), ('message', '+')], launch_invalid=False)
+    @command('anonpost')
+    @parse_command([('target', 1), ('message', '+')])
     def command_anonpost(self, msg, args):
         """Send a message to a target channel anonymously.
 
@@ -23,7 +24,9 @@ class Anonpost(BaseResponder):
         if is_channel_name(target):
             self.send(target, message)
 
-    @parse_command([('target', 1), ('message', '+')], launch_invalid=False)
+    @command('anonpost')
+    @only_admins()
+    @parse_command([('target', 1), ('message', '+')])
     def admin_command_anonpost(self, msg, args):
         """Send a message to a target user anonymously.
 

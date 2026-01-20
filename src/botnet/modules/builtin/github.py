@@ -1,6 +1,6 @@
 from collections import defaultdict
 import threading
-from .. import BaseResponder
+from .. import BaseResponder, command, only_admins
 from ..lib import MemoryCache, get_url, parse_command, catch_other
 from ...message import Message
 from ...signals import on_exception, message_out, config_changed
@@ -272,7 +272,9 @@ class Github(BaseResponder):
             text = '%s/%s is not being tracked' % (owner, repo)
         return text
 
-    @parse_command([('owner', 1), ('repo', 1), ('channels', '+')], launch_invalid=False)
+    @command('github_track')
+    @only_admins()
+    @parse_command([('owner', 1), ('repo', 1), ('channels', '+')])
     def admin_command_github_track(self, msg, args):
         """Starts tracking a repo. Events from a tracked repository (such as new
         created issues or pushed commits) are sent to the specified channels.
@@ -301,7 +303,9 @@ class Github(BaseResponder):
         text = self.get_subscription_info_text(owner, repo)
         self.respond(msg, text)
 
-    @parse_command([('owner', 1), ('repo', 1), ('channels', '*')], launch_invalid=False)
+    @command('github_untrack')
+    @only_admins()
+    @parse_command([('owner', 1), ('repo', 1), ('channels', '*')])
     def admin_command_github_untrack(self, msg, args):
         """Unsubscribes a channel from receiving updates about events occuring
         in a repository. If no CHANNELs are passed as an argument all channels
@@ -330,6 +334,8 @@ class Github(BaseResponder):
         else:
             self.respond(msg, 'This repository is not being tracked')
 
+    @command('github_tracked')
+    @only_admins()
     def admin_command_github_tracked(self, msg):
         """Lists tracked repositories.
 
@@ -348,7 +354,8 @@ class Github(BaseResponder):
             text = 'No tracked repositories'
         self.respond(msg, text)
 
-    @parse_command([('phrase', '+')], launch_invalid=False)
+    @command('github')
+    @parse_command([('phrase', '+')])
     def command_github(self, msg, args):
         """Search Github repositories.
 
@@ -365,7 +372,8 @@ class Github(BaseResponder):
 
         self.in_background(f)
 
-    @parse_command([('phrase', '+')], launch_invalid=False)
+    @command('github_user')
+    @parse_command([('phrase', '+')])
     def command_github_user(self, msg, args):
         """Search Github users.
 

@@ -16,11 +16,11 @@ class Manager(object):
     # Class used for config
     config_class = Config
 
-    def __init__(self, config_path=None):
+    def __init__(self, config_path=None) -> None:
         self.logger = get_logger(self)
 
         # List of ModuleWrapper objects, each with one module
-        self.module_wrappers = []
+        self.module_wrappers: list[ModuleWrapper] = []
 
         # Event used to stop the entire program
         self.stop_event = threading.Event()
@@ -44,7 +44,7 @@ class Manager(object):
         config_reload.connect(self.on_config_reload)
         config_changed.connect(self.on_config_changed)
 
-    def stop(self):
+    def stop(self) -> None:
         """Stops all modules and then the entire program."""
         self.logger.debug('Stop')
         with self.wrappers_lock:
@@ -52,7 +52,7 @@ class Manager(object):
                 wrapper.stop()
             self.stop_event.set()
 
-    def get_wrapper(self, module_class):
+    def get_wrapper(self, module_class) -> ModuleWrapper | None:
         """Checks if a module is loaded. Returns ModuleWrapper or None on
         failure.
         """
@@ -61,12 +61,12 @@ class Manager(object):
                 return wrapper
         return None
 
-    def on_request_list_commands(self, sender, msg: Message, auth: AuthContext):
+    def on_request_list_commands(self, sender, msg: Message, auth: AuthContext) -> None:
         """Handler for the _request_list_commands signal."""
-        commands = []
+        commands: list[str] = []
         with self.wrappers_lock:
             for wrapper in self.module_wrappers:
-                commands.extend(wrapper.module.get_all_commands(msg.params[0], auth))
+                commands.extend(wrapper.module.get_all_commands(msg, auth))
         _list_commands.send(self, msg=msg, auth=auth, commands=commands)
 
     def on_config_changed(self, sender):

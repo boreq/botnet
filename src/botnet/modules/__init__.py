@@ -2,5 +2,5 @@
 
 from .base import AuthContext, BaseModule
 from .baseresponder import BaseResponder
-from .mixins import ConfigMixin, BaseMessageDispatcherMixin, \
-    StandardMessageDispatcherMixin, AdminMessageDispatcherMixin
+from .decorators import command, Predicate, predicates, only_admins
+from .mixins import ConfigMixin, MessageDispatcherMixin

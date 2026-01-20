@@ -2,7 +2,7 @@ import datetime
 import os
 import threading
 from ...helpers import save_json, load_json, is_channel_name
-from .. import BaseResponder
+from .. import BaseResponder, command
 from ..lib import parse_command
 
 
@@ -116,8 +116,9 @@ class Tell(BaseResponder):
         super().__init__(config)
         self.ms = MessageStore(lambda: self.config_get('message_data'))
 
-    @parse_command([('target', 1), ('message', '+')], launch_invalid=False)
-    def command_tell(self, msg, args):
+    @command('tell')
+    @parse_command([('target', 1), ('message', '+')])
+    def command_tell(self, msg, auth, args):
         """Leave a message for someone. The user will receive the message the
         next time he sends anything in any of the channels.
 

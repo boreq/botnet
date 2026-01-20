@@ -1,11 +1,12 @@
 from .. import signals
 from ..logging import get_logger
+from ..message import Message
 from dataclasses import dataclass
 
 
 @dataclass
 class AuthContext:
-    uuid: str
+    uuid: str | None
     groups: list[str]
 
 
@@ -15,12 +16,12 @@ class BaseModule(object):
     def __init__(self, config):
         self._logger = None
 
-    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
+    def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
         """Should return a list of strings containing all commands supported by
         this module. Used to generate a help message.
 
-        msg_target: target of the PRIVMSG requesting help e.g. '#channel' or 'nick'.
-        auth: the auth context for the user which requested help.
+        msg: message in which the user requested a list of commands, always a PRIVMSG.
+        auth: the auth context associated with the message.
         """
         return []
 

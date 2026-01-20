@@ -1,14 +1,18 @@
-from ..signals import auth_message_in, message_in, on_exception, config_changed
+import re
+import inspect
+from ..signals import message_in, auth_message_in, on_exception, config_changed
 from ..config import Config
 from .base import BaseModule, AuthContext
+from .decorators import _ATTR_COMMAND_NAME, _ATTR_PREDICATES
 from ..message import Message
+from collections.abc import Callable
 
 
-_senti = object()
+_SENTI = object()
 _ADMIN_GROUP_NAME = 'admin'
 
 
-def iterate_dict(d, key):
+def _iterate_dict(d, key):
     """Allows to search a dict using a key.which.looks.like.this instead
     of passing complex lambda expressions to functions.
     """
@@ -62,7 +66,7 @@ class ConfigMixin(BaseModule):
         """
         self._config_locations.append((namespace, name))
 
-    def config_get(self, key, default=_senti, auto=_senti):
+    def config_get(self, key, default=_SENTI, auto=_SENTI):
         """Tries to get the value assigned to `key` from the registered configs.
         Raises KeyError if a key does not exist in the dictionary,
         Raises ValueError if a value which a key tries to subscript is not a dict.
@@ -79,22 +83,22 @@ class ConfigMixin(BaseModule):
             for config in reversed(self._config_locations):
                 actual_key = self._get_config_key(config, key)
                 try:
-                    return next(reversed(list(iterate_dict(self.config, actual_key))))
+                    return next(reversed(list(_iterate_dict(self.config, actual_key))))
                 except KeyError:
                     continue
 
         # defaults
         for config in reversed(self._config_defaults):
             try:
-                return next(reversed(list(iterate_dict(config, key))))
+                return next(reversed(list(_iterate_dict(config, key))))
             except KeyError:
                 continue
 
-        if auto is not _senti:
+        if auto is not _SENTI:
             self.config_set(key, auto)
             return self.config_get(key)
 
-        if default is not _senti:
+        if default is not _SENTI:
             return default
 
         raise KeyError
@@ -135,199 +139,126 @@ class ConfigMixin(BaseModule):
         return True
 
 
-class BaseMessageDispatcherMixin(BaseModule):
-
-    def get_command_name(self, priv_msg):
-        """Extracts the used command name from a PRIVMSG message."""
-        # Extract the first word the last message parameter:
-        cmd_name = priv_msg.params[-1].split(' ')[0]
-        # Remove the command prefix
-        cmd_name = cmd_name.strip(self.get_command_prefix())
-        return cmd_name
-
-    def _get_command_handler(self, handler_prefix, cmd_name):
-        """Returns a handler for a command."""
-        handler_name = handler_prefix + cmd_name
-        return getattr(self, handler_name, None)
-
-    def get_command_prefix(self):
-        """This method should return the command prefix."""
-        raise NotImplementedError
-
-    def is_command(self, priv_msg, command_name=None, command_prefix=None):
-        """Returns True if the message text starts with a `command_name`
-        prefixed with `command_prefix`.
-        If `command_name` is None this function will simply check if the message
-        is prefixed with a command prefix. By default the command prefix
-        defined in the config is used but you can ovverida it by passing the
-        `command_prefix` parameter.
-        """
-        if command_prefix is None:
-            command_prefix = self.get_command_prefix()
-
-        if command_name:
-            cmd = command_prefix + command_name
-            spl = priv_msg.params[-1].split()
-            if len(spl) > 0:
-                return spl[0] == cmd
-            else:
-                return False
-        else:
-            return priv_msg.params[-1].startswith(command_prefix)
-
-
-class StandardMessageDispatcherMixin(BaseMessageDispatcherMixin):
-    """Dispatches all messages received via `message_in` signal to the proper
+class MessageDispatcherMixin(BaseModule):
+    """Dispatches messages received via `auth_message_in` signal to appropriate
     methods.
 
-    When a message is received via the `message_in` signal:
-        Each incomming PRIVMSG is dispatched to the `handle_privmsg` method
-        and all incoming messages are dispatched to `handle_msg` method. If a
-        message starts with a command_prefix defined in the config it will be
-        also sent to a proper handler, for example `command_help`.
+    When a message is received via the `auth_message_in` signal:
+        - All messages are dispatched to `handle_msg` and `handle_auth_msg`.
+        - All PRIVMSG messages are dispatched to `handle_privmsg` and `handle_auth_privmsg`.
+        - If a message starts with a command prefix defined in the config it
+          will also be sent to all handlers marked with a matching command
+          decorator.
     """
-
-    # Prefix for command handlers. For example a method `command_help` would be
-    # a handler for messages starting with .help
-    handler_prefix = 'command_'
 
     def __init__(self, config):
         super().__init__(config)
-        message_in.connect(self.on_message_in)
+        auth_message_in.connect(self._on_auth_message_in)
+        message_in.connect(self._on_message_in)
 
-    def dispatch_message(self, msg):
-        """Dispatches a message to all handlers."""
-        # Main handler
-        self.handle_msg(msg)
-        if msg.command == 'PRIVMSG':
-            # PRIVMSG handler
-            self.handle_privmsg(msg)
-            # Command-specific handler
-            if self.is_command(msg):
-                cmd_name = self.get_command_name(msg)
-                func = self._get_command_handler(self.handler_prefix, cmd_name)
-                if func is not None:
-                    func(msg)
-
-    def on_message_in(self, sender, msg):
-        """Handler for a message_in signal. Dispatches the message to the
-        per-command handlers and the main handler.
-        """
-        try:
-            self.dispatch_message(msg)
-        except Exception as e:
-            on_exception.send(self, e=e)
-
-    def handle_msg(self, msg):
+    def handle_msg(self, msg: Message) -> None:
         """Called when a message is received."""
         pass
 
-    def handle_privmsg(self, msg):
+    def handle_privmsg(self, msg: Message) -> None:
         """Called when a message with a PRIVMSG command is received."""
         pass
 
+    def handle_auth_msg(self, msg: Message, auth: AuthContext) -> None:
+        """Called when a message is received."""
+        pass
 
-class AdminMessageDispatcherMixin(BaseMessageDispatcherMixin):
-    """Dispatches all messages received via `auth_message_in` signal with group
-    'admin' to the proper methods.
+    def handle_auth_privmsg(self, msg: Message, auth: AuthContext) -> None:
+        """Called when a message with a PRIVMSG command is received."""
+        pass
 
-    When a message is received via the `auth_message_in` signal and has a group 'admin':
-        Each incomming PRIVMSG is dispatched to the `handle_admin_privmsg`
-        method. If a message starts with a command_prefix defined in the config
-        it will be also sent to a proper handler, for example
-        `admin_command_help`.
-    """
+    def get_command_prefix(self) -> str:
+        """This method should return the command prefix."""
+        raise NotImplementedError
 
-    # Prefix for admin command handlers. For example a method
-    # `admin_command_help` would be a handler for messages starting with .help
-    # received from an admin
-    admin_handler_prefix = 'admin_command_'
+    def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
+        command_names: set[str] = set()
+        for handler in self._get_all_command_handlers():
+            if self._command_predicates_pass(handler, msg, auth):
+                command_names.add(getattr(handler, _ATTR_COMMAND_NAME))
+        return list(command_names)
 
-    def __init__(self, config):
-        super().__init__(config)
-        auth_message_in.connect(self.on_admin_auth_message_in)
+    def get_help_for_command(self, command_name: str, msg: Message, auth: AuthContext) -> list[str]:
+        help_texts: list[str] = []
+        for handler in self._get_command_handlers(command_name):
+            if self._command_predicates_pass(handler, msg, auth):
+                # Header
+                rw = 'Module %s, help for `%s`: ' % (self.__class__.__name__, command_name)
 
-    def dispatch_admin_message(self, msg):
-        """Dispatches a message originating from an admin to all handlers."""
-        if msg.command == 'PRIVMSG':
-            # PRIVMSG handler
-            self.handle_admin_privmsg(msg)
+                # Docstring
+                help_text = handler.__doc__
+                if help_text:
+                    rw += ' '.join(help_text.splitlines())
+                else:
+                    rw += 'No help available.'
 
-            # Command-specific handler
-            if self.is_command(msg):
-                cmd_name = self.get_command_name(msg)
-                func = self._get_command_handler(self.admin_handler_prefix, cmd_name)
-                if func is not None:
-                    func(msg)
+                rw = re.sub(' +', ' ', rw)
+                help_texts.append(rw)
+        return help_texts
 
-    def on_admin_auth_message_in(self, sender, msg: Message, auth: AuthContext) -> None:
-        """Handler for an auth_message_in signal. Dispatches the message to the
-        per-command handlers and the main handler.
-        """
+    def get_command_name(self, priv_msg: Message) -> str | None:
+        """Extracts the command name from a PRIVMSG message."""
+        command_prefix = self.get_command_prefix()
+        if not priv_msg.params[-1].startswith(command_prefix):
+            return None
+        cmd_name = priv_msg.params[-1].split(' ')[0]
+        cmd_name = cmd_name.strip(self.get_command_prefix())
+        return cmd_name
+
+    def _on_auth_message_in(self, sender, msg: Message, auth: AuthContext) -> None:
         try:
-            if _ADMIN_GROUP_NAME in auth.groups:
-                self.dispatch_admin_message(msg)
+            self._dispatch_auth_message(msg, auth)
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def handle_admin_privmsg(self, msg):
-        """Called when a message with a PRIVMSG command originating from an
-        admin is received.
-        """
-        pass
+    def _on_message_in(self, sender, msg: Message) -> None:
+        try:
+            self._dispatch_message(msg)
+        except Exception as e:
+            on_exception.send(self, e=e)
 
+    def _dispatch_auth_message(self, msg: Message, auth: AuthContext) -> None:
+        self.handle_auth_msg(msg, auth)
 
-class AuthMessageDispatcherMixin(BaseMessageDispatcherMixin):
-    """Dispatches all messages received via `auth_message_in` signal to the
-    proper methods.
-
-    When a message is received via the `auth_message_in` signal:
-        Each incomming PRIVMSG is dispatched to the `handle_auth_privmsg`
-        method. If a message starts with a command_prefix defined in the config
-        it will be also sent to a proper handler, for example
-        `auth_command_help`.
-    """
-
-    # Prefix for auth command handlers. For example a method
-    # `auth_command_help` would be a handler for messages starting with .help
-    # received from an authorised user
-    auth_handler_prefix = 'auth_command_'
-
-    def __init__(self, config):
-        super().__init__(config)
-        auth_message_in.connect(self.on_auth_auth_message_in)
-
-    def dispatch_auth_message(self, msg, auth):
-        """Dispatches a message originating from an authorised user to all handlers."""
         if msg.command == 'PRIVMSG':
-            # PRIVMSG handler
             self.handle_auth_privmsg(msg, auth)
 
-            # Command-specific handler
-            if self.is_command(msg):
-                cmd_name = self.get_command_name(msg)
-                func = self._get_command_handler(self.auth_handler_prefix, cmd_name)
-                if func is not None:
-                    func(msg, auth)
+            command_name = self.get_command_name(msg)
+            if command_name is not None:
+                for handler in self._get_command_handlers(command_name):
+                    if self._command_predicates_pass(handler, msg, auth):
+                        handler(msg, auth)
 
-    def on_auth_auth_message_in(self, sender, msg, auth):
-        """Handler for an auth_message_in signal. Dispatches the message to the
-        per-command handlers and the main handler.
-        """
-        try:
-            self.dispatch_auth_message(msg, auth)
-        except Exception as e:
-            on_exception.send(self, e=e)
+    def _dispatch_message(self, msg: Message) -> None:
+        self.handle_msg(msg)
 
-    def handle_auth_privmsg(self, msg, auth):
-        """Called when a message with a PRIVMSG command originating from an
-        authorised user is received.
-        """
-        pass
+        if msg.command == 'PRIVMSG':
+            self.handle_privmsg(msg)
 
+    def _get_command_handlers(self, command_name: str) -> list[Callable]:
+        """Gets a list of command handlers which match this command name."""
+        handlers: list[Callable] = []
+        for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
+            if getattr(method, _ATTR_COMMAND_NAME, None) == command_name:
+                handlers.append(method)
+        return handlers
 
-class MessageDispatcherMixin(AuthMessageDispatcherMixin, AdminMessageDispatcherMixin, StandardMessageDispatcherMixin):
-    """Dispatches all messages received via `message_in` and 'auth_message_in'
-    signals to the proper methods.
-    """
-    pass
+    def _get_all_command_handlers(self) -> list[Callable]:
+        """Gets a list of all command handlers."""
+        handlers: list[Callable] = []
+        for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
+            if getattr(method, _ATTR_COMMAND_NAME, None) is not None:
+                handlers.append(method)
+        return handlers
+
+    def _command_predicates_pass(self, handler: Callable, msg: Message, auth: AuthContext) -> bool:
+        """Returns a handler for a command."""
+        for predicate in getattr(handler, _ATTR_PREDICATES, []):
+            if not predicate(self, msg, auth):
+                return False
+        return True

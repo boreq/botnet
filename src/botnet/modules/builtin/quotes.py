@@ -1,6 +1,7 @@
 import os
 import random
 from ...signals import on_exception
+from ...message import Message
 from .. import BaseResponder, AuthContext
 
 
@@ -34,8 +35,8 @@ class Quotes(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'quotes'
 
-    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
-        rw = super().get_all_commands(msg_target, auth)
+    def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
+        rw = super().get_all_commands(msg, auth)
         new_commands = set()
         for command in self.config_get('files', {}).keys():
             new_commands.add(command)
@@ -44,21 +45,23 @@ class Quotes(BaseResponder):
         rw.extend(new_commands)
         return rw
 
-    def handle_privmsg(self, msg):
-        if self.is_command(msg):
-            key = self.get_command_name(msg)
+    def handle_privmsg(self, msg: Message) -> None:
+        command_name = self.get_command_name(msg)
 
-            # Directories
-            for root, filename in self.get_command_files():
-                if filename == key:
-                    path = os.path.join(root, filename)
-                    self.send_random_line(msg, path)
-                    return
+        if command_name is None:
+            return
 
-            # Files
-            filename = self.config_get('files.%s' % key, None)
-            if filename is not None:
-                self.send_random_line(msg, filename)
+        # Directories
+        for root, filename in self.get_command_files():
+            if filename == command_name:
+                path = os.path.join(root, filename)
+                self.send_random_line(msg, path)
+                return
+
+        # Files
+        filename = self.config_get('files.%s' % command_name, None)
+        if filename is not None:
+            self.send_random_line(msg, filename)
 
     def get_command_files(self):
         for directory in self.config_get('directories', []):

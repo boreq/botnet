@@ -1,5 +1,5 @@
 import datetime
-from .. import BaseResponder
+from .. import BaseResponder, command
 
 
 class C3(BaseResponder):
@@ -9,6 +9,7 @@ class C3(BaseResponder):
     CONGRESS_MONTH = 12
     CONGRESS_DAY = 27
 
+    @command('c3')
     def command_c3(self, msg):
         """Displays the number of days remaining to the next congress.
 

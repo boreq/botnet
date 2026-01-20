@@ -182,18 +182,21 @@ class Auth(WhoisMixin, BaseResponder):
                             if whois_data.get('nick_identified', None) != nick_data['nick']:
                                 continue
                             self._emit_auth_message_in(msg, uuid, groups)
+                            return
                         case 'matrix':
                             if whois_data.get('server', None) != 'matrix.hackint.org':
                                 continue
                             if whois_data.get('real_name', None) != nick_data['nick']:
                                 continue
                             self._emit_auth_message_in(msg, uuid, groups)
+                            return
                         case _:
                             raise Exception('unknown nick kind: {}'.format(nick_data['kind']))
+            self._emit_auth_message_in(msg, None, [])
 
         self.whois_schedule(msg.nickname, on_complete)
 
-    def _emit_auth_message_in(self, msg: Message, uuid: str, groups: list[str]) -> None:
+    def _emit_auth_message_in(self, msg: Message, uuid: str | None, groups: list[str]) -> None:
         auth_context = AuthContext(uuid, groups)
         auth_message_in.send(self, msg=msg, auth=auth_context)
 

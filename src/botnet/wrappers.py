@@ -1,4 +1,5 @@
 from .logging import get_logger
+from .modules import BaseModule
 from .modules.utils import get_ident_string
 
 
@@ -7,7 +8,9 @@ class ModuleWrapper(object):
     Manager.
     """
 
-    def __init__(self, module):
+    module: BaseModule
+
+    def __init__(self, module: BaseModule) -> None:
         self.module = module
         self.name = get_ident_string(module.__class__)
         self.logger = get_logger(str(self))
@@ -15,10 +18,10 @@ class ModuleWrapper(object):
     def __repr__(self):
         return '%s: %s' % (self.__class__.__name__, self.module)
 
-    def start(self):
+    def start(self) -> None:
         self.logger.debug('Start')
         self.module.start()
 
-    def stop(self):
+    def stop(self) -> None:
         self.logger.debug('Stop')
         self.module.stop()

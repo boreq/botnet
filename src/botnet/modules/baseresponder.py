@@ -1,10 +1,10 @@
-import re
 import textwrap
 from ..helpers import is_channel_name
 from ..message import Message
 from ..signals import message_out
 from .base import BaseModule, AuthContext
-from .mixins import ConfigMixin, MessageDispatcherMixin, _ADMIN_GROUP_NAME
+from .decorators import command
+from .mixins import ConfigMixin, MessageDispatcherMixin
 from .lib import parse_command
 
 
@@ -56,39 +56,10 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
         if self.config_namespace and self.config_name:
             self.register_config(self.config_namespace, self.config_name)
 
-    def _get_commands_from_handlers(self, handler_prefix):
-        """Generates a list of supported commands from defined handlers."""
-        commands = []
-        for name in dir(self):
-            if name.startswith(handler_prefix):
-                attr = getattr(self, name)
-                if hasattr(attr, '__call__'):
-                    command_name = name[len(handler_prefix):]
-                    if not (self.ignore_help and command_name == 'help'):
-                        commands.append(command_name)
-        return commands
-
-    def _get_help_for_command(self, handler_prefix, name):
-        handler = self._get_command_handler(handler_prefix, name)
-        if not handler:
-            return None
-        # Header
-        rw = 'Module %s, help for `%s`: ' % (self.__class__.__name__,
-                                             name)
-        # Docstring
-        help_text = handler.__doc__
-        if help_text:
-            rw += ' '.join(help_text.splitlines())
-        else:
-            rw += 'No help available.'
-
-        rw = re.sub(' +', ' ', rw)
-        return rw
-
-    def get_command_prefix(self):
+    def get_command_prefix(self) -> str:
         return self.config_get('command_prefix')
 
-    def respond(self, priv_msg, text, pm=False):
+    def respond(self, priv_msg: Message, text: str, pm: bool = False) -> None:
         """Send a text in response to a message. Text will be automatically
         sent to a proper channel or user.
 
@@ -106,37 +77,18 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
             response = Message(command='PRIVMSG', params=[target, part])
             message_out.send(self, msg=response)
 
-    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
-        """Should return a list of strings containing all commands supported by
-        this module.
-
-        msg_target: target of the PRIVMSG requesting help e.g. '#channel' or 'nick'.
-        """
-        commands = self._get_commands_from_handlers(self.handler_prefix)
-        if _ADMIN_GROUP_NAME in auth.groups:
-            commands.extend(self._get_commands_from_handlers(self.admin_handler_prefix))
-        return commands
-
+    @command('help')
     @parse_command([('command_names', '*')])
-    def command_help(self, msg, args):
-        """If COMMAND is specified sends detailed help for the commands in a
-        private message.
+    def command_help(self, msg: Message, auth: AuthContext, args) -> None:
+        """Sends a list of commands. If COMMAND is specified sends more
+        detailed help about a single command.
 
         Syntax: help [COMMAND ...]
         """
         if len(args.command_names) > 0:
-            # Display help for a specific command
             for name in args.command_names:
                 if self.ignore_help and name == 'help':
                     continue
 
-                # get help
-                lines = []
-                for prefix in [self.handler_prefix, self.admin_handler_prefix, self.auth_handler_prefix]:
-                    text = self._get_help_for_command(prefix, name)
-                    if text:
-                        lines.append(text)
-
-                # send help
-                for line in lines:
-                    self.respond(msg, line, pm=True)
+                for help_text in self.get_help_for_command(name, msg, auth):
+                    self.respond(msg, help_text)

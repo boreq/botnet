@@ -1,7 +1,10 @@
 import os
 import threading
+from typing import Any
 from ...helpers import save_json, load_json, is_channel_name
-from .. import BaseResponder, AuthContext
+from .. import BaseResponder, AuthContext, command
+from ...message import Message
+from ..decorators import predicates
 from ..lib import parse_command
 
 
@@ -49,6 +52,15 @@ class NewsStore(object):
             return self._news.get(channel, []).copy()
 
 
+def _is_enabled_for_this_channel():
+    def predicate(module: Any, msg: Message, auth: AuthContext) -> bool:
+        channel = msg.params[0] if is_channel_name(msg.params[0]) else None
+        channels = module.config_get('channels', [])
+        return channel in channels
+
+    return predicates([predicate])
+
+
 class News(BaseResponder):
     """Allows users to publish and read news.
 
@@ -70,16 +82,8 @@ class News(BaseResponder):
         super().__init__(config)
         self.store = NewsStore(lambda: self.config_get('news_data'))
 
-    def get_all_commands(self, msg_target: str, auth: AuthContext) -> list[str]:
-        rw = set()
-        if msg_target in self.config_get('channels', []):
-            rw.add('news')
-            rw.add('news_add')
-            rw.add('news_push')
-            rw.add('news_pop')
-            rw.add('news_update')
-        return list(rw)
-
+    @command('news')
+    @_is_enabled_for_this_channel()
     def command_news(self, msg):
         """List news for the current channel.
 
@@ -98,7 +102,9 @@ class News(BaseResponder):
         for index, message in enumerate(messages):
             self.respond(msg, 'News {}: {}'.format(index, message))
 
-    @parse_command([('message', '+')], launch_invalid=False)
+    @command('news_add')
+    @_is_enabled_for_this_channel()
+    @parse_command([('message', '+')])
     def command_news_add(self, msg, args):
         """Add a news entry for the current channel at the top of the list.
 
@@ -112,7 +118,9 @@ class News(BaseResponder):
         self.store.push(channel, 0, ' '.join(args.message))
         self.respond(msg, 'Ok!')
 
-    @parse_command([('index', 1), ('message', '+')], launch_invalid=False)
+    @command('news_push')
+    @_is_enabled_for_this_channel()
+    @parse_command([('index', 1), ('message', '+')])
     def command_news_push(self, msg, args):
         """Add a news entry for the current channel.
 
@@ -126,7 +134,9 @@ class News(BaseResponder):
         self.store.push(channel, int(args.index[0]), ' '.join(args.message))
         self.respond(msg, 'Ok!')
 
-    @parse_command([('index', 1)], launch_invalid=False)
+    @command('news_pop')
+    @_is_enabled_for_this_channel()
+    @parse_command([('index', 1)])
     def command_news_pop(self, msg, args):
         """Remove a news entry for the current channel.
 
@@ -140,7 +150,9 @@ class News(BaseResponder):
         self.store.pop(channel, int(args.index[0]))
         self.respond(msg, 'Ok!')
 
-    @parse_command([('index', 1), ('message', '+')], launch_invalid=False)
+    @command('news_update')
+    @_is_enabled_for_this_channel()
+    @parse_command([('index', 1), ('message', '+')])
     def command_news_update(self, msg, args):
         """Update a news entry for the current channel.
 
