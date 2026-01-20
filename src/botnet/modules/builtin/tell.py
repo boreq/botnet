@@ -25,7 +25,7 @@ def format_msg_entry(target, msg_entry):
                                msg_entry['message'])
 
 
-class MessageStore(object):
+class MessageStore:
     """Simple facility for storing and saving messages left users, the messages
     are automatically saved in a file.
 

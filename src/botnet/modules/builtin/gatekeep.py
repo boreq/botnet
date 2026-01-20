@@ -217,7 +217,7 @@ class Gatekeep(NamesMixin, BaseResponder):
         self.request_names(self.config_get('channel'), on_complete)
 
 
-class Store(object):
+class Store:
 
     def __init__(self, path):
         self.lock = threading.Lock()

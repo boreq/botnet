@@ -10,7 +10,7 @@ from .signals import module_loaded, module_unloaded, module_load, module_unload,
 from .wrappers import ModuleWrapper
 
 
-class Manager(object):
+class Manager:
     """Main class which manages modules."""
 
     # Class used for config

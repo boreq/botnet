@@ -10,7 +10,7 @@ class AuthContext:
     groups: list[str]
 
 
-class BaseModule(object):
+class BaseModule:
     """Base class for all modules."""
 
     def __init__(self, config):

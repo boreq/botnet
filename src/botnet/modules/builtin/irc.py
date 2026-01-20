@@ -11,7 +11,7 @@ from .. import BaseResponder, command, only_admins
 from ..lib import parse_command
 
 
-class NoopWith(object):
+class NoopWith:
 
     def __enter__(self):
         return self
@@ -20,7 +20,7 @@ class NoopWith(object):
         pass
 
 
-class InactivityMonitor(object):
+class InactivityMonitor:
     """Checks if the connection is still alive.
 
     If no messages are received from a server in a certain amount of time PING
@@ -95,7 +95,7 @@ class InactivityMonitor(object):
         self.irc_module.restart()
 
 
-class Buffer(object):
+class Buffer:
     """Buffer ensures that there is no partial command at the end of the data
     chunk (that can happen if the data does not fit in the socket buffer or
     just cause). If that happens the partual command will be reconstructed the

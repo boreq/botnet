@@ -64,7 +64,7 @@ def parse_message(message_text):
     return seconds, ' '.join(parts)
 
 
-class RemindersStore(object):
+class RemindersStore:
     """RemindersStore saves the remiders in a data file.
 
     path: function to call to get path to the data file.

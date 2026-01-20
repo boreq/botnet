@@ -22,7 +22,7 @@ def format_msg_entry(nick, msg_entry):
     return '%s was last seen on %s' % (nick, time)
 
 
-class MessageStore(object):
+class MessageStore:
     """Stores last messages sent by each user.
 
     path: function to call to get path to the data file.

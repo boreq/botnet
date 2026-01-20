@@ -27,7 +27,7 @@ def analyze_prefix(prefix):
     return servername, nickname
 
 
-class Message(object):
+class Message:
     """Parses the server message and provides access to its properties.
 
     Properties you can access are the same as constructor parameters.

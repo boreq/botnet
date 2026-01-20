@@ -3,7 +3,7 @@ from .modules import BaseModule
 from .modules.utils import get_ident_string
 
 
-class ModuleWrapper(object):
+class ModuleWrapper:
     """Wraps a module. It is used to hold a reference to a loaded module in the
     Manager.
     """

@@ -43,7 +43,7 @@ def replace(messages, nick, a, b, flags):
     return None
 
 
-class MessageStore(object):
+class MessageStore:
     """MessageStore saves the past messages.
 
     limit: function to call to get the message limit for a specified channel.

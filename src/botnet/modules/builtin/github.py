@@ -10,7 +10,7 @@ class APIError(Exception):
     pass
 
 
-class EventParser(object):
+class EventParser:
     """Converts events downloaded from the API into readable texts."""
 
     def parse_CreateEvent(self, events):
@@ -97,7 +97,7 @@ class EventParser(object):
         return texts
 
 
-class GithubAPI(object):
+class GithubAPI:
 
     url_root = 'https://api.github.com'
 

@@ -8,7 +8,7 @@ from ..decorators import predicates
 from ..lib import parse_command
 
 
-class NewsStore(object):
+class NewsStore:
 
     def __init__(self, get_path):
         self._lock = threading.Lock()

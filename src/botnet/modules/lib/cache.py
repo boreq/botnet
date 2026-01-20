@@ -14,7 +14,7 @@ def get_md5(string):
     return m.hexdigest()
 
 
-class BaseCache(object):
+class BaseCache:
     """Base cache class."""
 
     def __init__(self, default_timeout=300):
