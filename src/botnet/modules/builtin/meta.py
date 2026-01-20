@@ -9,6 +9,7 @@ class Meta(BaseResponder):
 
     ignore_help = False
     ibip_repo = 'https://github.com/boreq/botnet'
+    ibip_website = 'https://ibip.0x46.net/'
 
     def __init__(self, config):
         super().__init__(config)
@@ -20,7 +21,7 @@ class Meta(BaseResponder):
 
         Syntax: git
         """
-        self.ibip(msg)
+        self._respond_with_ibip(msg)
 
     @command('help')
     @parse_command([('command_names', '*')])
@@ -35,24 +36,25 @@ class Meta(BaseResponder):
         else:
             super().command_help(msg, auth)
 
-    def ibip(self, msg: Message) -> None:
-        """Makes the bot identify itself as defined by The IRC Bot
-        Identification Protocol Standard.
-        """
-        text = 'Reporting in! [Python] {ibip_repo} try {prefix}help'.format(
-            ibip_repo=self.ibip_repo,
-            prefix=self.config_get('command_prefix')
-        )
-        self.respond(msg, text)
-
     def on_list_commands(self, sender, msg: Message, auth: AuthContext, commands: list[str]) -> None:
         """Sends a list of commands received from the Manager."""
         text = 'Supported commands: %s' % ', '.join(commands)
         self.respond(msg, text)
 
-    def handle_privmsg(self, msg):
+    def handle_privmsg(self, msg: Message) -> None:
         if msg.params[1] == '.bots':
-            self.ibip(msg)
+            self._respond_with_ibip(msg)
+
+    def _respond_with_ibip(self, msg: Message) -> None:
+        """Makes the bot identify itself as defined by The IRC Bot
+        Identification Protocol Standard.
+        """
+        text = 'Reporting in! [Python] {ibip_repo} try {prefix}help ({ibip_website})'.format(
+            ibip_repo=self.ibip_repo,
+            prefix=self.config_get('command_prefix'),
+            ibip_website=self.ibip_website,
+        )
+        self.respond(msg, text)
 
 
 mod = Meta
