@@ -82,7 +82,7 @@ class Admin(BaseResponder):
         t = threading.Thread(target=f)
         t.start()
 
-    def _reload_config(self, msg: Message, name: str) -> None:
+    def _reload_config(self, msg: Message) -> None:
         self._config_reload_commands.append(msg)
         config_reload.send(self)
 
