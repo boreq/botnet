@@ -27,7 +27,7 @@ class Admin(BaseResponder):
     @command('module_load')
     @only_admins()
     @parse_command([('module_names', '*')])
-    def admin_command_module_load(self, msg, args):
+    def admin_command_module_load(self, msg, auth, args):
         """Loads a module.
 
         Syntax: module_load MODULE_NAME ...
@@ -38,7 +38,7 @@ class Admin(BaseResponder):
     @command('module_unload')
     @only_admins()
     @parse_command([('module_names', '*')])
-    def admin_command_module_unload(self, msg, args):
+    def admin_command_module_unload(self, msg, auth, args):
         """Unloads a module.
 
         Syntax: module_unload MODULE_NAME ...
@@ -49,7 +49,7 @@ class Admin(BaseResponder):
     @command('module_reload')
     @only_admins()
     @parse_command([('module_names', '*')])
-    def admin_command_module_reload(self, msg, args):
+    def admin_command_module_reload(self, msg, auth, args):
         """Unloads and loads a module back.
 
         Syntax: module_reload MODULE_NAME ...
@@ -59,7 +59,7 @@ class Admin(BaseResponder):
 
     @command('config_reload')
     @only_admins()
-    def admin_command_config_reload(self, msg):
+    def admin_command_config_reload(self, msg, auth):
         """Reloads the config.
 
         Syntax: config_reload

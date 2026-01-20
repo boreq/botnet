@@ -13,7 +13,7 @@ class Anonpost(BaseResponder):
 
     @command('anonpost')
     @parse_command([('target', 1), ('message', '+')])
-    def command_anonpost(self, msg, args):
+    def command_anonpost(self, msg, auth, args):
         """Send a message to a target channel anonymously.
 
         Syntax: anonpost TARGET MESSAGE
@@ -27,7 +27,7 @@ class Anonpost(BaseResponder):
     @command('anonpost')
     @only_admins()
     @parse_command([('target', 1), ('message', '+')])
-    def admin_command_anonpost(self, msg, args):
+    def admin_command_anonpost(self, msg, auth, args):
         """Send a message to a target user anonymously.
 
         Syntax: anonpost TARGET MESSAGE

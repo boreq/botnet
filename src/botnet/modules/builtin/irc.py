@@ -162,7 +162,7 @@ class IRC(BaseResponder):
     @command('channel_join')
     @only_admins()
     @parse_command([('name', 1), ('password', '?')])
-    def admin_command_channel_join(self, msg, args):
+    def admin_command_channel_join(self, msg, auth, args):
         """Joins a channel.
 
         Syntax: channel_join CHANNEL_NAME [CHANNEL_PASSWORD]
@@ -172,7 +172,7 @@ class IRC(BaseResponder):
     @command('channel_part')
     @only_admins()
     @parse_command([('name', 1)])
-    def admin_command_channel_part(self, msg, args):
+    def admin_command_channel_part(self, msg, auth, args):
         """Parts a channel.
 
         Syntax: channel_part CHANNEL_NAME
@@ -182,7 +182,7 @@ class IRC(BaseResponder):
     @command('ignore')
     @only_admins()
     @parse_command([('pattern', 1)])
-    def admin_command_ignore(self, msg, args):
+    def admin_command_ignore(self, msg, auth, args):
         """Ignores a user. Pattern should be in the following form with
         asterisks used as wildcards: nick!user@host.
 
@@ -195,7 +195,7 @@ class IRC(BaseResponder):
     @command('unignore')
     @only_admins()
     @parse_command([('pattern', 1)])
-    def admin_command_unignore(self, msg, args):
+    def admin_command_unignore(self, msg, auth, args):
         """Unignores a user.
 
         Syntax: unignore PATTERN

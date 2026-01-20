@@ -10,7 +10,7 @@ class C3(BaseResponder):
     CONGRESS_DAY = 27
 
     @command('c3')
-    def command_c3(self, msg):
+    def command_c3(self, msg, auth):
         """Displays the number of days remaining to the next congress.
 
         Syntax: c3

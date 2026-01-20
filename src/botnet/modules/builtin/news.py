@@ -84,7 +84,7 @@ class News(BaseResponder):
 
     @command('news')
     @_is_enabled_for_this_channel()
-    def command_news(self, msg):
+    def command_news(self, auth, msg):
         """List news for the current channel.
 
         Syntax: news
@@ -105,7 +105,7 @@ class News(BaseResponder):
     @command('news_add')
     @_is_enabled_for_this_channel()
     @parse_command([('message', '+')])
-    def command_news_add(self, msg, args):
+    def command_news_add(self, msg, auth, args):
         """Add a news entry for the current channel at the top of the list.
 
         Syntax: news_add MESSAGE
@@ -121,7 +121,7 @@ class News(BaseResponder):
     @command('news_push')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1), ('message', '+')])
-    def command_news_push(self, msg, args):
+    def command_news_push(self, msg, auth, args):
         """Add a news entry for the current channel.
 
         Syntax: news_push INDEX MESSAGE
@@ -137,7 +137,7 @@ class News(BaseResponder):
     @command('news_pop')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1)])
-    def command_news_pop(self, msg, args):
+    def command_news_pop(self, msg, auth, args):
         """Remove a news entry for the current channel.
 
         Syntax: news_pop INDEX
@@ -153,7 +153,7 @@ class News(BaseResponder):
     @command('news_update')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1), ('message', '+')])
-    def command_news_update(self, msg, args):
+    def command_news_update(self, msg, auth, args):
         """Update a news entry for the current channel.
 
         Syntax: news_update INDEX MESSAGE

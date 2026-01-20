@@ -15,7 +15,7 @@ class Meta(BaseResponder):
         _list_commands.connect(self.on_list_commands)
 
     @command('git')
-    def command_git(self, msg: Message) -> None:
+    def command_git(self, msg: Message, auth: AuthContext) -> None:
         """Alias for the IBIP identification.
 
         Syntax: git
@@ -25,8 +25,8 @@ class Meta(BaseResponder):
     @command('help')
     @parse_command([('command_names', '*')])
     def command_help(self, msg: Message, auth: AuthContext, args) -> None:
-        """Sends a list of commands. If COMMAND is specified sends detailed help
-        in a private message.
+        """Sends a list of commands. If COMMAND is specified sends more
+        detailed help about a single command.
 
         Syntax: help [COMMAND ...]
         """
