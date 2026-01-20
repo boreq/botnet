@@ -429,3 +429,13 @@ class Code(Enum):
 
     # :Cannot change mode for other users
     ERR_USERSDONTMATCH = 502
+
+    # CODES BELOW ARE NOT DEFINED IN THE RFC
+
+    # Used by Rizon when a user has identified for a nick
+    # <nick> <nick_logged_in> :is logged in as
+    RIZON_RPL_WHOISIDENTIFIED = 330
+
+    # Used by Freenode when a user has identified for a nick
+    # <nick> :has identified for this nick
+    FREENODE_RPL_WHOISIDENTIFIED = 307
