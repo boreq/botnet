@@ -22,7 +22,7 @@ class Anonpost(BaseResponder):
         message = 'ANONPOST: ' + ' '.join(args.message)
 
         if is_channel_name(target):
-            self.send(target, message)
+            self._send(target, message)
 
     @command('anonpost')
     @only_admins()
@@ -36,9 +36,9 @@ class Anonpost(BaseResponder):
         message = 'ANONPOST: ' + ' '.join(args.message)
 
         if not is_channel_name(target):
-            self.send(target, message)
+            self._send(target, message)
 
-    def send(self, target, message):
+    def _send(self, target, message):
         msg = Message(command='PRIVMSG', params=[target, message])
         message_out.send(self, msg=msg)
 
