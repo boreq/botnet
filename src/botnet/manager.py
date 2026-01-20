@@ -63,11 +63,11 @@ class Manager:
 
     def on_request_list_commands(self, sender, msg: Message, auth: AuthContext) -> None:
         """Handler for the _request_list_commands signal."""
-        commands: list[str] = []
+        commands: set[str] = set()
         with self.wrappers_lock:
             for wrapper in self.module_wrappers:
-                commands.extend(wrapper.module.get_all_commands(msg, auth))
-        _list_commands.send(self, msg=msg, auth=auth, commands=commands)
+                commands.update(wrapper.module.get_all_commands(msg, auth))
+        _list_commands.send(self, msg=msg, auth=auth, commands=list(commands))
 
     def on_config_changed(self, sender):
         """Handler for the config_changed signal."""
