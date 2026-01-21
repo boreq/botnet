@@ -2,8 +2,7 @@ from collections import defaultdict
 import threading
 from .. import BaseResponder, command, only_admins
 from ..lib import MemoryCache, get_url, parse_command, catch_other
-from ...message import Message
-from ...signals import on_exception, message_out, config_changed
+from ...signals import on_exception, config_changed
 
 
 class APIError(Exception):
@@ -215,7 +214,7 @@ class Github(BaseResponder):
             except Exception as e:
                 on_exception.send(self, e=e)
 
-    def update(self):
+    def update(self) -> None:
         """Queries the event API."""
         self.logger.debug('Performing event update')
         for data in self.config_get('track', []):
@@ -230,8 +229,7 @@ class Github(BaseResponder):
                 # send the text
                 if texts:
                     for channel in data['channels']:
-                        msg = Message(command='PRIVMSG', params=[channel, text])
-                        message_out.send(self, msg=msg)
+                        self.message(channel, text)
             except Exception as e:
                 on_exception.send(self, e=e)
 

@@ -1,5 +1,5 @@
 from botnet.message import Message
-from botnet.signals import message_out, admin_message_in, message_in, clear_state
+from botnet.signals import message_out, message_in, auth_message_in, clear_state
 import logging
 import os
 import pytest
@@ -80,10 +80,10 @@ def rec_msg():
 
 
 @pytest.fixture()
-def rec_admin_msg():
-    """Provides a function used for sending messages via admin_message_in signal."""
+def rec_auth_msg():
+    """Provides a function used for sending messages via auth_message_in signal."""
     def f(msg):
-        admin_message_in.send(None, msg=msg)
+        auth_message_in.send(None, msg=msg)
     return f
 
 

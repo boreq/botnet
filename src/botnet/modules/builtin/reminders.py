@@ -2,8 +2,7 @@ import datetime
 import os
 import threading
 from ...helpers import save_json, load_json, is_channel_name
-from ...signals import message_out, on_exception
-from ...message import Message
+from ...signals import on_exception
 from .. import BaseResponder, command
 from ..lib import parse_command
 import re
@@ -172,8 +171,7 @@ class Reminders(BaseResponder):
         for stored_msg in self.store.get_messages(now):
             target = stored_msg['target']
             text = format_msg_entry(stored_msg)
-            response = Message(command='PRIVMSG', params=[target, text])
-            message_out.send(self, msg=response)
+            self.message(target, text)
 
 
 mod = Reminders
