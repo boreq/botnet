@@ -1,7 +1,6 @@
 import os
 from botnet.config import Config
 from botnet.modules.builtin.quotes import Quotes
-from botnet.message import Message
 from botnet.signals import message_in
 
 

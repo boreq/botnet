@@ -16,4 +16,4 @@ def test_unsubscribe_from_all(cl):
 
 
 def test_clear_state_doesnt_throw():
-    signals.clear_state() 
+    signals.clear_state()

@@ -106,7 +106,9 @@ def test_priv(tmp_file, msg_t, make_privmsg, rec_msg, test_tell):
 @pytest.fixture()
 def test_tell(request, tmp_file):
     m = TestTell(tmp_file, Config())
+
     def teardown():
         m.stop()
+
     request.addfinalizer(teardown)
     return m

@@ -5,6 +5,7 @@ import os
 import pytest
 import tempfile
 import time
+from typing import Callable
 
 
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
@@ -15,9 +16,11 @@ logging.basicConfig(format=log_format, level=log_level)
 @pytest.fixture()
 def tmp_file(request):
     fd, path = tempfile.mkstemp()
+
     def teardown():
         os.close(fd)
         os.remove(path)
+
     request.addfinalizer(teardown)
     return path
 
@@ -123,7 +126,7 @@ def make_signal_trap():
         def reset(self):
             self.trapped = []
 
-        def wait(self, assertion, max_seconds = 2):
+        def wait(self, assertion: Callable[[list], None], max_seconds=2):
             for i in range(max_seconds):
                 try:
                     assertion(self.trapped)

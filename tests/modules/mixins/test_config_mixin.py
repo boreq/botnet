@@ -12,14 +12,14 @@ def test_default_config():
             'overwrite': {
                 'a': 'a',
                 'b': 'b',
-             },
+            },
             'onlya': 'v'
         }
 
         b = {
             'overwrite': {
                 'b': 'o',
-             },
+            },
             'onlyb': 'v'
         }
 
@@ -27,7 +27,6 @@ def test_default_config():
             super(TestResponder, self).__init__(config)
             self.register_default_config(self.a)
             self.register_default_config(self.b)
-
 
     t = TestResponder(Config())
 
@@ -58,7 +57,7 @@ def test_complex_config():
                         'overwrite': {
                             'd': 'invalid',
                             'c': 'o',
-                         },
+                        },
                         'only_namespace_a': 'v'
                     }
                 },
@@ -66,7 +65,7 @@ def test_complex_config():
                     'module_name': {
                         'overwrite': {
                             'd': 'o',
-                         },
+                        },
                         'only_namespace_b': 'v'
                     }
                 }
@@ -82,14 +81,14 @@ def test_complex_config():
                 'b': 'b',
                 'c': 'c',
                 'd': 'd',
-             },
+            },
             'only_a': 'v'
         }
 
         b = {
             'overwrite': {
                 'b': 'o',
-             },
+            },
             'only_b': 'v'
         }
 
@@ -99,7 +98,6 @@ def test_complex_config():
             self.register_default_config(self.b)
             self.register_config('namespace_a', 'module_name')
             self.register_config('namespace_b', 'module_name')
-
 
     t = TestResponder(get_config())
 

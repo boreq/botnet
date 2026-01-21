@@ -55,7 +55,6 @@ def test_inactivity_monitor():
         def on_timer_abort(self):
             self.aborted = True
 
-
     config = make_config()
     irc = IRC(config)
 
@@ -94,7 +93,6 @@ def test_inactivity_monitor_repeated():
             super(TestMonitor, self).on_timer_abort()
             self.aborted += 1
 
-
     config = make_config()
     irc = IRC(config)
 
@@ -115,8 +113,8 @@ def test_empty_config():
 
 def test_ignore():
     ignore_list = [
-            "nick!*@*",
-            "*!*@example.com",
+        "nick!*@*",
+        "*!*@example.com",
     ]
 
     config = make_config()

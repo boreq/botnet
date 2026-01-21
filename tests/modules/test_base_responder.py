@@ -2,7 +2,6 @@ from botnet.config import Config
 from botnet.message import Message
 from botnet.modules import BaseResponder
 from botnet.modules.lib import parse_command
-from botnet.modules.builtin.admin import Admin
 from botnet.signals import message_in
 
 
@@ -23,6 +22,8 @@ def test_help(msg_t):
 
     assert not msg_t.msg
 
+    re.stop()
+
 
 def test_specific(msg_l):
     """Test help regarding a specific command."""
@@ -40,10 +41,12 @@ def test_specific(msg_l):
     re = Responder(Config())
 
     message_in.send(None, msg=msg)
-    assert len(msg_l.msgs) == 2 # 1 normal 1 admin handler
+    assert len(msg_l.msgs) == 2  # 1 normal 1 admin handler
 
     message_in.send(None, msg=msg)
     assert len(msg_l.msgs) == 4
+
+    re.stop()
 
 
 def test_respond(msg_t):

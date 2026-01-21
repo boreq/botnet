@@ -1,14 +1,12 @@
 from botnet.config import Config
-from botnet.manager import Manager
 from botnet.modules.builtin.countdown import Countdown
-from datetime import date
 
 
 def make_config():
     config = {
         'module_config': {
             'botnet': {
-                'countdown':  {
+                'countdown': {
                     'summary_command': 'summary',
                     'commands': {
                         'camp': {
@@ -26,31 +24,27 @@ def make_config():
             }
         }
     }
-    config = Config(config)
-    return config
+    return Config(config)
 
 
 def test_countdown(cl, msg_t, make_privmsg, rec_msg):
-    """Test help command. Only Meta module should respond to that command
-    without any parameters."""
-    msg = make_privmsg('.camp')
     config = make_config()
-    mng = Manager()
     re = Countdown(config)
 
-    config['module_config']['countdown'] = {
-    }
-
+    msg = make_privmsg('.camp')
     rec_msg(msg)
     assert msg_t.msg.to_string() == 'PRIVMSG #channel :It already happened!'
 
+    re.stop()
+
 
 def test_countdown_summary(cl, msg_t, make_privmsg, rec_msg):
-    msg = make_privmsg('.summary')
     config = make_config()
-    mng = Manager()
     re = Countdown(config)
 
+    msg = make_privmsg('.summary')
     rec_msg(msg)
     assert 'camp' in msg_t.msg.to_string()
     assert 'congress' in msg_t.msg.to_string()
+
+    re.stop()

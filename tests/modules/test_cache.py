@@ -7,7 +7,7 @@ class BaseCacheTests(object):
 
     def make_cache(self):
         """Expected default timeout is 1 second."""
-        raise NotImplemented
+        raise NotImplementedError
 
     @pytest.fixture
     def c(self):

@@ -27,7 +27,7 @@ class Tester(MessageDispatcherMixin, BaseModule):
 
     def get_command_prefix(self):
         return '.'
-    
+
     def command_test(self, msg):
         self.launched_command = True
 
@@ -115,3 +115,5 @@ def test_admin_dispatching():
     send_data(data4)
     assert t.launched_admin_command
     assert t.launched_admin_priv
+
+    ad.stop()

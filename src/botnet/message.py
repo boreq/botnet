@@ -126,6 +126,6 @@ class Message:
         return '<Message: %s>' % self.__str__()
 
     def __eq__(self, other):
-            if not isinstance(other, Message):
-                return False
-            return self.prefix == other.prefix and self.command == other.command and self.params == other.params
+        if not isinstance(other, Message):
+            return False
+        return self.prefix == other.prefix and self.command == other.command and self.params == other.params

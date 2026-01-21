@@ -15,6 +15,7 @@ class A(GithubAPI):
             content = fp.read()
         return json.loads(content)
 
+
 class G(Github):
 
     default_config = {

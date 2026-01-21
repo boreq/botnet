@@ -2,7 +2,7 @@ from botnet.config import Config
 from botnet.modules import AuthContext
 from botnet.modules.builtin.auth import Auth
 from botnet.message import Message
-from botnet.signals import message_in, message_out, auth_message_in
+from botnet.signals import message_out, auth_message_in
 
 
 def test_whois_parsing(subtests, rec_msg) -> None:
@@ -94,7 +94,7 @@ def test_whois_parsing(subtests, rec_msg) -> None:
 
     for test_case in test_cases:
         with subtests.test(test_case=test_case):
-            config = {
+            config: dict = {
                 'module_config': {
                     'botnet': {
                         'auth': {}
@@ -198,7 +198,7 @@ def test_identify_irc_user(subtests, make_signal_trap, rec_msg):
             received_msg = Message.new_from_string(':someone!example.com PRIVMSG #channel :Hello!')
             rec_msg(received_msg)
 
-            def wait_condition(trapped) -> bool:
+            def wait_condition(trapped):
                 assert trapped == [{
                     'msg': Message.new_from_string('WHOIS someone'),
                 }]
@@ -207,7 +207,7 @@ def test_identify_irc_user(subtests, make_signal_trap, rec_msg):
             for message_string in test_case['messages']:
                 rec_msg(Message.new_from_string(message_string))
 
-            def wait_condition(trapped) -> bool:
+            def wait_condition(trapped):
                 assert trapped == [{
                     'msg': received_msg,
                     'auth': test_case['context'],
