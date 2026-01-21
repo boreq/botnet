@@ -32,7 +32,7 @@ def make_privmsg():
     """Provides a PRIVMSG message factory."""
     def f(text, nick='nick', target='#channel'):
         return Message(
-            prefix=':%s!~user@1-2-3-4.example.com',
+            prefix='%s!~user@1-2-3-4.example.com' % nick,
             command='PRIVMSG',
             params=[target, text]
         )
@@ -88,7 +88,7 @@ class Trap(object):
     def reset(self):
         self.trapped = []
 
-    def wait(self, assertion: Callable[[list], None], max_seconds=2):
+    def wait(self, assertion: Callable[[list], None], max_seconds=1):
         for i in range(max_seconds):
             try:
                 assertion(self.trapped)
@@ -146,7 +146,8 @@ class ModuleHarness:
 
     def _stop(self) -> None:
         self.module.stop()
-        assert self._on_exception_trap.trapped == []
+        for e in self._on_exception_trap.trapped:
+            raise e['e']
 
 
 @pytest.fixture()
