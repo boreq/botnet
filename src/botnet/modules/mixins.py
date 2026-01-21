@@ -219,6 +219,8 @@ class MessageDispatcherMixin(BaseModule):
             return None
         cmd_name = priv_msg.params[-1].split(' ')[0]
         cmd_name = cmd_name.strip(self.get_command_prefix())
+        if len(cmd_name) == 0:
+            return None
         return cmd_name
 
     def _on_auth_message_in(self, sender, msg: Message, auth: AuthContext) -> None:

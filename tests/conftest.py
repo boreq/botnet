@@ -73,7 +73,7 @@ def resource_path():
 
 
 @pytest.fixture()
-def clear():
+def clear_signal_state():
     clear_state()
 
 
@@ -122,7 +122,7 @@ class ModuleHarnessFactory:
 class ModuleHarness:
 
     def __init__(self, module_class, config: Config) -> None:
-        self._module = module_class(config)
+        self.module = module_class(config)
 
         self._request_list_commands_trap = Trap(_request_list_commands)
         self._message_out_trap = Trap(message_out)
@@ -145,7 +145,7 @@ class ModuleHarness:
         self._message_out_trap.wait(wait_condition)
 
     def _stop(self) -> None:
-        self._module.stop()
+        self.module.stop()
         assert self._on_exception_trap.trapped == []
 
 
