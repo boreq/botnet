@@ -84,16 +84,12 @@ class News(BaseResponder):
 
     @command('news')
     @_is_enabled_for_this_channel()
-    def command_news(self, auth, msg):
+    def command_news(self, msg: Message, auth: AuthContext) -> None:
         """List news for the current channel.
 
         Syntax: news
         """
-        channel = msg.params[0] if is_channel_name(msg.params[0]) else None
-        channels = self.config_get('channels', [])
-        if channel not in channels:
-            return
-
+        channel = msg.params[0]
         messages = self.store.get(channel)
 
         if not messages:
@@ -105,64 +101,48 @@ class News(BaseResponder):
     @command('news_add')
     @_is_enabled_for_this_channel()
     @parse_command([('message', '+')])
-    def command_news_add(self, msg, auth, args):
+    def command_news_add(self, msg: Message, auth: AuthContext, args) -> None:
         """Add a news entry for the current channel at the top of the list.
 
         Syntax: news_add MESSAGE
         """
-        channel = msg.params[0] if is_channel_name(msg.params[0]) else None
-        channels = self.config_get('channels', [])
-        if channel not in channels:
-            return
-
+        channel = msg.params[0]
         self.store.push(channel, 0, ' '.join(args.message))
         self.respond(msg, 'Ok!')
 
     @command('news_push')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1), ('message', '+')])
-    def command_news_push(self, msg, auth, args):
+    def command_news_push(self, msg: Message, auth: AuthContext, args) -> None:
         """Add a news entry for the current channel.
 
         Syntax: news_push INDEX MESSAGE
         """
-        channel = msg.params[0] if is_channel_name(msg.params[0]) else None
-        channels = self.config_get('channels', [])
-        if channel not in channels:
-            return
-
+        channel = msg.params[0]
         self.store.push(channel, int(args.index[0]), ' '.join(args.message))
         self.respond(msg, 'Ok!')
 
     @command('news_pop')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1)])
-    def command_news_pop(self, msg, auth, args):
+    def command_news_pop(self, msg: Message, auth: AuthContext, args) -> None:
         """Remove a news entry for the current channel.
 
         Syntax: news_pop INDEX
         """
-        channel = msg.params[0] if is_channel_name(msg.params[0]) else None
-        channels = self.config_get('channels', [])
-        if channel not in channels:
-            return
-
+        channel = msg.params[0]
         self.store.pop(channel, int(args.index[0]))
         self.respond(msg, 'Ok!')
 
     @command('news_update')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1), ('message', '+')])
-    def command_news_update(self, msg, auth, args):
+    def command_news_update(self, msg: Message, auth: AuthContext, args) -> None:
         """Update a news entry for the current channel.
 
         Syntax: news_update INDEX MESSAGE
         """
-        channel = msg.params[0] if is_channel_name(msg.params[0]) else None
-        channels = self.config_get('channels', [])
-        if channel not in channels:
-            return
-
+        channel = msg.params[0]
         self.store.update(channel, int(args.index[0]), ' '.join(args.message))
         self.respond(msg, 'Ok!')
 
