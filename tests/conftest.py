@@ -26,52 +26,11 @@ def tmp_file(request):
 
 
 @pytest.fixture()
-def msg_t():
-    class Trap(object):
-        """Saves the last message sent via the message_out signal."""
-
-        def __init__(self):
-            self.msg = None
-            message_out.connect(self.on_message_out)
-
-        def on_message_out(self, sender, msg):
-            self.msg = msg
-
-        def reset(self):
-            self.msg = None
-
-    return Trap()
-
-
-@pytest.fixture()
-def msg_l():
-    class LTrap(object):
-        """Saves all messages sent via the message_out signal."""
-
-        def __init__(self):
-            self.msgs = []
-            message_out.connect(self.on_message_out)
-
-        def __repr__(self):
-            return '<LTrap: %s>' % self.msgs
-
-        def on_message_out(self, sender, msg):
-            self.msgs.append(msg)
-
-        def reset(self):
-            self.msgs = []
-
-    return LTrap()
-
-
-@pytest.fixture()
 def make_privmsg():
     """Provides a PRIVMSG message factory."""
     def f(text, nick='nick', target='#channel'):
         text = ':%s!~user@1-2-3-4.example.com PRIVMSG %s :%s' % (nick, target, text)
-        msg = Message()
-        msg.from_string(text)
-        return msg
+        return Message.new_from_string(text)
     return f
 
 
@@ -113,27 +72,28 @@ def clear():
     clear_state()
 
 
+class Trap(object):
+    def __init__(self, signal):
+        self.trapped = []
+        signal.connect(self.on_signal)
+
+    def on_signal(self, sender, **kwargs):
+        self.trapped.append(kwargs)
+
+    def reset(self):
+        self.trapped = []
+
+    def wait(self, assertion: Callable[[list], None], max_seconds=2):
+        for i in range(max_seconds):
+            try:
+                assertion(self.trapped)
+            except AssertionError:
+                time.sleep(1)
+                continue
+            return
+        assertion(self.trapped)
+
+
 @pytest.fixture()
 def make_signal_trap():
-    class Trap(object):
-        def __init__(self, signal):
-            self.trapped = []
-            signal.connect(self.on_signal)
-
-        def on_signal(self, sender, **kwargs):
-            self.trapped.append(kwargs)
-
-        def reset(self):
-            self.trapped = []
-
-        def wait(self, assertion: Callable[[list], None], max_seconds=2):
-            for i in range(max_seconds):
-                try:
-                    assertion(self.trapped)
-                except AssertionError:
-                    time.sleep(1)
-                    continue
-                return
-            assertion(self.trapped)
-
     return Trap
