@@ -1,40 +1,49 @@
+from botnet.message import Message
 from botnet.config import Config
 from botnet.modules.builtin.meta import Meta
 
 
 def make_config():
-    config = {'module_config': {'base_responder': {'command_prefix': '.'}}}
+    config = {'module_config': {'botnet': {'base_responder': {'command_prefix': ':'}}}}
     return Config(config)
 
 
-def test_help(cl, msg_t, make_privmsg, rec_msg):
-    config = make_config()
-    re = Meta(config)
+def test_help(module_harness_factory, unauthorised_context, make_privmsg):
+    m = module_harness_factory.make(Meta, make_config())
 
-    msg = make_privmsg('.help')
-    rec_msg(msg)
-    assert msg_t.msg
-
-    re.stop()
-
-
-def test_bots(cl, msg_t, make_privmsg, rec_msg):
-    config = make_config()
-    re = Meta(config)
-
-    msg = make_privmsg('.bots')
-    rec_msg(msg)
-    assert msg_t.msg
-
-    re.stop()
+    msg = make_privmsg(':help')
+    m.receive_auth_message_in(msg, unauthorised_context)
+    m.expect_request_list_commands_signals(
+        [
+            {
+                'msg': msg,
+                'auth': unauthorised_context,
+            }
+        ]
+    )
 
 
-def test_git(cl, msg_t, make_privmsg, rec_msg):
-    config = make_config()
-    re = Meta(config)
+def test_bots(module_harness_factory, make_privmsg):
+    m = module_harness_factory.make(Meta, make_config())
 
-    msg = make_privmsg('.git')
-    rec_msg(msg)
-    assert msg_t.msg
+    m.receive_message_in(make_privmsg('.bots'))
+    m.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Reporting in! [Python] https://github.com/boreq/botnet try :help (https://ibip.0x46.net/)')
+            }
+        ]
+    )
 
-    re.stop()
+
+def test_git(module_harness_factory, unauthorised_context, make_privmsg):
+    m = module_harness_factory.make(Meta, make_config())
+
+    m.receive_auth_message_in(make_privmsg(':git'), unauthorised_context)
+    m.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Reporting in! [Python] https://github.com/boreq/botnet try :help (https://ibip.0x46.net/)')
+            }
+        ]
+    )

@@ -1,11 +1,13 @@
+from botnet.config import Config
 from botnet.message import Message
-from botnet.signals import message_out, message_in, auth_message_in, clear_state
+from botnet.modules import AuthContext
+from botnet.signals import message_out, message_in, auth_message_in, clear_state, on_exception, _request_list_commands
 import logging
 import os
 import pytest
 import tempfile
 import time
-from typing import Callable
+from typing import Callable, Any
 
 
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
@@ -29,8 +31,11 @@ def tmp_file(request):
 def make_privmsg():
     """Provides a PRIVMSG message factory."""
     def f(text, nick='nick', target='#channel'):
-        text = ':%s!~user@1-2-3-4.example.com PRIVMSG %s :%s' % (nick, target, text)
-        return Message.new_from_string(text)
+        return Message(
+            prefix=':%s!~user@1-2-3-4.example.com',
+            command='PRIVMSG',
+            params=[target, text]
+        )
     return f
 
 
@@ -97,3 +102,64 @@ class Trap(object):
 @pytest.fixture()
 def make_signal_trap():
     return Trap
+
+
+class ModuleHarnessFactory:
+
+    def __init__(self) -> None:
+        self._harnesses: list[ModuleHarness] = []
+
+    def make(self, module_class: Callable, config: Config) -> Any:
+        harness = ModuleHarness(module_class, config)
+        self._harnesses.append(harness)
+        return harness
+
+    def _stop_all(self) -> None:
+        for harness in self._harnesses:
+            harness._stop()
+
+
+class ModuleHarness:
+
+    def __init__(self, module_class, config: Config) -> None:
+        self._module = module_class(config)
+
+        self._request_list_commands_trap = Trap(_request_list_commands)
+        self._message_out_trap = Trap(message_out)
+        self._on_exception_trap = Trap(on_exception)
+
+    def receive_message_in(self, msg: Message) -> None:
+        message_in.send(None, msg=msg)
+
+    def receive_auth_message_in(self, msg: Message, auth: AuthContext) -> None:
+        auth_message_in.send(None, msg=msg, auth=auth)
+
+    def expect_request_list_commands_signals(self, expected_signals: list[dict]) -> None:
+        def wait_condition(trapped):
+            assert trapped == expected_signals
+        self._request_list_commands_trap.wait(wait_condition)
+
+    def expect_message_out_signals(self, expected_signals: list[dict]) -> None:
+        def wait_condition(trapped):
+            assert trapped == expected_signals
+        self._message_out_trap.wait(wait_condition)
+
+    def _stop(self) -> None:
+        self._module.stop()
+        assert self._on_exception_trap.trapped == []
+
+
+@pytest.fixture()
+def module_harness_factory(request) -> ModuleHarnessFactory:
+    factory = ModuleHarnessFactory()
+
+    def teardown():
+        factory._stop_all()
+
+    request.addfinalizer(teardown)
+    return factory
+
+
+@pytest.fixture()
+def unauthorised_context() -> AuthContext:
+    return AuthContext(None, [])

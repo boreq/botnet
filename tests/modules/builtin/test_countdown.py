@@ -1,5 +1,4 @@
 from botnet.message import Message
-from botnet.signals import message_out
 from botnet.config import Config
 from botnet.modules.builtin.countdown import Countdown
 
@@ -31,41 +30,27 @@ def make_config():
     return Config(config)
 
 
-def test_countdown(make_signal_trap, make_privmsg, rec_msg):
-    config = make_config()
-    re = Countdown(config)
+def test_countdown(module_harness_factory, make_privmsg):
+    m = module_harness_factory.make(Countdown, make_config())
 
-    message_out_signal_trap = make_signal_trap(message_out)
-
-    msg = make_privmsg('.camp')
-    rec_msg(msg)
-
-    def wait_condition(trapped):
-        assert trapped == [
+    m.receive_message_in(make_privmsg('.camp'))
+    m.expect_message_out_signals(
+        [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :It already happened!')
             }
         ]
-    message_out_signal_trap.wait(wait_condition)
-
-    re.stop()
+    )
 
 
-def test_countdown_summary(make_signal_trap, make_privmsg, rec_msg):
-    config = make_config()
-    re = Countdown(config)
+def test_countdown_summary(module_harness_factory, make_privmsg):
+    m = module_harness_factory.make(Countdown, make_config())
 
-    message_out_signal_trap = make_signal_trap(message_out)
-
-    msg = make_privmsg('.summary')
-    rec_msg(msg)
-
-    def wait_condition(trapped):
-        assert trapped == [
+    m.receive_message_in(make_privmsg('.summary'))
+    m.expect_message_out_signals(
+        [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :camp: It already happened, congress: It already happened')
             }
         ]
-    message_out_signal_trap.wait(wait_condition)
-
-    re.stop()
+    )
