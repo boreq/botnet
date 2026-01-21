@@ -40,11 +40,54 @@ class Message:
              from_string and constructor).
     params: message parameters. Always a list.
     """
+    prefix: str | None
+    command: str
+    params: list[str]
 
-    def __init__(self, prefix=None, command=None, params=None):
+    def __init__(self, command: str, prefix: str | None = None, params: list[str] = []) -> None:
         self.prefix = prefix
-        self.command = command.upper() if command is not None else command
+        self.command = command.upper()
         self.params = params or []
+
+    @classmethod
+    def new_from_string(cls, message: str) -> Message:
+        """Loads a message from a string.
+
+        message: string, for example one line received from the server.
+        """
+        prefix = None
+        command = None
+        params = []
+
+        # Load data.
+        message = message.strip()
+        for index, part in enumerate(message.split(' ')):
+            # Prefix.
+            if index == 0 and part[0] == ':':
+                prefix = part[1:]
+                continue
+
+            # Command.
+            if command is None:
+                command = part.upper()
+                continue
+            # Parameters.
+            params.append(part)
+
+        # If one parameter starts with a colon (':') it is considered as the
+        # last parameter and may contain spaces.
+        for index, param in enumerate(params):
+            if param.startswith(':'):
+                # Create a list with params before the one containing a colon.
+                tmpparams = params[:index]
+                # Join a parameter with a colon and parameters following it.
+                # Remove the first character - a colon.
+                tmpparams.append(' '.join(params[index:])[1:])
+                params = tmpparams
+                break
+
+        assert command is not None
+        return Message(prefix=prefix, command=command, params=params)
 
     @property
     def servername(self):
@@ -55,42 +98,6 @@ class Message:
     def nickname(self):
         """Calls analyze_prefix on self.prefix in the background."""
         return analyze_prefix(self.prefix)[1]
-
-    def from_string(self, message):
-        """Loads a message from a string.
-
-        message: string, for example one line received from the server.
-        """
-        self.prefix = None
-        self.command = None
-        self.params = []
-
-        # Load data.
-        message = message.strip()
-        message = message.split(' ')
-        for index, part in enumerate(message):
-            # Prefix.
-            if index == 0 and part[0] == ':':
-                self.prefix = part[1:]
-                continue
-            # Command.
-            if self.command is None:
-                self.command = part.upper()
-                continue
-            # Parameters.
-            self.params.append(part)
-
-        # If one parameter starts with a colon (':') it is considered as the
-        # last parameter and may contain spaces.
-        for index, param in enumerate(self.params):
-            if param.startswith(':'):
-                # Create a list with params before the one containing a colon.
-                params = self.params[:index]
-                # Join a parameter with a colon and parameters following it.
-                # Remove the first character - a colon.
-                params.append(' '.join(self.params[index:])[1:])
-                self.params = params
-                break
 
     def to_string(self):
         """Converts the message back to a string."""

@@ -249,15 +249,13 @@ class IRC(BaseResponder):
         """
         self.send(msg.to_string())
 
-    def line_to_message(self, line):
+    def line_to_message(self, line) -> Message:
         """Converts a line received from the server to a message object.
 
         line: bytes.
         """
         line = line.decode()
-        msg = Message()
-        msg.from_string(line)
-        return msg
+        return Message.new_from_string(line)
 
     def process_data(self, data):
         """Processes data received from the servers, partitions it into lines
