@@ -3,3 +3,4 @@ __pycache__/
 _misc
 *.egg-info
 .cache/
+.idea/

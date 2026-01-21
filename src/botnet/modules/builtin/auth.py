@@ -22,7 +22,6 @@ class WhoisMixin(BaseModule):
             'user',            # username
             'host',            # host
             'real_name',       # real name
-            'channels',        # list of channels the user is in
             'server',          # url of a server to which the user is connected
             'server_info,      # string with additional information about the server
             'away',            # away message set by the user, present if the user is /away
@@ -48,13 +47,6 @@ class WhoisMixin(BaseModule):
             'host': msg.params[3],
             'real_name': msg.params[5],
         }
-
-    def handler_rpl_whoischannels(self, msg):
-        """WHOIS channels."""
-        if msg.params[1] in self._whois_current:
-            if 'channels' not in self._whois_current[msg.params[1]]:
-                self._whois_current[msg.params[1]]['channels'] = []
-            self._whois_current[msg.params[1]]['channels'].extend(msg.params[2:])
 
     def handler_rpl_whoisserver(self, msg):
         """WHOIS server."""

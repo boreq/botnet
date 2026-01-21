@@ -4,6 +4,7 @@ import logging
 import os
 import pytest
 import tempfile
+import time
 
 
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
@@ -105,5 +106,31 @@ def resource_path():
 
 
 @pytest.fixture()
-def cl():
+def clear():
     clear_state()
+
+
+@pytest.fixture()
+def make_signal_trap():
+    class Trap(object):
+        def __init__(self, signal):
+            self.trapped = []
+            signal.connect(self.on_signal)
+
+        def on_signal(self, sender, **kwargs):
+            self.trapped.append(kwargs)
+
+        def reset(self):
+            self.trapped = []
+
+        def wait(self, assertion, max_seconds = 2):
+            for i in range(max_seconds):
+                try:
+                    assertion(self.trapped)
+                except AssertionError:
+                    time.sleep(1)
+                    continue
+                return
+            assertion(self.trapped)
+
+    return Trap
