@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from botnet.message import Message
 from botnet.config import Config
 from botnet.modules.builtin.quotes import Quotes

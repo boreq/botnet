@@ -56,14 +56,6 @@ def rec_auth_msg():
 
 
 @pytest.fixture()
-def send_msg():
-    """Provides a function used for sending messages via message_out signal."""
-    def f(msg):
-        message_out.send(None, msg=msg)
-    return f
-
-
-@pytest.fixture()
 def resource_path():
     """Provides a function used for creating paths to resources."""
     def f(path):

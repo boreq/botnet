@@ -1,4 +1,6 @@
 from botnet.config import Config
+from botnet.message import Message
+from botnet.modules import AuthContext
 from botnet.modules.builtin.github import GithubAPI, Github
 import json
 
@@ -28,10 +30,6 @@ class G(Github):
         ]
     }
 
-    def __init__(self, config):
-        super(Github, self).__init__(config)
-        self.api = self.api_class()
-
 
 def test_event_parser(resource_path):
     a = A(resource_path('events.json'))
@@ -41,69 +39,81 @@ def test_event_parser(resource_path):
     assert len(t) == 6
 
 
-def test_response(resource_path, msg_t):
+def test_response(module_harness_factory, resource_path):
     a = A(resource_path('events.json'))
     a._last_events['boreq/botnet'] = 0
 
-    g = G(Config())
-    g.api = a
+    g = module_harness_factory.make(G, Config())
+    g.module.api = a
 
-    g.update()
-    assert 'commits' in str(msg_t.msg)
+    g.module.update()
+    g.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #botnet-dev :https://github.com/boreq/botnet new events: issue comments created: https://github.com/django/django/pull/4699#issuecomment-106543528 | pull requests: https://github.com/django/django/pull/4665 was closed | 1 commits to refs/heads/master | starred by: kez0r | forked to: https://github.com/grzes/django | issues: https://github.com/Homebrew/homebrew/issues/40102 was closed')
+            }
+        ]
+    )
 
 
-def test_admin(rec_admin_msg, make_privmsg):
-    g = Github(Config())
+def test_admin(module_harness_factory, make_privmsg):
+    g = module_harness_factory.make(Github, Config())
 
     msg = make_privmsg('.github_track owner repo #channel')
-    rec_admin_msg(msg)
-    assert g.config_get('track')
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+    assert g.module.config_get('track')
 
     msg = make_privmsg('.github_untrack owner repo #channel')
-    rec_admin_msg(msg)
-    assert not g.config_get('track')
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+    assert not g.module.config_get('track')
 
 
-def test_admin_one_left(rec_admin_msg, make_privmsg):
-    g = Github(Config())
+def test_admin_one_left(module_harness_factory, make_privmsg):
+    g = module_harness_factory.make(Github, Config())
 
     msg = make_privmsg('.github_track owner repo #channel1')
-    rec_admin_msg(msg)
-    rec_admin_msg(msg)
-    assert len(g.config_get('track')[0]['channels']) == 1
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+    assert len(g.module.config_get('track')[0]['channels']) == 1
 
     msg = make_privmsg('.github_track owner repo #channel2')
-    rec_admin_msg(msg)
-    assert len(g.config_get('track')[0]['channels']) == 2
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+    assert len(g.module.config_get('track')[0]['channels']) == 2
 
     msg = make_privmsg('.github_untrack owner repo #channel2')
-    rec_admin_msg(msg)
-    assert len(g.config_get('track')[0]['channels']) == 1
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+    assert len(g.module.config_get('track')[0]['channels']) == 1
 
 
-def test_admin_all_gone(rec_admin_msg, make_privmsg):
-    g = Github(Config())
+def test_admin_all_gone(module_harness_factory, make_privmsg):
+    g = module_harness_factory.make(Github, Config())
 
     msg = make_privmsg('.github_track owner repo #channel1')
-    rec_admin_msg(msg)
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+
     msg = make_privmsg('.github_track owner repo #channel2')
-    rec_admin_msg(msg)
-    assert len(g.config_get('track')[0]['channels']) == 2
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+
+    assert len(g.module.config_get('track')[0]['channels']) == 2
 
     msg = make_privmsg('.github_untrack owner repo')
-    rec_admin_msg(msg)
-    assert not g.config_get('track')
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+
+    assert not g.module.config_get('track')
 
 
-def test_admin_multiple(rec_admin_msg, make_privmsg):
-    g = Github(Config())
+def test_admin_multiple(module_harness_factory, make_privmsg):
+    g = module_harness_factory.make(Github, Config())
 
     msg = make_privmsg('.github_track owner repo1 #channel')
-    rec_admin_msg(msg)
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+
     msg = make_privmsg('.github_track owner repo2 #channel')
-    rec_admin_msg(msg)
-    assert len(g.config_get('track')) == 2
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+
+    assert len(g.module.config_get('track')) == 2
 
     msg = make_privmsg('.github_untrack owner repo1 #channel')
-    rec_admin_msg(msg)
-    assert len(g.config_get('track')) == 1
+    g.receive_auth_message_in(msg, AuthContext('some-uuid', ['admin']))
+
+    assert len(g.module.config_get('track')) == 1
