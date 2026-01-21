@@ -1,16 +1,9 @@
 .PHONY: ci
-ci: lint
+ci: lint test
 
 .PHONY: test
-test: test_botnet test_examples
-
-.PHONY: test_botnet
-test_botnet:
+test:
 	py.test tests
-
-.PHONY: test_examples
-test_examples:
-	py.test examples/tests.py
 
 .PHONY: lint
 lint: flake8 mypy
@@ -21,4 +14,4 @@ flake8:
 
 .PHONY: mypy
 mypy:
-	mypy --warn-no-return --ignore-missing-imports src
+	mypy src

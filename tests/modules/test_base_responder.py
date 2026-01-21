@@ -3,7 +3,7 @@ from botnet.message import Message
 from botnet.modules import BaseResponder
 from botnet.modules.lib import parse_command
 from botnet.modules.builtin.admin import Admin
-from botnet.signals import message_in, admin_message_in
+from botnet.signals import message_in
 
 
 def make_message(text):

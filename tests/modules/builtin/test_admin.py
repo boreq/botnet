@@ -1,7 +1,7 @@
 from botnet.config import Config
 from botnet.modules.builtin.admin import Admin
 from botnet.message import Message
-from botnet.signals import message_in, admin_message_in
+from botnet.signals import message_in
 
 
 data1 = [
