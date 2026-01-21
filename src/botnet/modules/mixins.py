@@ -50,9 +50,6 @@ class ConfigMixin(BaseModule):
         # list of tuples (namespace, name)
         self._config_locations = []
 
-    def _get_config_key(self, config, key):
-        return 'module_config.{}.{}.{}'.format(config[0], config[1], key)
-
     def register_default_config(self, config: Config):
         """Adds a default config. Default configs are queried for requested
         values in a reverse order in which they were registered in case a value
@@ -80,8 +77,8 @@ class ConfigMixin(BaseModule):
         """
         # configs
         with self.config.lock:
-            for config in reversed(self._config_locations):
-                actual_key = self._get_config_key(config, key)
+            for config_location in reversed(self._config_locations):
+                actual_key = self._get_config_key(config_location, key)
                 try:
                     return next(reversed(list(_iterate_dict(self.config, actual_key))))
                 except KeyError:
@@ -100,6 +97,17 @@ class ConfigMixin(BaseModule):
 
         if default is not _SENTI:
             return default
+
+        raise KeyError
+
+    def peek_loaded_config_for_module(self, namespace: str, module: str, key: str, default=_SENTI):
+        with self.config.lock:
+            actual_key = self._get_config_key((namespace, module), key)
+            try:
+                return next(reversed(list(_iterate_dict(self.config, actual_key))))
+            except KeyError:
+                if default is not _SENTI:
+                    return default
 
         raise KeyError
 
@@ -137,6 +145,9 @@ class ConfigMixin(BaseModule):
         except AttributeError as e:
             raise AttributeError('Value for a key "{}" is not a list'.format(key)) from e
         return True
+
+    def _get_config_key(self, config_location: tuple[str, str], key: str) -> str:
+        return 'module_config.{}.{}.{}'.format(config_location[0], config_location[1], key)
 
 
 class MessageDispatcherMixin(BaseModule):

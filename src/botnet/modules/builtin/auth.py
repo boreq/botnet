@@ -144,7 +144,7 @@ class Auth(WhoisMixin, BaseResponder):
                 "people": [
                         {
                             "uuid": "someperson",
-                            "nicks": [
+                            "authorisations": [
                                 {
                                     "kind": "irc",
                                     "nick": "nick"
@@ -153,6 +153,9 @@ class Auth(WhoisMixin, BaseResponder):
                                     "kind": "matrix",
                                     "nick": "@nick:example.com"
                                 }
+                            ],
+                            "contact": [
+                                "nick"
                             ],
                             groups: ["admin"]
                         }
@@ -176,22 +179,22 @@ class Auth(WhoisMixin, BaseResponder):
             for person in self.config_get('people', []):
                 uuid = person.get('uuid')
                 groups = person.get('groups')
-                for nick_data in person.get('nicks', []):
-                    match nick_data['kind']:
+                for authorisation in person.get('authorisations', []):
+                    match authorisation['kind']:
                         case 'irc':
-                            if whois_data.get('nick_identified', None) != nick_data['nick']:
+                            if whois_data.get('nick_identified', None) != authorisation['nick']:
                                 continue
                             self._emit_auth_message_in(msg, uuid, groups)
                             return
                         case 'matrix':
                             if whois_data.get('server', None) != 'matrix.hackint.org':
                                 continue
-                            if whois_data.get('real_name', None) != nick_data['nick']:
+                            if whois_data.get('real_name', None) != authorisation['nick']:
                                 continue
                             self._emit_auth_message_in(msg, uuid, groups)
                             return
                         case _:
-                            raise Exception('unknown nick kind: {}'.format(nick_data['kind']))
+                            raise Exception('unknown authorisation kind: {}'.format(authorisation['kind']))
             self._emit_auth_message_in(msg, None, [])
 
         self.whois_schedule(msg.nickname, on_complete)
