@@ -102,12 +102,11 @@ def test_inactivity_monitor_repeated():
         assert t.aborted > 0
 
 
-def test_empty_config():
+def test_ignore_empty_config():
     config = make_config()
     irc = IRC(config)
 
-    msg = Message()
-    msg.from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
+    msg = Message.new_from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
     assert not irc.should_ignore(msg)
 
 
@@ -122,14 +121,11 @@ def test_ignore():
 
     irc = IRC(config)
 
-    msg = Message()
-    msg.from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
+    msg = Message.new_from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
     assert irc.should_ignore(msg)
 
-    msg = Message()
-    msg.from_string(':othernick!~user@example.com PRIVMSG #channel :lorem ipsum')
+    msg = Message.new_from_string(':othernick!~user@example.com PRIVMSG #channel :lorem ipsum')
     assert irc.should_ignore(msg)
 
-    msg = Message()
-    msg.from_string(':othernick!~user@example.net PRIVMSG #channel :lorem ipsum')
+    msg = Message.new_from_string(':othernick!~user@example.net PRIVMSG #channel :lorem ipsum')
     assert not irc.should_ignore(msg)
