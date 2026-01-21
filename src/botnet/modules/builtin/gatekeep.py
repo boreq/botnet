@@ -80,9 +80,9 @@ class NamesMixin(BaseModule):
         msg = Message(command='NAMES', params=[channel])
         message_out.send(self, msg=msg)
 
-    def handle_msg(self, msg) -> None:
+    def handle_msg(self, msg: Message) -> None:
         # Dispatch to the handlers
-        code = msg.command_code()
+        code = msg.command_code
         if code is not None:
             handler_name = 'handler_%s' % code.name.lower()
         else:

@@ -279,7 +279,7 @@ class IRC(BaseResponder):
         msg = self.line_to_message(line)
         self.handle_message(msg)
 
-    def handle_message(self, msg):
+    def handle_message(self, msg: Message) -> None:
         """Process the created Message object."""
         self.logger.debug('Received: %s', str(msg))
 
@@ -289,7 +289,7 @@ class IRC(BaseResponder):
 
         # Dispatch the message to the right handler
         # If command is a numeric code convert it to a string
-        code = msg.command_code()
+        code = msg.command_code
         if code is not None:
             handler_name = 'handler_%s' % code.name.lower()
         else:

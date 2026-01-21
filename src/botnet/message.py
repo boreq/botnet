@@ -90,27 +90,17 @@ class Message:
         return Message(prefix=prefix, command=command, params=params)
 
     @property
-    def servername(self):
+    def servername(self) -> str | None:
         """Calls analyze_prefix on self.prefix in the background."""
         return analyze_prefix(self.prefix)[0]
 
     @property
-    def nickname(self):
+    def nickname(self) -> str | None:
         """Calls analyze_prefix on self.prefix in the background."""
         return analyze_prefix(self.prefix)[1]
 
-    def to_string(self):
-        """Converts the message back to a string."""
-        tmp = [self.command.upper()]
-        if self.prefix:
-            tmp.insert(0, ':%s' % self.prefix)
-        for param in self.params:
-            if ' ' in param:
-                param = ':%s' % param
-            tmp.append(param)
-        return ' '.join(tmp)
-
-    def command_code(self):
+    @property
+    def command_code(self) -> Code | None:
         """Returns an enum which matches a numeric reply code or None if there
         is no such enum or the message is not numeric.
         """
@@ -118,6 +108,17 @@ class Message:
             return Code(int(self.command))
         except ValueError:
             return None
+
+    def to_string(self) -> str:
+        """Converts the message back to a string."""
+        tmp = [self.command.upper()]
+        if self.prefix:
+            tmp.insert(0, ':%s' % self.prefix)
+        for param in self.params:
+            if ' ' in param or ':' in param:
+                param = ':%s' % param
+            tmp.append(param)
+        return ' '.join(tmp)
 
     def __str__(self):
         return self.to_string()

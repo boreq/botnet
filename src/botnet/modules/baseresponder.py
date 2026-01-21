@@ -70,6 +70,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
         # If this is supposed to be sent as a private message or was sent in
         # a private message to the bot respond also in private message.
         if pm or not is_channel_name(priv_msg.params[0]):
+            assert priv_msg.nickname is not None
             target = priv_msg.nickname
         else:
             target = priv_msg.params[0]

@@ -110,9 +110,9 @@ class WhoisMixin(BaseModule):
         msg = Message(command='WHOIS', params=[nick])
         message_out.send(self, msg=msg)
 
-    def handle_msg(self, msg):
+    def handle_msg(self, msg: Message) -> None:
         # Dispatch to the handlers
-        code = msg.command_code()
+        code = msg.command_code
         if code is not None:
             handler_name = 'handler_%s' % code.name.lower()
         else:
