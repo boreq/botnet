@@ -9,24 +9,6 @@
 from .codes import Code
 
 
-def analyze_prefix(prefix):
-    """Analyze a message prefix which is a server name or data about the user
-    (nickname, user, host). Returns a tuple containing a servername and
-    a nickname (one of those will always be None).
-
-    prefix: message prefix.
-    """
-    servername = None
-    nickname = None
-    if prefix is not None:
-        parts = prefix.split('!')
-        if len(parts) > 1:
-            nickname = parts[0]
-        else:
-            servername = prefix
-    return servername, nickname
-
-
 class Message:
     """Parses the server message and provides access to its properties.
 
@@ -92,12 +74,12 @@ class Message:
     @property
     def servername(self) -> str | None:
         """Calls analyze_prefix on self.prefix in the background."""
-        return analyze_prefix(self.prefix)[0]
+        return self._analyze_prefix(self.prefix)[0]
 
     @property
     def nickname(self) -> str | None:
         """Calls analyze_prefix on self.prefix in the background."""
-        return analyze_prefix(self.prefix)[1]
+        return self._analyze_prefix(self.prefix)[1]
 
     @property
     def command_code(self) -> Code | None:
@@ -126,7 +108,50 @@ class Message:
     def __repr__(self):
         return '<Message: %s>' % self.__str__()
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if not isinstance(other, Message):
             return False
         return self.prefix == other.prefix and self.command == other.command and self.params == other.params
+
+    def _analyze_prefix(self, prefix) -> tuple[str | None, str | None]:
+        """Analyze a message prefix which is a server name or data about the user
+        (nickname, user, host). Returns a tuple containing a servername and
+        a nickname (one of those will always be None).
+
+        prefix: message prefix.
+        """
+        servername = None
+        nickname = None
+        if prefix is not None:
+            parts = prefix.split('!')
+            if len(parts) > 1:
+                nickname = parts[0]
+            else:
+                servername = prefix
+        return servername, nickname
+
+
+class IncomingPrivateMessage:
+    sender: str
+    target: str
+    text: str
+
+    def __init__(self, sender: str, target: str, text: str) -> None:
+        self.sender = sender
+        self.target = target
+        self.text = text
+
+    @classmethod
+    def new_from_message(cls, msg: Message) -> IncomingPrivateMessage:
+        if msg.command != 'PRIVMSG':
+            raise Exception('passed a message that isn\'t a private message')
+
+        if msg.nickname is None:
+            raise Exception('something is wrong, a received PRIVMSG should always have a nickname available')
+
+        return cls(msg.nickname, msg.params[0], msg.params[1])
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, IncomingPrivateMessage):
+            return False
+        return self.sender == other.sender and self.target == other.target and self.text == other.text

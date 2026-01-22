@@ -3,7 +3,7 @@ import threading
 from typing import Any, Callable
 from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder, AuthContext, command
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from ..decorators import predicates
 from ..lib import parse_command, Args
 from ...config import Config
@@ -54,8 +54,8 @@ class NewsStore:
 
 
 def _is_enabled_for_this_channel():
-    def predicate(module: Any, msg: Message, auth: AuthContext) -> bool:
-        channel = msg.params[0] if is_channel_name(msg.params[0]) else None
+    def predicate(module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
+        channel = msg.target if is_channel_name(msg.target) else None
         channels = module.config_get('channels', [])
         return channel in channels
 
@@ -85,12 +85,12 @@ class News(BaseResponder):
 
     @command('news')
     @_is_enabled_for_this_channel()
-    def command_news(self, msg: Message, auth: AuthContext) -> None:
+    def command_news(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """List news for the current channel.
 
         Syntax: news
         """
-        channel = msg.params[0]
+        channel = msg.target
         messages = self.store.get(channel)
 
         if not messages:
@@ -102,48 +102,48 @@ class News(BaseResponder):
     @command('news_add')
     @_is_enabled_for_this_channel()
     @parse_command([('message', '+')])
-    def command_news_add(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_news_add(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Add a news entry for the current channel at the top of the list.
 
         Syntax: news_add MESSAGE
         """
-        channel = msg.params[0]
+        channel = msg.target
         self.store.push(channel, 0, ' '.join(args.message))
         self.respond(msg, 'Ok!')
 
     @command('news_push')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1), ('message', '+')])
-    def command_news_push(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_news_push(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Add a news entry for the current channel.
 
         Syntax: news_push INDEX MESSAGE
         """
-        channel = msg.params[0]
+        channel = msg.target
         self.store.push(channel, int(args.index[0]), ' '.join(args.message))
         self.respond(msg, 'Ok!')
 
     @command('news_pop')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1)])
-    def command_news_pop(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_news_pop(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Remove a news entry for the current channel.
 
         Syntax: news_pop INDEX
         """
-        channel = msg.params[0]
+        channel = msg.target
         self.store.pop(channel, int(args.index[0]))
         self.respond(msg, 'Ok!')
 
     @command('news_update')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1), ('message', '+')])
-    def command_news_update(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_news_update(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Update a news entry for the current channel.
 
         Syntax: news_update INDEX MESSAGE
         """
-        channel = msg.params[0]
+        channel = msg.target
         self.store.update(channel, int(args.index[0]), ' '.join(args.message))
         self.respond(msg, 'Ok!')
 

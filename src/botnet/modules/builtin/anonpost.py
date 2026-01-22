@@ -1,6 +1,6 @@
 from .. import BaseResponder, command, only_admins, AuthContext
 from ..lib import parse_command, Args
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from ...helpers import is_channel_name
 
 
@@ -12,7 +12,7 @@ class Anonpost(BaseResponder):
 
     @command('anonpost')
     @parse_command([('target', 1), ('message', '+')])
-    def command_anonpost(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_anonpost(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Send a message to a target channel anonymously.
 
         Syntax: anonpost TARGET MESSAGE
@@ -26,7 +26,7 @@ class Anonpost(BaseResponder):
     @command('anonpost')
     @only_admins()
     @parse_command([('target', 1), ('message', '+')])
-    def admin_command_anonpost(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def admin_command_anonpost(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Send a message to a target user anonymously.
 
         Syntax: anonpost TARGET MESSAGE

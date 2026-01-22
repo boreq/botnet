@@ -1,5 +1,5 @@
 from botnet.config import Config
-from botnet.message import Message
+from botnet.message import Message, IncomingPrivateMessage
 from botnet.modules import AuthContext
 from botnet.signals import message_out, message_in, auth_message_in, clear_state, on_exception, _request_list_commands
 import logging
@@ -35,6 +35,18 @@ def make_privmsg():
             prefix='%s!~user@1-2-3-4.example.com' % nick,
             command='PRIVMSG',
             params=[target, text]
+        )
+    return f
+
+
+@pytest.fixture()
+def make_incoming_privmsg():
+    """Provides a PRIVMSG message factory."""
+    def f(text, nick='nick', target='#channel'):
+        return IncomingPrivateMessage(
+            sender=nick,
+            target=target,
+            text=text,
         )
     return f
 
@@ -123,7 +135,7 @@ class ModuleHarness:
     def receive_message_in(self, msg: Message) -> None:
         message_in.send(None, msg=msg)
 
-    def receive_auth_message_in(self, msg: Message, auth: AuthContext) -> None:
+    def receive_auth_message_in(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         auth_message_in.send(None, msg=msg, auth=auth)
 
     def expect_request_list_commands_signals(self, expected_signals: list[dict]) -> None:

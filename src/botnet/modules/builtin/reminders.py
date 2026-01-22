@@ -7,7 +7,7 @@ from ...signals import on_exception
 from .. import BaseResponder, command, AuthContext
 from ..lib import parse_command, Args
 from ...config import Config
-from ...message import Message
+from ...message import IncomingPrivateMessage
 import re
 
 
@@ -144,7 +144,7 @@ class Reminders(BaseResponder):
 
     @command('in')
     @parse_command([('message', '+')])
-    def command_in(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_in(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Set a reminder. Amount is a floating point number, unit is either
         seconds, minutes, hours, days or years. You will receive a message in
         the channel you created this reminder in or privately if you PM this
@@ -152,15 +152,13 @@ class Reminders(BaseResponder):
 
         Syntax: in AMOUNT UNIT MESSAGE
         """
-        assert msg.nickname is not None
-
-        author = msg.nickname
+        author = msg.sender
         seconds, message = parse_message(' '.join(args.message))
         time = datetime.datetime.utcnow().timestamp() + seconds
-        if not is_channel_name(msg.params[0]):
-            target = msg.nickname
+        if not is_channel_name(msg.target):
+            target = msg.sender
         else:
-            target = msg.params[0]
+            target = msg.target
         if self.store.add_message(author, target, message, time):
             self.respond(msg, 'Will do!')
 

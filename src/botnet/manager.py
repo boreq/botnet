@@ -1,7 +1,7 @@
 import threading
 from .config import Config
 from .logging import get_logger
-from .message import Message
+from .message import IncomingPrivateMessage
 from .modules import AuthContext
 from .modules.utils import get_module, reload_module, get_ident_string
 from .signals import module_loaded, module_unloaded, module_load, module_unload, \
@@ -61,7 +61,7 @@ class Manager:
                 return wrapper
         return None
 
-    def on_request_list_commands(self, sender, msg: Message, auth: AuthContext) -> None:
+    def on_request_list_commands(self, sender, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Handler for the _request_list_commands signal."""
         commands: set[str] = set()
         with self.wrappers_lock:

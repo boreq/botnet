@@ -1,7 +1,7 @@
 import random
 from .. import BaseResponder, command, AuthContext
 from ..lib import parse_command, Args
-from ...message import Message
+from ...message import IncomingPrivateMessage
 
 
 cutelist = [
@@ -73,7 +73,7 @@ class Reactions(BaseResponder):
 
     @command('cute')
     @parse_command([('target', '*')])
-    def command_cute(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_cute(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Sends a random emoticon. The style of an emoticon changes if the
         TARGET is defined.
 
@@ -86,16 +86,16 @@ class Reactions(BaseResponder):
 
     @command('magic')
     @parse_command([('target', '*')])
-    def command_magic(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_magic(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Sends a random emoticon.
 
         Syntax: magic [TARGET ...]
         """
         self.send_from_list(msg, args, magiclist)
 
-    def send_from_list(self, msg: Message, args: Args, reactions_list: list[str]) -> None:
+    def send_from_list(self, msg: IncomingPrivateMessage, args: Args, reactions_list: list[str]) -> None:
         target = ' '.join(args.target)
-        response = random.choice(reactions_list).format(sender=msg.nickname,
+        response = random.choice(reactions_list).format(sender=msg.sender,
                                                         target=target)
         self.respond(msg, response)
 

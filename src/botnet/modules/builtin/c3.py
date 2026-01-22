@@ -1,6 +1,6 @@
 import datetime
 from .. import BaseResponder, command, AuthContext
-from ...message import Message
+from ...message import IncomingPrivateMessage
 
 
 class C3(BaseResponder):
@@ -11,7 +11,7 @@ class C3(BaseResponder):
     CONGRESS_DAY = 27
 
     @command('c3')
-    def command_c3(self, msg: Message, auth: AuthContext) -> None:
+    def command_c3(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Displays the number of days remaining to the next congress.
 
         Syntax: c3

@@ -5,7 +5,7 @@ from typing import Any, Callable
 from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder, command, AuthContext
 from ..lib import parse_command, Args
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from ...config import Config
 
 
@@ -84,7 +84,7 @@ class Seen(BaseResponder):
 
     @command('seen')
     @parse_command([('nick', 1)])
-    def command_seen(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_seen(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Check when was the last time someone said something.
 
         Syntax: seen NICK
@@ -96,10 +96,9 @@ class Seen(BaseResponder):
         else:
             self.respond(msg, 'I\'ve never seen %s' % args.nick[0])
 
-    def handle_privmsg(self, msg: Message) -> None:
-        if is_channel_name(msg.params[0]):
-            assert msg.nickname is not None
-            self.ms.register_message(msg.nickname, msg.params[0], msg.params[1])
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
+        if is_channel_name(msg.target):
+            self.ms.register_message(msg.sender, msg.target, msg.text)
 
 
 mod = Seen

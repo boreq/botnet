@@ -6,7 +6,7 @@ from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder, command, AuthContext
 from ..lib import parse_command, Args
 from ...config import Config
-from ...message import Message
+from ...message import IncomingPrivateMessage
 
 
 def make_msg_entry(author: str, target: str, message: str, channel: str | None, time: datetime) -> dict:
@@ -118,31 +118,27 @@ class Tell(BaseResponder):
 
     @command('tell')
     @parse_command([('target', 1), ('message', '+')])
-    def command_tell(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_tell(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Leave a message for someone. The user will receive the message the
         next time he sends anything in any of the channels.
 
         Syntax: tell TARGET MESSAGE
         """
-        assert msg.nickname is not None
-
-        author = msg.nickname
+        author = msg.sender
         target = args.target[0]
         message = ' '.join(args.message)
-        channel = msg.params[0] if is_channel_name(msg.params[0]) else None
+        channel = msg.target if is_channel_name(msg.target) else None
         time = self.now()
         if self.ms.add_message(author, target, message, channel, time):
             self.respond(msg, 'Will do!')
 
-    def handle_privmsg(self, msg: Message) -> None:
-        assert msg.nickname is not None
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
+        for stored_msg in self.ms.get_private_messages(msg.sender):
+            self.respond(msg, format_msg_entry(msg.sender, stored_msg), pm=True)
 
-        for stored_msg in self.ms.get_private_messages(msg.nickname):
-            self.respond(msg, format_msg_entry(msg.nickname, stored_msg), pm=True)
-
-        if is_channel_name(msg.params[0]):
-            for stored_msg in self.ms.get_channel_messages(msg.nickname, msg.params[0]):
-                self.respond(msg, format_msg_entry(msg.nickname, stored_msg))
+        if is_channel_name(msg.target):
+            for stored_msg in self.ms.get_channel_messages(msg.sender, msg.target):
+                self.respond(msg, format_msg_entry(msg.sender, stored_msg))
 
     def now(self) -> datetime:
         return datetime.now()

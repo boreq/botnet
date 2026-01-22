@@ -8,7 +8,7 @@ from collections import namedtuple
 from dataclasses import dataclass, asdict
 from ...helpers import save_json, load_json, is_channel_name, cleanup_nick
 from ...signals import message_out, on_exception
-from ...message import Message
+from ...message import Message, IncomingPrivateMessage
 from .. import BaseResponder, predicates, command, AuthContext
 from ..lib import MemoryCache, parse_command, Args
 from ..base import BaseModule
@@ -93,7 +93,7 @@ class NamesMixin(BaseModule):
 
 
 def _is_authorised_has_uuid_and_sent_a_privmsg():
-    def predicate(module: Any, msg: Message, auth: AuthContext) -> bool:
+    def predicate(module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
         authorised_group = module.config_get('authorised_group')
         if authorised_group not in auth.groups:
             return False
@@ -101,7 +101,7 @@ def _is_authorised_has_uuid_and_sent_a_privmsg():
         if not auth.uuid:
             return False
 
-        if is_channel_name(msg.params[0]):
+        if is_channel_name(msg.target):
             return False
 
         return True
@@ -146,7 +146,7 @@ class Gatekeep(NamesMixin, BaseResponder):
 
     @command('gatekeep')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
-    def auth_command_gatekeep(self, msg: Message, auth: AuthContext) -> None:
+    def auth_command_gatekeep(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Prints a report containing the number of endorsements and other information.
 
         Syntax: gatekeep
@@ -169,7 +169,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     @command('endorse')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
     @parse_command([('nick', 1)])
-    def auth_command_endorse(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def auth_command_endorse(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Adds your endorsement for a nick.
 
         Syntax: endorse NICK
@@ -190,7 +190,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     @command('unendorse')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
     @parse_command([('nick', 1)])
-    def auth_command_unendorse(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def auth_command_unendorse(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Removes your endorsement for a nick.
 
         Syntax: unendorse NICK
@@ -208,7 +208,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     @command('merge_personas')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
     @parse_command([('nick1', 1), ('nick2', 1)])
-    def auth_command_merge_personas(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def auth_command_merge_personas(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Merges two personas (use if one physical person has multiple clients in the channel).
 
         Syntax: merge_personas NICK1 NICK2
@@ -228,12 +228,10 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         self.request_names(self.config_get('channel'), on_names_available)
 
-    def handle_privmsg(self, msg: Message) -> None:
-        assert msg.nickname is not None
-
-        if is_channel_name(msg.params[0]) and msg.params[0] == self.config_get('channel'):
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
+        if is_channel_name(msg.target) and msg.target == self.config_get('channel'):
             with self._store as state:
-                state.on_privmsg(msg.nickname)
+                state.on_privmsg(msg.sender)
 
     def stop(self) -> None:
         super().stop()

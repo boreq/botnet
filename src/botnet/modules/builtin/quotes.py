@@ -2,7 +2,7 @@ import os
 import random
 from typing import Iterator
 from ...signals import on_exception
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from .. import BaseResponder, AuthContext
 
 
@@ -37,7 +37,7 @@ class Quotes(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'quotes'
 
-    def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
         rw = super().get_all_commands(msg, auth)
         new_commands = set()
         for command in self.config_get('files', {}).keys():
@@ -47,7 +47,7 @@ class Quotes(BaseResponder):
         rw.extend(new_commands)
         return rw
 
-    def handle_privmsg(self, msg: Message) -> None:
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
 
         if command_name is None:
@@ -57,13 +57,13 @@ class Quotes(BaseResponder):
         for root, filename in self.get_command_files():
             if filename == command_name:
                 path = os.path.join(root, filename)
-                self.send_random_line(msg, path)
+                self._send_random_line(msg, path)
                 return
 
         # Files
         filename = self.config_get('files.%s' % command_name, None)
         if filename is not None:
-            self.send_random_line(msg, filename)
+            self._send_random_line(msg, filename)
 
     def get_command_files(self) -> Iterator[tuple[str, str]]:
         for directory in self.config_get('directories', []):
@@ -71,7 +71,7 @@ class Quotes(BaseResponder):
                 for filename in files:
                     yield (root, filename)
 
-    def send_random_line(self, msg: Message, filepath: str) -> None:
+    def _send_random_line(self, msg: IncomingPrivateMessage, filepath: str) -> None:
         try:
             line = random_line(filepath)
             self.respond(msg, line)

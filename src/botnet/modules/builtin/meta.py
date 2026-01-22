@@ -1,5 +1,5 @@
 from ...signals import _request_list_commands, _list_commands
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from .. import BaseResponder, AuthContext, command
 from ..lib import parse_command, Args
 from ...config import Config
@@ -17,7 +17,7 @@ class Meta(BaseResponder):
         _list_commands.connect(self.on_list_commands)
 
     @command('git')
-    def command_git(self, msg: Message, auth: AuthContext) -> None:
+    def command_git(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Alias for the IBIP identification.
 
         Syntax: git
@@ -26,7 +26,7 @@ class Meta(BaseResponder):
 
     @command('help')
     @parse_command([('command_names', '*')])
-    def command_help(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_help(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Sends a list of commands. If COMMAND is specified sends more
         detailed help about a single command.
 
@@ -37,16 +37,16 @@ class Meta(BaseResponder):
         else:
             super().command_help(msg, auth)
 
-    def on_list_commands(self, sender, msg: Message, auth: AuthContext, commands: list[str]) -> None:
+    def on_list_commands(self, sender, msg: IncomingPrivateMessage, auth: AuthContext, commands: list[str]) -> None:
         """Sends a list of commands received from the Manager."""
         text = 'Supported commands: %s' % ', '.join(commands)
         self.respond(msg, text)
 
-    def handle_privmsg(self, msg: Message) -> None:
-        if msg.params[1] == '.bots':
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
+        if msg.text == '.bots':
             self._respond_with_ibip(msg)
 
-    def _respond_with_ibip(self, msg: Message) -> None:
+    def _respond_with_ibip(self, msg: IncomingPrivateMessage) -> None:
         """Makes the bot identify itself as defined by The IRC Bot
         Identification Protocol Standard.
         """

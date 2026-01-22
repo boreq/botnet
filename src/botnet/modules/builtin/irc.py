@@ -6,7 +6,7 @@ import threading
 import fnmatch
 from typing import Any, Generator
 from ...logging import get_logger
-from ...message import Message
+from ...message import Message, IncomingPrivateMessage
 from ...signals import message_in, message_out, on_exception, config_changed
 from .. import BaseResponder, command, only_admins, AuthContext
 from ..lib import parse_command, Args
@@ -163,7 +163,7 @@ class IRC(BaseResponder):
     @command('channel_join')
     @only_admins()
     @parse_command([('name', 1), ('password', '?')])
-    def admin_command_channel_join(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def admin_command_channel_join(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Joins a channel.
 
         Syntax: channel_join CHANNEL_NAME [CHANNEL_PASSWORD]
@@ -173,7 +173,7 @@ class IRC(BaseResponder):
     @command('channel_part')
     @only_admins()
     @parse_command([('name', 1)])
-    def admin_command_channel_part(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def admin_command_channel_part(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Parts a channel.
 
         Syntax: channel_part CHANNEL_NAME
@@ -183,7 +183,7 @@ class IRC(BaseResponder):
     @command('ignore')
     @only_admins()
     @parse_command([('pattern', 1)])
-    def admin_command_ignore(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def admin_command_ignore(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Ignores a user. Pattern should be in the following form with
         asterisks used as wildcards: nick!user@host.
 
@@ -196,7 +196,7 @@ class IRC(BaseResponder):
     @command('unignore')
     @only_admins()
     @parse_command([('pattern', 1)])
-    def admin_command_unignore(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def admin_command_unignore(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Unignores a user.
 
         Syntax: unignore PATTERN
@@ -210,7 +210,7 @@ class IRC(BaseResponder):
 
     @command('ignored')
     @only_admins()
-    def admin_command_ignored(self, msg: Message, auth: AuthContext) -> None:
+    def admin_command_ignored(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Lists ignored patterns.
 
         Syntax: ignored

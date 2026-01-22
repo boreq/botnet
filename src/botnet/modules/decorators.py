@@ -1,6 +1,6 @@
 from typing import Protocol, Any
+from botnet.message import IncomingPrivateMessage
 from .base import AuthContext
-from ..message import Message
 from functools import wraps
 
 
@@ -9,7 +9,7 @@ _ATTR_PREDICATES = '_predicates'
 
 
 class Predicate(Protocol):
-    def __call__(self, module: Any, msg: Message, auth: AuthContext) -> bool:
+    def __call__(self, module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
         ...
 
 
@@ -70,7 +70,7 @@ def predicates(predicates: list[Predicate]):
 
 
 def _any_group(groups: list[str]):
-    def predicate(module: Any, msg: Message, auth: AuthContext) -> bool:
+    def predicate(module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
         for group in groups:
             if group in auth.groups:
                 return True

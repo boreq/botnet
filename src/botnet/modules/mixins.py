@@ -1,15 +1,20 @@
 import re
 import inspect
+from typing import Protocol
 from ..signals import message_in, auth_message_in, on_exception, config_changed
 from ..config import Config
 from .base import BaseModule, AuthContext
 from .decorators import _ATTR_COMMAND_NAME, _ATTR_PREDICATES
-from ..message import Message
+from ..message import Message, IncomingPrivateMessage
 from collections.abc import Callable
 
 
 _SENTI = object()
-_ADMIN_GROUP_NAME = 'admin'
+
+
+class CommandHandler(Protocol):
+    def __call__(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+        ...
 
 
 def _iterate_dict(d, key):
@@ -151,12 +156,15 @@ class ConfigMixin(BaseModule):
 
 
 class MessageDispatcherMixin(BaseModule):
-    """Dispatches messages received via `auth_message_in` signal to appropriate
-    methods.
+    """Dispatches messages received via `message_in` and `auth_message_in`
+    signals to appropriate methods.
 
-    When a message is received via the `auth_message_in` signal:
-        - All messages are dispatched to `handle_msg` and `handle_auth_msg`.
-        - All PRIVMSG messages are dispatched to `handle_privmsg` and `handle_auth_privmsg`.
+    When a message is received via the `message_in` signal:
+        - All messages are dispatched to `handle_msg`.
+        - All PRIVMSG messages are then dispatched to `handle_privmsg`.
+
+    When a PRIVMSG message is received via the `auth_message_in` signal:
+        - All messages are dispatched to `handle_auth_privmsg`.
         - If a message starts with a command prefix defined in the config it
           will also be sent to all handlers marked with a matching command
           decorator.
@@ -171,15 +179,11 @@ class MessageDispatcherMixin(BaseModule):
         """Called when a message is received."""
         pass
 
-    def handle_privmsg(self, msg: Message) -> None:
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         """Called when a message with a PRIVMSG command is received."""
         pass
 
-    def handle_auth_msg(self, msg: Message, auth: AuthContext) -> None:
-        """Called when a message is received."""
-        pass
-
-    def handle_auth_privmsg(self, msg: Message, auth: AuthContext) -> None:
+    def handle_auth_privmsg(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Called when a message with a PRIVMSG command is received."""
         pass
 
@@ -187,14 +191,14 @@ class MessageDispatcherMixin(BaseModule):
         """This method should return the command prefix."""
         raise NotImplementedError
 
-    def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
         command_names: set[str] = set()
         for handler in self._get_all_command_handlers():
             if self._command_predicates_pass(handler, msg, auth):
                 command_names.add(getattr(handler, _ATTR_COMMAND_NAME))
         return list(command_names)
 
-    def get_help_for_command(self, command_name: str, msg: Message, auth: AuthContext) -> list[str]:
+    def get_help_for_command(self, command_name: str, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
         help_texts: list[str] = []
         for handler in self._get_command_handlers(command_name):
             if self._command_predicates_pass(handler, msg, auth):
@@ -212,18 +216,18 @@ class MessageDispatcherMixin(BaseModule):
                 help_texts.append(rw)
         return help_texts
 
-    def get_command_name(self, priv_msg: Message) -> str | None:
+    def get_command_name(self, msg: IncomingPrivateMessage) -> str | None:
         """Extracts the command name from a PRIVMSG message."""
         command_prefix = self.get_command_prefix()
-        if not priv_msg.params[-1].startswith(command_prefix):
+        if not msg.text.startswith(command_prefix):
             return None
-        cmd_name = priv_msg.params[-1].split(' ')[0]
-        cmd_name = cmd_name.strip(self.get_command_prefix())
+        cmd_name = msg.text.split(' ')[0]
+        cmd_name = cmd_name.strip(command_prefix)
         if len(cmd_name) == 0:
             return None
         return cmd_name
 
-    def _on_auth_message_in(self, sender, msg: Message, auth: AuthContext) -> None:
+    def _on_auth_message_in(self, sender, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         try:
             self._dispatch_auth_message(msg, auth)
         except Exception as e:
@@ -235,25 +239,23 @@ class MessageDispatcherMixin(BaseModule):
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def _dispatch_auth_message(self, msg: Message, auth: AuthContext) -> None:
-        self.handle_auth_msg(msg, auth)
+    def _dispatch_auth_message(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+        self.handle_auth_privmsg(msg, auth)
 
-        if msg.command == 'PRIVMSG':
-            self.handle_auth_privmsg(msg, auth)
-
-            command_name = self.get_command_name(msg)
-            if command_name is not None:
-                for handler in self._get_command_handlers(command_name):
-                    if self._command_predicates_pass(handler, msg, auth):
-                        handler(msg, auth)
+        command_name = self.get_command_name(msg)
+        if command_name is not None:
+            for handler in self._get_command_handlers(command_name):
+                if self._command_predicates_pass(handler, msg, auth):
+                    handler(msg, auth)
 
     def _dispatch_message(self, msg: Message) -> None:
         self.handle_msg(msg)
 
         if msg.command == 'PRIVMSG':
-            self.handle_privmsg(msg)
+            privmsg = IncomingPrivateMessage.new_from_message(msg)
+            self.handle_privmsg(privmsg)
 
-    def _get_command_handlers(self, command_name: str) -> list[Callable]:
+    def _get_command_handlers(self, command_name: str) -> list[CommandHandler]:
         """Gets a list of command handlers which match this command name."""
         handlers: list[Callable] = []
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
@@ -261,7 +263,7 @@ class MessageDispatcherMixin(BaseModule):
                 handlers.append(method)
         return handlers
 
-    def _get_all_command_handlers(self) -> list[Callable]:
+    def _get_all_command_handlers(self) -> list[CommandHandler]:
         """Gets a list of all command handlers."""
         handlers: list[Callable] = []
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
@@ -269,7 +271,7 @@ class MessageDispatcherMixin(BaseModule):
                 handlers.append(method)
         return handlers
 
-    def _command_predicates_pass(self, handler: Callable, msg: Message, auth: AuthContext) -> bool:
+    def _command_predicates_pass(self, handler: CommandHandler, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
         """Returns a handler for a command."""
         for predicate in getattr(handler, _ATTR_PREDICATES, []):
             if not predicate(self, msg, auth):

@@ -1,7 +1,7 @@
 from botnet.config import Config
 from botnet.modules import AuthContext
 from botnet.modules.builtin.auth import Auth
-from botnet.message import Message
+from botnet.message import Message, IncomingPrivateMessage
 from botnet.signals import message_out, auth_message_in
 
 
@@ -113,7 +113,7 @@ def test_whois_parsing(subtests, rec_msg) -> None:
             assert data == test_case['result']
 
 
-def test_identify_irc_user(subtests, make_signal_trap, rec_msg):
+def test_identify_irc_user(subtests, make_signal_trap, rec_msg) -> None:
     config = {
         'module_config': {
             'botnet': {
@@ -209,7 +209,7 @@ def test_identify_irc_user(subtests, make_signal_trap, rec_msg):
 
             def wait_condition(trapped):
                 assert trapped == [{
-                    'msg': received_msg,
+                    'msg': IncomingPrivateMessage(sender='someone', target='#channel', text='Hello!'),
                     'auth': test_case['context'],
                 }]
             auth_message_in_trap.wait(wait_condition)

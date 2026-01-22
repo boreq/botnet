@@ -57,8 +57,8 @@ def test_message_store_ordering(tmp_file):
     assert a[1]['message'] == 'text2'
 
 
-def test_same_channel(make_privmsg, unauthorised_context, test_tell):
-    msg = make_privmsg('.tell target message text', nick='author', target='#channel')
+def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
+    msg = make_incoming_privmsg('.tell target message text', nick='author', target='#channel')
     test_tell.receive_auth_message_in(msg, unauthorised_context)
     test_tell.expect_message_out_signals(
         [
@@ -82,8 +82,8 @@ def test_same_channel(make_privmsg, unauthorised_context, test_tell):
     )
 
 
-def test_other_channel(make_privmsg, unauthorised_context, test_tell):
-    msg = make_privmsg('.tell target message text', nick='author', target='#channel')
+def test_other_channel(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
+    msg = make_incoming_privmsg('.tell target message text', nick='author', target='#channel')
     test_tell.receive_auth_message_in(msg, unauthorised_context)
     test_tell.expect_message_out_signals(
         [
@@ -104,8 +104,8 @@ def test_other_channel(make_privmsg, unauthorised_context, test_tell):
     )
 
 
-def test_priv(make_privmsg, unauthorised_context, test_tell):
-    msg = make_privmsg('.tell target message text', nick='author', target='bot')
+def test_priv(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell) -> None:
+    msg = make_incoming_privmsg('.tell target message text', nick='author', target='bot')
     test_tell.receive_auth_message_in(msg, unauthorised_context)
     test_tell.expect_message_out_signals(
         [

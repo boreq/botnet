@@ -1,7 +1,7 @@
 import datetime
 from collections import namedtuple
 from typing import Any, Callable
-from ...message import Message
+from ...message import Message, IncomingPrivateMessage
 from ...signals import message_out, auth_message_in
 from .. import AuthContext, BaseResponder
 from ..lib import MemoryCache
@@ -166,9 +166,8 @@ class Auth(WhoisMixin, BaseResponder):
     def __init__(self, config: Config) -> None:
         super().__init__(config)
 
-    def handle_privmsg(self, msg: Message) -> None:
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         super().handle_privmsg(msg)
-        assert msg.nickname is not None
 
         def on_complete(whois_data: dict[str, Any]) -> None:
             for person in self.config_get('people', []):
@@ -192,9 +191,9 @@ class Auth(WhoisMixin, BaseResponder):
                             raise Exception('unknown authorisation kind: {}'.format(authorisation['kind']))
             self._emit_auth_message_in(msg, None, [])
 
-        self.whois_schedule(msg.nickname, on_complete)
+        self.whois_schedule(msg.sender, on_complete)
 
-    def _emit_auth_message_in(self, msg: Message, uuid: str | None, groups: list[str]) -> None:
+    def _emit_auth_message_in(self, msg: IncomingPrivateMessage, uuid: str | None, groups: list[str]) -> None:
         auth_context = AuthContext(uuid, groups)
         auth_message_in.send(self, msg=msg, auth=auth_context)
 

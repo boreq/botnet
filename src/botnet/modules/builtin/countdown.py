@@ -1,4 +1,4 @@
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from .. import BaseResponder, AuthContext
 from ...config import Config
 from datetime import date
@@ -32,7 +32,7 @@ class Countdown(BaseResponder):
     def __init__(self, config: Config) -> None:
         super().__init__(config)
 
-    def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
         rw = super().get_all_commands(msg, auth)
         new_commands = set()
         new_commands.add(self.config_get('summary_command'))
@@ -41,7 +41,7 @@ class Countdown(BaseResponder):
         rw.extend(new_commands)
         return rw
 
-    def handle_privmsg(self, msg: Message) -> None:
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
 
         if command_name is None:
@@ -50,18 +50,18 @@ class Countdown(BaseResponder):
         if command_name == self.config_get('summary_command'):
             responses = []
             for entry in self.config_get('commands', []):
-                time_left = self.generate_response(entry)
+                time_left = self._generate_response(entry)
                 responses.append('{}: {}'.format(entry['names'][0], time_left))
             if len(responses) > 0:
                 self.respond(msg, ', '.join(responses))
         else:
             for entry in self.config_get('commands', []):
                 if command_name.lower() in [name.lower() for name in entry['names']]:
-                    response = self.generate_response(entry) + '!'
+                    response = self._generate_response(entry) + '!'
                     self.respond(msg, response)
                     break
 
-    def generate_response(self, target_date: dict[str, Any]) -> str:
+    def _generate_response(self, target_date: dict[str, Any]) -> str:
         year = int(target_date['year'])
         month = int(target_date['month'])
         day = int(target_date['day'])

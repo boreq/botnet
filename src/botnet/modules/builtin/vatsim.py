@@ -1,5 +1,5 @@
 import threading
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from .. import BaseResponder, command
 from ..lib import parse_command, get_url, Args
 from ..base import AuthContext
@@ -27,7 +27,7 @@ class Vatsim(BaseResponder):
 
     @command('metar')
     @parse_command([('icao', 1)])
-    def command_metar(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_metar(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Returns a METAR for the given aiport.
 
         Syntax: metar ICAO

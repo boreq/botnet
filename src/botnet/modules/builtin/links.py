@@ -3,7 +3,7 @@ from ...helpers import is_channel_name
 from ...signals import on_exception
 from .. import BaseResponder
 from ...config import Config
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
@@ -55,15 +55,15 @@ class Links(BaseResponder):
             return title
         return None
 
-    def handle_privmsg(self, msg: Message) -> None:
-        if not is_channel_name(msg.params[0]):
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
+        if not is_channel_name(msg.target):
             return
 
-        if not msg.params[0] in self.config_get('channels', []):
+        if msg.target not in self.config_get('channels', []):
             return
 
         urls = set()
-        for element in msg.params[1].split():
+        for element in msg.text.split():
             if element.startswith('http://') or element.startswith('https://'):
                 urls.add(element)
 

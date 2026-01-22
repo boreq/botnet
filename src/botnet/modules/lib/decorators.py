@@ -3,7 +3,7 @@ import inspect
 from argparse import ArgumentError
 from functools import wraps
 from typing import Protocol, Any
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from ..base import AuthContext
 
 
@@ -11,7 +11,7 @@ type Args = argparse.Namespace
 
 
 class CommandHandlerWithArguments(Protocol):
-    def __call__(self, instance: Any, msg: Message, auth: AuthContext, args: Args) -> None:
+    def __call__(self, instance: Any, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         ...
 
 
@@ -39,8 +39,8 @@ def parse_command(params):
         new_params = [p for name, p in sig.parameters.items() if name != 'args']
 
         @wraps(f)
-        def decorated_function(self, msg: Message, auth: AuthContext):
-            args = msg.params[-1].split()
+        def decorated_function(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+            args = msg.text.split()
             try:
                 args = parser.parse_args(args)
             except ArgumentError:

@@ -4,7 +4,7 @@ from typing import Callable
 from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder
 from ...config import Config
-from ...message import Message
+from ...message import IncomingPrivateMessage
 import re
 
 
@@ -118,24 +118,22 @@ class Sed(BaseResponder):
         super().__init__(config)
         self.store = MessageStore(lambda: self.config_get('message_data'), lambda c: self.config_get('message_limit', 100))
 
-    def handle_privmsg(self, msg: Message) -> None:
-        assert msg.nickname is not None
-
-        if is_channel_name(msg.params[0]):
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
+        if is_channel_name(msg.target):
             try:
-                nick, a, b, flags = parse_message(' '.join(msg.params[1:]))
+                nick, a, b, flags = parse_message(msg.text)
                 if nick is None:
-                    nick = msg.nickname
-                messages = self.store.get_messages(msg.params[0])
+                    nick = msg.sender
+                messages = self.store.get_messages(msg.target)
                 message = replace(messages, nick, a, b, flags)
                 if message is not None:
-                    if nick == msg.nickname:
+                    if nick == msg.sender:
                         text = '%s meant to say: %s' % (nick, message)
                     else:
-                        text = '%s thinks %s meant to say: %s' % (msg.nickname, nick, message)
+                        text = '%s thinks %s meant to say: %s' % (msg.sender, nick, message)
                     self.respond(msg, text)
             except ValueError:
-                self.store.add_message(msg.params[0], msg.nickname, ' '.join(msg.params[1:]))
+                self.store.add_message(msg.target, msg.sender, msg.text)
 
 
 mod = Sed

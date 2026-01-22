@@ -4,7 +4,7 @@ from typing import Iterator
 from ...signals import on_exception
 from .. import BaseResponder, AuthContext
 from ...config import Config
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from markov import Chain
 
 
@@ -41,7 +41,7 @@ class Markov(BaseResponder):
         t = threading.Thread(target=self.cache_chains, daemon=True)
         t.start()
 
-    def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
         rw = super().get_all_commands(msg, auth)
         new_commands = set()
         for command in self.config_get('files', {}).keys():
@@ -51,7 +51,7 @@ class Markov(BaseResponder):
         rw.extend(new_commands)
         return rw
 
-    def handle_privmsg(self, msg: Message) -> None:
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
 
         if command_name is None:
@@ -83,7 +83,7 @@ class Markov(BaseResponder):
                 c.grow(line.split())
         self.cache[key] = c
 
-    def send_random_line(self, msg: Message, key: str) -> None:
+    def send_random_line(self, msg: IncomingPrivateMessage, key: str) -> None:
         try:
             c = self.cache.get(key, None)
             if c is not None:

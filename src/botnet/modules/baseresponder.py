@@ -1,6 +1,6 @@
 import textwrap
 from ..helpers import is_channel_name
-from ..message import Message
+from ..message import Message, IncomingPrivateMessage
 from ..signals import message_out
 from .base import BaseModule, AuthContext
 from .decorators import command
@@ -59,7 +59,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
     def get_command_prefix(self) -> str:
         return self.config_get('command_prefix')
 
-    def respond(self, priv_msg: Message, text: str, pm: bool = False) -> None:
+    def respond(self, msg: IncomingPrivateMessage, text: str, pm: bool = False) -> None:
         """Send a text in response to a message. Text will be automatically
         sent to a proper channel or user.
 
@@ -69,11 +69,10 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
         """
         # If this is supposed to be sent as a private message or was sent in
         # a private message to the bot respond also in private message.
-        if pm or not is_channel_name(priv_msg.params[0]):
-            assert priv_msg.nickname is not None
-            target = priv_msg.nickname
+        if pm or not is_channel_name(msg.target):
+            target = msg.sender
         else:
-            target = priv_msg.params[0]
+            target = msg.target
         self.message(target, text)
 
     def message(self, nick_or_channel: str, text: str) -> None:
@@ -84,7 +83,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
 
     @command('help')
     @parse_command([('command_names', '+')])
-    def command_help(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def command_help(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Sends a list of commands. If COMMAND is specified sends more
         detailed help about a single command.
 

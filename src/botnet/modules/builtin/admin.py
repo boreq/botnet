@@ -1,6 +1,6 @@
 import threading
 from typing import Any
-from ...message import Message
+from ...message import IncomingPrivateMessage
 from ...signals import module_load, module_unload, module_loaded, \
     module_unloaded, config_reload, config_reloaded
 from .. import BaseResponder, command, only_admins, AuthContext
@@ -22,14 +22,14 @@ class Admin(BaseResponder):
         # Since there is no threading involved in the signal distribution the
         # last message which triggered a command will simply be on top of those
         # lists
-        self._load_commands: list[Message] = []
-        self._unload_commands: list[Message] = []
-        self._config_reload_commands: list[Message] = []
+        self._load_commands: list[IncomingPrivateMessage] = []
+        self._unload_commands: list[IncomingPrivateMessage] = []
+        self._config_reload_commands: list[IncomingPrivateMessage] = []
 
     @command('module_load')
     @only_admins()
     @parse_command([('module_names', '*')])
-    def admin_command_module_load(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def admin_command_module_load(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Loads a module.
 
         Syntax: module_load MODULE_NAME ...
@@ -40,7 +40,7 @@ class Admin(BaseResponder):
     @command('module_unload')
     @only_admins()
     @parse_command([('module_names', '*')])
-    def admin_command_module_unload(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def admin_command_module_unload(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Unloads a module.
 
         Syntax: module_unload MODULE_NAME ...
@@ -51,7 +51,7 @@ class Admin(BaseResponder):
     @command('module_reload')
     @only_admins()
     @parse_command([('module_names', '*')])
-    def admin_command_module_reload(self, msg: Message, auth: AuthContext, args: Args) -> None:
+    def admin_command_module_reload(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Unloads and loads a module back.
 
         Syntax: module_reload MODULE_NAME ...
@@ -61,22 +61,22 @@ class Admin(BaseResponder):
 
     @command('config_reload')
     @only_admins()
-    def admin_command_config_reload(self, msg: Message, auth: AuthContext) -> None:
+    def admin_command_config_reload(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Reloads the config.
 
         Syntax: config_reload
         """
         self._reload_config(msg)
 
-    def _load_module(self, msg: Message, name: str) -> None:
+    def _load_module(self, msg: IncomingPrivateMessage, name: str) -> None:
         self._load_commands.append(msg)
         module_load.send(self, name=name)
 
-    def _unload_module(self, msg: Message, name: str) -> None:
+    def _unload_module(self, msg: IncomingPrivateMessage, name: str) -> None:
         self._unload_commands.append(msg)
         module_unload.send(self, name=name)
 
-    def _reload_module(self, msg: Message, name: str) -> None:
+    def _reload_module(self, msg: IncomingPrivateMessage, name: str) -> None:
         def f() -> None:
             self._unload_module(msg, name)
             self._load_module(msg, name)
@@ -84,7 +84,7 @@ class Admin(BaseResponder):
         t = threading.Thread(target=f)
         t.start()
 
-    def _reload_config(self, msg: Message) -> None:
+    def _reload_config(self, msg: IncomingPrivateMessage) -> None:
         self._config_reload_commands.append(msg)
         config_reload.send(self)
 

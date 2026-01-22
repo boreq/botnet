@@ -1,6 +1,6 @@
 from .. import signals
 from ..logging import get_logger, Logger
-from ..message import Message
+from ..message import IncomingPrivateMessage
 from dataclasses import dataclass
 
 
@@ -16,11 +16,11 @@ class BaseModule:
     def __init__(self, config) -> None:
         self._logger: Logger | None = None
 
-    def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
         """Should return a list of strings containing all commands supported by
         this module. Used to generate a help message.
 
-        msg: message in which the user requested a list of commands, always a PRIVMSG.
+        msg: message in which the user requested a list of commands.
         auth: the auth context associated with the message.
         """
         return []
