@@ -162,43 +162,45 @@ class Gatekeep(NamesMixin, BaseResponder):
 
     @command('endorse')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
-    @parse_command([('nick', 1)])
+    @parse_command([('nick', '+')])
     def auth_command_endorse(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Adds your endorsement for a nick.
 
-        Syntax: endorse NICK
+        Syntax: endorse NICK...
         """
         def on_names_available(names: list[Nick]) -> None:
             assert auth.uuid is not None
 
-            nick = Nick(cleanup_nick(args['nick'][0]))
-            if nick in names:
-                with self._store as state:
-                    state.endorse(auth.uuid, nick)
-                self.respond(msg, 'You endorsed {}!'.format(nick))
-            else:
-                self.respond(msg, 'There is no {} in the channel.'.format(nick))
+            for nick_argument in args['nick']:
+                nick = Nick(cleanup_nick(nick_argument))
+                if nick in names:
+                    with self._store as state:
+                        state.endorse(auth.uuid, nick)
+                    self.respond(msg, 'You endorsed {}!'.format(nick))
+                else:
+                    self.respond(msg, 'There is no {} in the channel.'.format(nick))
 
         channel = Channel(self.config_get('channel'))
         self.request_names(channel, on_names_available)
 
     @command('unendorse')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
-    @parse_command([('nick', 1)])
+    @parse_command([('nick', '+')])
     def auth_command_unendorse(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Removes your endorsement for a nick.
 
-        Syntax: unendorse NICK
+        Syntax: unendorse NICK...
         """
         assert auth.uuid is not None
 
-        nick = Nick(cleanup_nick(args['nick'][0]))
-        with self._store as state:
-            unendorsed = state.unendorse(auth.uuid, nick)
-        if unendorsed:
-            self.respond(msg, 'You unendorsed {}!'.format(nick))
-        else:
-            self.respond(msg, 'You never endorsed {}.'.format(nick))
+        for nick_argument in args['nick']:
+            nick = Nick(cleanup_nick(nick_argument))
+            with self._store as state:
+                unendorsed = state.unendorse(auth.uuid, nick)
+            if unendorsed:
+                self.respond(msg, 'You unendorsed {}!'.format(nick))
+            else:
+                self.respond(msg, 'You never endorsed {}.'.format(nick))
 
     @command('merge_personas')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
