@@ -38,22 +38,23 @@ class Bricked(BaseResponder):
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
-
         if command_name is None:
             return
 
-        for entry in self.config_get('statuses', []):
-            if command_name not in entry['commands']:
-                continue
+        channel = msg.target.channel
+        if channel is not None:
+            for entry in self.config_get('statuses', []):
+                if command_name not in entry['commands']:
+                    continue
 
-            if msg.target not in entry['channels']:
-                continue
+                if channel.s.lower() not in entry['channels']:
+                    continue
 
-            url = entry['instance'].rstrip('/') + '/api/status/' + entry['id']
-            r = get_url(url)
-            r.raise_for_status()
-            j = r.json()
-            self.respond(msg, '{:.0f}%'.format(j['status'] * 100))
+                url = entry['instance'].rstrip('/') + '/api/status/' + entry['id']
+                r = get_url(url)
+                r.raise_for_status()
+                j = r.json()
+                self.respond(msg, '{:.0f}%'.format(j['status'] * 100))
 
 
 mod = Bricked
