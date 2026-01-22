@@ -1,4 +1,5 @@
 import threading
+from typing import Any
 from ...message import Message
 from ...signals import module_load, module_unload, module_loaded, \
     module_unloaded, config_reload, config_reloaded
@@ -76,9 +77,9 @@ class Admin(BaseResponder):
         module_unload.send(self, name=name)
 
     def _reload_module(self, msg: Message, name: str) -> None:
-        def f():
-            self.unload(msg, name)
-            self.load(msg, name)
+        def f() -> None:
+            self._unload_module(msg, name)
+            self._load_module(msg, name)
 
         t = threading.Thread(target=f)
         t.start()
@@ -87,21 +88,21 @@ class Admin(BaseResponder):
         self._config_reload_commands.append(msg)
         config_reload.send(self)
 
-    def _on_module_loaded(self, sender, cls) -> None:
+    def _on_module_loaded(self, sender: Any, cls: type) -> None:
         try:
             msg = self._load_commands.pop()
             self.respond(msg, 'Loaded module %s' % cls)
         except IndexError:
             pass
 
-    def _on_module_unloaded(self, sender, cls) -> None:
+    def _on_module_unloaded(self, sender: Any, cls: type) -> None:
         try:
             msg = self._unload_commands.pop()
             self.respond(msg, 'Unloaded module %s' % cls)
         except IndexError:
             pass
 
-    def _on_config_reloaded(self, sender) -> None:
+    def _on_config_reloaded(self, sender: Any) -> None:
         try:
             msg = self._config_reload_commands.pop()
             self.respond(msg, 'Config reloaded')
