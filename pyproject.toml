@@ -21,7 +21,8 @@ dependencies = [
     "beautifulsoup4>=4.6.0",
     "markov @ git+https://github.com/boreq/markov",
     "Mastodon.py==2.1.1",
-    "dacite==1.9.2"
+    "dacite==1.9.2",
+    "irccodes==1.2.0"
 ]
 
 [project.optional-dependencies]

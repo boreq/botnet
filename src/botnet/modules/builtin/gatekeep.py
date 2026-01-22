@@ -5,6 +5,9 @@ import threading
 import dacite
 from typing import Any, Callable
 from dataclasses import dataclass, asdict
+
+import irccodes
+
 from ...helpers import save_json, load_json, cleanup_nick
 from ...signals import message_out, on_exception
 from ...message import Message, IncomingPrivateMessage, Nick, Channel
@@ -154,10 +157,7 @@ class Gatekeep(NamesMixin, BaseResponder):
             with self._store as state:
                 report = state.generate_report(auth.uuid, names)
 
-            not_endorsed: list[PersonaReport] = [v for v in report.persona_reports if auth.uuid not in v.endorsements]
-
-            self.respond(msg, 'Everyone currently in the channel: {}'.format(', '.join([v.for_display() for v in reversed(report.persona_reports)])))
-            self.respond(msg, 'People currently in the channel who were NOT endorsed by you: {}'.format(', '.join([v.for_display() for v in reversed(not_endorsed)])))
+            self.respond(msg, 'Everyone currently in the channel: {}'.format(', '.join([v.for_display(auth.uuid) for v in reversed(report.persona_reports)])))
             self.respond(msg, f'If you would like to endorse anyone then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'.')
 
         channel = Channel(self.config_get('channel'))
@@ -257,10 +257,9 @@ class Gatekeep(NamesMixin, BaseResponder):
                     with self._store as state:
                         report = state.generate_pestering_report(person['uuid'], names)
                     if report is not None:
-                        not_endorsed: list[PersonaReport] = [v for v in report.persona_reports if person['uuid'] not in v.endorsements]
                         for nick in person['contact']:
-                            self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to endorse people who are in the channel and were previously NOT endorsed by you:')
-                            self.message(nick, ', '.join([v.for_display() for v in reversed(not_endorsed)]))
+                            self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
+                            self.message(nick, ', '.join([v.for_display(person['uuid']) for v in reversed(report.persona_reports)]))
                             self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}gatekeep\' command.')
 
         channel = Channel(self.config_get('channel'))
@@ -487,8 +486,14 @@ class PersonaReport:
     def add_nick(self, nick: Nick) -> None:
         self.nicks.append(nick)
 
-    def for_display(self) -> str:
-        return '{} ({})'.format('/'.join([v.s for v in self.nicks]), len(self.endorsements))
+    def for_display(self, uuid: str) -> str:
+        endorsed = uuid in self.endorsements
+        nicks = '/'.join([v.s for v in self.nicks])
+        if endorsed:
+            nicks = irccodes.colored(nicks, 'green')
+        else:
+            nicks = irccodes.colored(nicks, 'light red')
+        return '{} ({}{})'.format(nicks, len(self.endorsements), '+' if endorsed else '')
 
 
 @dataclass
