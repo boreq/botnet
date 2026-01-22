@@ -76,7 +76,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
 
     def message(self, nick_or_channel: str, text: str) -> None:
         """Send the text as a message to the provided nick or channel."""
-        for part in textwrap.wrap(text, width=_BREAK_PRIVMSG_EVERY):
+        for part in textwrap.wrap(text, width=_BREAK_PRIVMSG_EVERY, drop_whitespace=False):
             response = Message(command='PRIVMSG', params=[nick_or_channel, part])
             message_out.send(self, msg=response)
 
