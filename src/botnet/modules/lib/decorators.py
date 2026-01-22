@@ -1,5 +1,6 @@
 import argparse
 import inspect
+from argparse import ArgumentError
 from functools import wraps
 from typing import Protocol, Any
 from ...message import Message
@@ -24,7 +25,7 @@ def parse_command(params):
 
     """
     params.insert(0, ('command', 1))
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(exit_on_error=False)
     for name, nargs in params:
         parser.add_argument(name, nargs=nargs)
 
@@ -39,7 +40,7 @@ def parse_command(params):
             args = msg.params[-1].split()
             try:
                 args = parser.parse_args(args)
-            except SystemExit:
+            except ArgumentError:
                 return
 
             f(self, msg, auth, args)

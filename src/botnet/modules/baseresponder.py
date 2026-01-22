@@ -83,17 +83,16 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
             message_out.send(self, msg=response)
 
     @command('help')
-    @parse_command([('command_names', '*')])
+    @parse_command([('command_names', '+')])
     def command_help(self, msg: Message, auth: AuthContext, args) -> None:
         """Sends a list of commands. If COMMAND is specified sends more
         detailed help about a single command.
 
         Syntax: help [COMMAND ...]
         """
-        if len(args.command_names) > 0:
-            for name in args.command_names:
-                if self.ignore_help and name == 'help':
-                    continue
+        for name in args.command_names:
+            if self.ignore_help and name == 'help':
+                continue
 
-                for help_text in self.get_help_for_command(name, msg, auth):
-                    self.respond(msg, help_text)
+            for help_text in self.get_help_for_command(name, msg, auth):
+                self.respond(msg, help_text)
