@@ -1,24 +1,25 @@
 import json
 import os
+from typing import Any
 
 
-def load_json(file_path):
+def load_json(file_path: str) -> Any:
     with open(file_path, 'r') as f:
         return json.load(f)
 
 
-def save_json(file_path, data, **kwargs):
+def save_json(file_path: str, data: Any, **kwargs: Any) -> None:
     tmp_file_path = file_path + '.tmp'
     with open(tmp_file_path, 'w') as f:
         json.dump(data, f, **kwargs)
     os.replace(tmp_file_path, file_path)
 
 
-def is_channel_name(text):
+def is_channel_name(text: str | None) -> bool:
     if text:
         return text[0] in ['&', '#', '+', '!']
     return False
 
 
-def cleanup_nick(nick):
+def cleanup_nick(nick: str) -> str:
     return nick.lstrip("@+")

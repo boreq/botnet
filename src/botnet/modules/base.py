@@ -1,6 +1,5 @@
-from logging import Logger
 from .. import signals
-from ..logging import get_logger
+from ..logging import get_logger, Logger
 from ..message import Message
 from dataclasses import dataclass
 

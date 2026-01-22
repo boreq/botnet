@@ -1,7 +1,10 @@
 import logging
 
 
-def get_logger(obj: str | object) -> logging.Logger:
+Logger = logging.Logger
+
+
+def get_logger(obj: str | object) -> Logger:
     if isinstance(obj, str):
         name = obj
     else:
