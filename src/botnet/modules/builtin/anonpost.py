@@ -1,5 +1,4 @@
-from .. import BaseResponder, command, only_admins, AuthContext
-from ..lib import parse_command, Args
+from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
 from ...message import IncomingPrivateMessage
 from ...helpers import is_channel_name
 
@@ -17,8 +16,8 @@ class Anonpost(BaseResponder):
 
         Syntax: anonpost TARGET MESSAGE
         """
-        target = args.target[0]
-        message = 'ANONPOST: ' + ' '.join(args.message)
+        target = args['target'][0]
+        message = 'ANONPOST: ' + ' '.join(args['message'])
 
         if is_channel_name(target):
             self.message(target, message)
@@ -31,8 +30,8 @@ class Anonpost(BaseResponder):
 
         Syntax: anonpost TARGET MESSAGE
         """
-        target = args.target[0]
-        message = 'ANONPOST: ' + ' '.join(args.message)
+        target = args['target'][0]
+        message = 'ANONPOST: ' + ' '.join(args['message'])
 
         if not is_channel_name(target):
             self.message(target, message)

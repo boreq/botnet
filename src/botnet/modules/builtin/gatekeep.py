@@ -4,18 +4,20 @@ import os
 import threading
 import dacite
 from typing import Any, Callable
-from collections import namedtuple
 from dataclasses import dataclass, asdict
-from ...helpers import save_json, load_json, is_channel_name, cleanup_nick
+from ...helpers import save_json, load_json, cleanup_nick
 from ...signals import message_out, on_exception
-from ...message import Message, IncomingPrivateMessage
-from .. import BaseResponder, predicates, command, AuthContext
-from ..lib import MemoryCache, parse_command, Args
+from ...message import Message, IncomingPrivateMessage, Nick, Channel
+from .. import BaseResponder, predicates, command, AuthContext, parse_command, Args
+from ..lib import MemoryCache
 from ..base import BaseModule
 from ...config import Config
 
 
-DeferredAction = namedtuple('DeferredAction', ['channel', 'on_names_available'])
+@dataclass
+class DeferredAction:
+    channel: Channel
+    on_names_available: Callable[[list[Nick]], None]
 
 
 _PESTER_IF_NOT_PESTERED_FOR = 60 * 60 * 24 * 7  # [s]
@@ -29,25 +31,26 @@ class NamesMixin(BaseModule):
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self._cache = MemoryCache(self.cache_timeout)
+        self._cache: MemoryCache[Channel, list[Nick]] = MemoryCache(self.cache_timeout)
         self._deferred: list[DeferredAction] = []
-        self._current: dict[str, list[str]] = {}
+        self._current: dict[Channel, list[Nick]] = {}
 
     def handler_rpl_namreply(self, msg: Message) -> None:
         """Names reply."""
-        channel = msg.params[2]
+        channel = Channel(msg.params[2])
         if channel not in self._current:
             self._current[channel] = []
-        self._current[channel].extend([cleanup_nick(v) for v in msg.params[3].split(' ')])
+        self._current[channel].extend([Nick(cleanup_nick(v)) for v in msg.params[3].split(' ')])
 
     def handler_rpl_endofnames(self, msg: Message) -> None:
         """End of WHOIS."""
-        if msg.params[1] not in self._current:
+        channel = Channel(msg.params[1])
+        if channel not in self._current:
             return
-        self._cache.set(msg.params[1], self._current.pop(msg.params[1]))
+        self._cache.set(channel, self._current.pop(channel))
         self._run_deferred()
 
-    def request_names(self, channel: str, on_names_available: Callable[[list[str]], None]) -> None:
+    def request_names(self, channel: Channel, on_names_available: Callable[[list[Nick]], None]) -> None:
         """Schedules an action to be completed when the names for the channel
         are available.
 
@@ -75,9 +78,9 @@ class NamesMixin(BaseModule):
                 d.on_names_available(data)
                 self._deferred.pop(i)
 
-    def _request(self, channel: str) -> None:
+    def _request(self, channel: Channel) -> None:
         """Sends a message with the NAMES command."""
-        msg = Message(command='NAMES', params=[channel])
+        msg = Message(command='NAMES', params=[channel.s])
         message_out.send(self, msg=msg)
 
     def handle_msg(self, msg: Message) -> None:
@@ -101,7 +104,7 @@ def _is_authorised_has_uuid_and_sent_a_privmsg():
         if not auth.uuid:
             return False
 
-        if is_channel_name(msg.target):
+        if msg.target.is_channel:
             return False
 
         return True
@@ -153,7 +156,7 @@ class Gatekeep(NamesMixin, BaseResponder):
         """
         command_prefix = self.get_command_prefix()
 
-        def on_names_available(names: list[str]) -> None:
+        def on_names_available(names: list[Nick]) -> None:
             assert auth.uuid is not None
 
             with self._store as state:
@@ -175,10 +178,10 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         Syntax: endorse NICK
         """
-        def on_names_available(names: list[str]) -> None:
+        def on_names_available(names: list[Nick]) -> None:
             assert auth.uuid is not None
 
-            nick = cleanup_nick(args.nick[0])
+            nick = Nick(cleanup_nick(args['nick'][0]))
             if nick in names:
                 with self._store as state:
                     state.endorse(auth.uuid, nick)
@@ -198,7 +201,7 @@ class Gatekeep(NamesMixin, BaseResponder):
         """
         assert auth.uuid is not None
 
-        nick = cleanup_nick(args.nick[0])
+        nick = Nick(cleanup_nick(args['nick'][0]))
         with self._store as state:
             unendorsed = state.unendorse(auth.uuid, nick)
         if unendorsed:
@@ -214,10 +217,10 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         Syntax: merge_personas NICK1 NICK2
         """
-        nick1 = cleanup_nick(args.nick1[0])
-        nick2 = cleanup_nick(args.nick2[0])
+        nick1 = Nick(cleanup_nick(args['nick1'][0]))
+        nick2 = Nick(cleanup_nick(args['nick2'][0]))
 
-        def on_names_available(names: list[str]) -> None:
+        def on_names_available(names: list[Nick]) -> None:
             assert auth.uuid is not None
 
             if nick1 in names and nick2 in names:
@@ -230,9 +233,11 @@ class Gatekeep(NamesMixin, BaseResponder):
         self.request_names(self.config_get('channel'), on_names_available)
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
-        if is_channel_name(msg.target) and msg.target == self.config_get('channel'):
-            with self._store as state:
-                state.on_privmsg(msg.sender)
+        channel = msg.target.channel
+        if channel is not None:
+            if channel.s == self.config_get('channel'):
+                with self._store as state:
+                    state.on_privmsg(msg.sender)
 
     def stop(self) -> None:
         super().stop()
@@ -250,7 +255,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     def _update(self) -> None:
         command_prefix = self.get_command_prefix()
 
-        def on_names_available(names: list[str]) -> None:
+        def on_names_available(names: list[Nick]) -> None:
             authorised_group = self.config_get('authorised_group')
             for person in self.peek_loaded_config_for_module('botnet', 'auth', 'people', default=[]):
                 if authorised_group in person['groups']:
@@ -296,28 +301,28 @@ class Store:
 class State:
     authorised_people_infos: dict[str, AuthorisedPersonInfo]
     personas: list[Persona]
-    nick_infos: dict[str, NickInfo]
+    nick_infos: dict[Nick, NickInfo]
 
-    def on_privmsg(self, nick: str) -> None:
+    def on_privmsg(self, nick: Nick) -> None:
         if nick not in self.nick_infos:
             self.nick_infos[nick] = NickInfo.new_due_to_privmsg()
             return
         self.nick_infos[nick].on_privmsg()
 
-    def endorse(self, endorser_uuid: str, endorsee_nick: str) -> None:
+    def endorse(self, endorser_uuid: str, endorsee_nick: Nick) -> None:
         self._mark_command_executed(endorser_uuid)
         if endorsee_nick not in self.nick_infos:
             self.nick_infos[endorsee_nick] = NickInfo.new_due_to_endorsement(endorser_uuid)
         else:
             self.nick_infos[endorsee_nick].endorse(endorser_uuid)
 
-    def unendorse(self, unendorser_uuid: str, unendorsee_nick: str) -> bool:
+    def unendorse(self, unendorser_uuid: str, unendorsee_nick: Nick) -> bool:
         self._mark_command_executed(unendorser_uuid)
         if unendorsee_nick not in self.nick_infos:
             return False
         return self.nick_infos[unendorsee_nick].unendorse(unendorser_uuid)
 
-    def merge_personas(self, auth_uuid: str, nick1: str, nick2: str) -> None:
+    def merge_personas(self, auth_uuid: str, nick1: Nick, nick2: Nick) -> None:
         self._mark_command_executed(auth_uuid)
         for persona in self.personas:
             if nick1 in persona.nicks or nick2 in persona.nicks:
@@ -326,25 +331,25 @@ class State:
                 return
         self.personas.append(Persona.new(nick1, nick2))
 
-    def generate_report(self, auth_uuid: str, nicks: list[str]) -> MinorityReport:
+    def generate_report(self, auth_uuid: str, nicks: list[Nick]) -> MinorityReport:
         self._mark_command_executed(auth_uuid)
         return MinorityReport.generate(self, nicks)
 
-    def generate_pestering_report(self, auth_uuid: str, nicks: list[str]) -> MinorityReport | None:
+    def generate_pestering_report(self, auth_uuid: str, nicks: list[Nick]) -> MinorityReport | None:
         if auth_uuid in self.authorised_people_infos:
             if not self.authorised_people_infos[auth_uuid].should_pester():
                 return None
         self._mark_pestered(auth_uuid)
         return MinorityReport.generate(self, nicks)
 
-    def _all_nicks_of(self, nick: str) -> list[str]:
+    def _all_nicks_of(self, nick: Nick) -> list[Nick]:
         all_nicks = set([nick])
         for persona in self.personas:
             if nick in persona.nicks:
                 all_nicks.update(persona.nicks)
         return list(all_nicks)
 
-    def _get_endorsements(self, nick: str) -> list[str]:
+    def _get_endorsements(self, nick: Nick) -> list[str]:
         all_nicks = self._all_nicks_of(nick)
         endorsements: set[str] = set()
         for possible_nick in all_nicks:
@@ -359,22 +364,22 @@ class State:
             return
         self.authorised_people_infos[auth_uuid].update_due_to_command_execution()
 
-    def _mark_pestered(self, uuid: str) -> None:
-        if uuid not in self.authorised_people_infos:
-            self.authorised_people_infos[uuid] = AuthorisedPersonInfo.new_due_to_pestering()
+    def _mark_pestered(self, auth_uuid: str) -> None:
+        if auth_uuid not in self.authorised_people_infos:
+            self.authorised_people_infos[auth_uuid] = AuthorisedPersonInfo.new_due_to_pestering()
             return
-        self.authorised_people_infos[uuid].update_due_to_pestering()
+        self.authorised_people_infos[auth_uuid].update_due_to_pestering()
 
 
 @dataclass
 class Persona:
-    nicks: list[str]
+    nicks: list[Nick]
 
     @classmethod
-    def new(cls, nick1: str, nick2: str) -> Persona:
+    def new(cls, nick1: Nick, nick2: Nick) -> Persona:
         return cls([nick1, nick2])
 
-    def add_nick(self, nick: str) -> None:
+    def add_nick(self, nick: Nick) -> None:
         if nick not in self.nicks:
             self.nicks.append(nick)
 
@@ -449,7 +454,7 @@ class MinorityReport:
     persona_reports: list[PersonaReport]
 
     @classmethod
-    def generate(cls, state: State, nicks: list[str]) -> MinorityReport:
+    def generate(cls, state: State, nicks: list[Nick]) -> MinorityReport:
         report = cls([])
 
         for nick in nicks:
@@ -465,7 +470,7 @@ class MinorityReport:
 
         return report
 
-    def _find_existing_persona_report(self, state: State, nick: str) -> PersonaReport | None:
+    def _find_existing_persona_report(self, state: State, nick: Nick) -> PersonaReport | None:
         all_nicks = state._all_nicks_of(nick)
         for persona_report in self.persona_reports:
             for possible_nick in all_nicks:
@@ -476,18 +481,18 @@ class MinorityReport:
 
 @dataclass
 class PersonaReport:
-    nicks: list[str]
+    nicks: list[Nick]
     endorsements: list[str]
 
     @classmethod
-    def new(cls, state: State, nick: str) -> PersonaReport:
+    def new(cls, state: State, nick: Nick) -> PersonaReport:
         return PersonaReport([nick], state._get_endorsements(nick))
 
-    def add_nick(self, nick: str) -> None:
+    def add_nick(self, nick: Nick) -> None:
         self.nicks.append(nick)
 
     def for_display(self) -> str:
-        return '{} ({})'.format('/'.join(self.nicks), len(self.endorsements))
+        return '{} ({})'.format('/'.join([v.s for v in self.nicks]), len(self.endorsements))
 
 
 mod = Gatekeep

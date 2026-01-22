@@ -1,5 +1,4 @@
 import threading
-from ...helpers import is_channel_name
 from ...signals import on_exception
 from .. import BaseResponder
 from ...config import Config
@@ -56,14 +55,14 @@ class Links(BaseResponder):
         return None
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
-        if not is_channel_name(msg.target):
+        if not msg.target.is_channel:
             return
 
         if msg.target not in self.config_get('channels', []):
             return
 
         urls = set()
-        for element in msg.text.split():
+        for element in msg.text.s.split():
             if element.startswith('http://') or element.startswith('https://'):
                 urls.add(element)
 

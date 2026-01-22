@@ -76,7 +76,6 @@ class Markov(BaseResponder):
             self.load_chain(path, filename)
 
     def load_chain(self, filepath: str, key: str) -> None:
-        print(filepath, key)
         c = Chain()
         with open(filepath) as f:
             for line in f:

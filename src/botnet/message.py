@@ -6,7 +6,9 @@
 """
 
 
+import re
 from .codes import Code
+from .helpers import is_channel_name
 
 
 class Message:
@@ -110,7 +112,7 @@ class Message:
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, Message):
-            return False
+            raise NotImplementedError
         return self.prefix == other.prefix and self.command == other.command and self.params == other.params
 
     def _analyze_prefix(self, prefix) -> tuple[str | None, str | None]:
@@ -131,12 +133,129 @@ class Message:
         return servername, nickname
 
 
-class IncomingPrivateMessage:
-    sender: str
-    target: str
-    text: str
+_NICK_REGEX = re.compile(r"^[a-zA-Z\[\]\\`_^{}][a-zA-Z0-9\[\]\\`_^{}|-]{0,31}$")
 
-    def __init__(self, sender: str, target: str, text: str) -> None:
+
+class Nick:
+    s: str
+
+    def __init__(self, s: str) -> None:
+        if s is None or s == '':
+            raise Exception('nick cannot be none or empty')
+
+        if not _NICK_REGEX.match(s):
+            raise Exception(f'nick \'{s}\' is invalid')
+
+        self.s = s
+
+    def __str__(self) -> str:
+        return self.s
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Nick):
+            raise NotImplementedError
+        return self.s.lower() == other.s.lower()
+
+    def __hash__(self):
+        return hash(self.s.lower())
+
+
+_CHANNEL_REGEX = re.compile(r"^[#&+\!][^ \x07,]{1,49}$")
+
+
+class Channel:
+    s: str
+
+    def __init__(self, s: str) -> None:
+        if s is None or s == '':
+            raise Exception('channel cannot be none or empty')
+
+        if not _CHANNEL_REGEX.match(s):
+            raise Exception(f'channel \'{s}\' is invalid')
+
+        self.s = s
+
+    def __str__(self) -> str:
+        return self.s
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Channel):
+            raise NotImplementedError
+        return self.s.lower() == other.s.lower()
+
+    def __hash__(self):
+        return hash(self.s.lower())
+
+
+class Target:
+    nick_or_channel: Nick | Channel
+
+    def __init__(self, nick_or_channel: Nick | Channel) -> None:
+        assert isinstance(nick_or_channel, Nick) or isinstance(nick_or_channel, Channel)
+        self.nick_or_channel = nick_or_channel
+
+    @classmethod
+    def new_from_string(cls, s: str) -> Target:
+        if is_channel_name(s):
+            return cls(Channel(s))
+        else:
+            return cls(Nick(s))
+
+    @property
+    def is_channel(self) -> bool:
+        return isinstance(self.nick_or_channel, Channel)
+
+    @property
+    def is_nick(self) -> bool:
+        return isinstance(self.nick_or_channel, Nick)
+
+    @property
+    def channel(self) -> Channel | None:
+        if self.is_channel:
+            assert isinstance(self.nick_or_channel, Channel)
+            return self.nick_or_channel
+        return None
+
+    @property
+    def nick(self) -> Nick | None:
+        if self.is_nick:
+            assert isinstance(self.nick_or_channel, Nick)
+            return self.nick_or_channel
+        return None
+
+    def __str__(self) -> str:
+        return self.nick_or_channel.s
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Target):
+            raise NotImplementedError
+        return self.nick_or_channel == other.nick_or_channel
+
+
+class Text:
+    s: str
+
+    def __init__(self, s: str) -> None:
+        if s is None or s == '':
+            raise Exception('text cannot be none or empty')
+
+        self.s = s
+
+    def __str__(self) -> str:
+        return self.s
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Text):
+            raise NotImplementedError
+        return self.s == other.s
+
+
+class IncomingPrivateMessage:
+    sender: Nick
+    target: Target
+    text: Text
+
+    def __init__(self, sender: Nick, target: Target, text: Text) -> None:
         self.sender = sender
         self.target = target
         self.text = text
@@ -149,9 +268,18 @@ class IncomingPrivateMessage:
         if msg.nickname is None:
             raise Exception('something is wrong, a received PRIVMSG should always have a nickname available')
 
-        return cls(msg.nickname, msg.params[0], msg.params[1])
+        if len(msg.params) != 2:
+            raise Exception('something is wrong, a received PRIVMSG should always have two parameters')
 
-    def __eq__(self, other) -> bool:
+        sender = Nick(msg.nickname)
+        target = Target.new_from_string(msg.params[0])
+        text = Text(msg.params[1])
+        return cls(sender, target, text)
+
+    def __repr__(self):
+        return f'<IncomingPrivateMessage: sender={self.sender} target={self.target} text={self.text}>'
+
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, IncomingPrivateMessage):
-            return False
+            raise NotImplementedError
         return self.sender == other.sender and self.target == other.target and self.text == other.text

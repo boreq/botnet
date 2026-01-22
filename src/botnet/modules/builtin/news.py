@@ -1,11 +1,10 @@
 import os
 import threading
 from typing import Any, Callable
-from ...helpers import save_json, load_json, is_channel_name
-from .. import BaseResponder, AuthContext, command
-from ...message import IncomingPrivateMessage
+from ...helpers import save_json, load_json
+from .. import BaseResponder, AuthContext, command, parse_command, Args
+from ...message import IncomingPrivateMessage, Channel
 from ..decorators import predicates
-from ..lib import parse_command, Args
 from ...config import Config
 
 
@@ -27,37 +26,43 @@ class NewsStore:
     def _save(self) -> None:
         save_json(self._get_path(), self._news)
 
-    def push(self, channel: str, index: int, message: str) -> None:
+    def push(self, channel: Channel, index: int, message: str) -> None:
+        ch = channel.s.lower()
         with self._lock:
-            news = self._news.get(channel, [])
+            news = self._news.get(ch, [])
             news.insert(index, message)
-            self._news[channel] = news
+            self._news[ch] = news
             self._save()
 
-    def pop(self, channel: str, index: int) -> None:
+    def pop(self, channel: Channel, index: int) -> None:
+        ch = channel.s.lower()
         with self._lock:
-            news = self._news.get(channel, [])
+            news = self._news.get(ch, [])
             news.pop(index)
-            self._news[channel] = news
+            self._news[ch] = news
             self._save()
 
-    def update(self, channel: str, index: int, message: str) -> None:
+    def update(self, channel: Channel, index: int, message: str) -> None:
+        ch = channel.s.lower()
         with self._lock:
-            news = self._news.get(channel, [])
+            news = self._news.get(ch, [])
             news[index] = message
-            self._news[channel] = news
+            self._news[ch] = news
             self._save()
 
-    def get(self, channel: str) -> list[str]:
+    def get(self, channel: Channel) -> list[str]:
+        ch = channel.s.lower()
         with self._lock:
-            return self._news.get(channel, []).copy()
+            return self._news.get(ch, []).copy()
 
 
 def _is_enabled_for_this_channel():
     def predicate(module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
-        channel = msg.target if is_channel_name(msg.target) else None
+        channel = msg.target.channel
+        if channel is None:
+            return False
         channels = module.config_get('channels', [])
-        return channel in channels
+        return channel.s in channels
 
     return predicates([predicate])
 
@@ -90,7 +95,9 @@ class News(BaseResponder):
 
         Syntax: news
         """
-        channel = msg.target
+        channel = msg.target.channel
+        assert channel is not None
+
         messages = self.store.get(channel)
 
         if not messages:
@@ -107,8 +114,10 @@ class News(BaseResponder):
 
         Syntax: news_add MESSAGE
         """
-        channel = msg.target
-        self.store.push(channel, 0, ' '.join(args.message))
+        channel = msg.target.channel
+        assert channel is not None
+
+        self.store.push(channel, 0, ' '.join(args['message']))
         self.respond(msg, 'Ok!')
 
     @command('news_push')
@@ -119,8 +128,10 @@ class News(BaseResponder):
 
         Syntax: news_push INDEX MESSAGE
         """
-        channel = msg.target
-        self.store.push(channel, int(args.index[0]), ' '.join(args.message))
+        channel = msg.target.channel
+        assert channel is not None
+
+        self.store.push(channel, int(args['index'][0]), ' '.join(args['message']))
         self.respond(msg, 'Ok!')
 
     @command('news_pop')
@@ -131,8 +142,10 @@ class News(BaseResponder):
 
         Syntax: news_pop INDEX
         """
-        channel = msg.target
-        self.store.pop(channel, int(args.index[0]))
+        channel = msg.target.channel
+        assert channel is not None
+
+        self.store.pop(channel, int(args['index'][0]))
         self.respond(msg, 'Ok!')
 
     @command('news_update')
@@ -143,8 +156,10 @@ class News(BaseResponder):
 
         Syntax: news_update INDEX MESSAGE
         """
-        channel = msg.target
-        self.store.update(channel, int(args.index[0]), ' '.join(args.message))
+        channel = msg.target.channel
+        assert channel is not None
+
+        self.store.update(channel, int(args['index'][0]), ' '.join(args['message']))
         self.respond(msg, 'Ok!')
 
 

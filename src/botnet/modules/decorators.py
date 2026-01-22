@@ -1,4 +1,6 @@
-from typing import Protocol, Any
+import argparse
+import inspect
+from typing import Protocol, Any, Callable, TypeVar
 from botnet.message import IncomingPrivateMessage
 from .base import AuthContext
 from functools import wraps
@@ -8,8 +10,16 @@ _ATTR_COMMAND_NAME = '_command_name'
 _ATTR_PREDICATES = '_predicates'
 
 
-class Predicate(Protocol):
-    def __call__(self, module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
+T = TypeVar("T", contravariant=True)
+
+
+class CommandHandler(Protocol[T]):
+    def __call__(self, instance: T, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+        ...
+
+
+class CommandHandlerWithArguments(Protocol[T]):
+    def __call__(self, instance: T, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         ...
 
 
@@ -33,19 +43,19 @@ def command(name: str):
             if 'admin' in auth.groups:
                 self.respond(msg, 'Hello world, admin!')
     """
-    def decorator(f):
+    def decorator(f: CommandHandler) -> CommandHandler:
         setattr(f, _ATTR_COMMAND_NAME, name)
-
-        @wraps(f)
-        def decorated_function(self, *args, **kwargs):
-            f(self, *args, **kwargs)
-
-        return decorated_function
+        return f
 
     return decorator
 
 
-def predicates(predicates: list[Predicate]):
+class Predicate(Protocol):
+    def __call__(self, module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
+        ...
+
+
+def predicates(predicates: list[Predicate]) -> Callable[[CommandHandler], CommandHandler]:
     """Decorator which adds predicates which must be fulfilled to launch this command.
 
     Example:
@@ -59,17 +69,12 @@ def predicates(predicates: list[Predicate]):
         all_predicates = getattr(f, _ATTR_PREDICATES, [])
         all_predicates.extend(predicates)
         setattr(f, _ATTR_PREDICATES, all_predicates)
-
-        @wraps(f)
-        def decorated_function(self, *args, **kwargs):
-            f(self, *args, **kwargs)
-
-        return decorated_function
+        return f
 
     return decorator
 
 
-def _any_group(groups: list[str]):
+def _any_group(groups: list[str]) -> Callable[[CommandHandler], CommandHandler]:
     def predicate(module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
         for group in groups:
             if group in auth.groups:
@@ -89,3 +94,49 @@ def only_admins():
             self.respond(msg, 'Hello admin!')
     """
     return _any_group(['admin'])
+
+
+class Args(dict[str, list[str]]):
+
+    def __init__(self, namespace: argparse.Namespace) -> None:
+        for name in dir(namespace):
+            if not name.startswith('_'):
+                value = getattr(namespace, name)
+                if not callable(value):
+                    self[name] = value
+
+
+def parse_command(params):
+    """Decorator which parses the last argument of PRIVMSG, which is the
+    message itself, using argparse.
+
+        class TestResponder(BaseResponder):
+            @parse_command([('person', '?'), ('colors', '+')])
+            def command_colors(self, msg, args):
+                colors = ' '.join(args.colors)
+                self.respond(msg, '%s likes those colors: %s' % (args.person,
+                                                                 colors))
+
+    """
+    params.insert(0, ('command', 1))
+    parser = argparse.ArgumentParser(exit_on_error=False)
+    for name, nargs in params:
+        parser.add_argument(name, nargs=nargs)
+
+    def decorator(f):
+        sig = inspect.signature(f)
+        if 'args' not in sig.parameters.keys():
+            raise Exception('function signature is missing args')
+        new_params = [p for name, p in sig.parameters.items() if name != 'args']
+
+        @wraps(f)
+        def decorated_function(self: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+            try:
+                args = parser.parse_args(msg.text.s.split())
+            except argparse.ArgumentError:
+                return
+            f(self, msg, auth, Args(args))
+
+        setattr(decorated_function, '__signature__', sig.replace(parameters=new_params))
+        return decorated_function
+    return decorator

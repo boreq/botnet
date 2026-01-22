@@ -1,8 +1,8 @@
 from collections import defaultdict
 import threading
 from typing import Any, Callable
-from .. import BaseResponder, command, only_admins, AuthContext
-from ..lib import MemoryCache, get_url, parse_command, catch_other, Args
+from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
+from ..lib import MemoryCache, get_url, catch_other
 from ...signals import on_exception, config_changed
 from ...message import IncomingPrivateMessage
 
@@ -103,8 +103,8 @@ class GithubAPI:
     url_root = 'https://api.github.com'
 
     def __init__(self) -> None:
-        self._repo_cache = MemoryCache(default_timeout=600)
-        self._user_cache = MemoryCache(default_timeout=600)
+        self._repo_cache: MemoryCache[str, dict] = MemoryCache(default_timeout=600)
+        self._user_cache: MemoryCache[str, dict] = MemoryCache(default_timeout=600)
         # { '<owner>/<repo>': id of the last processed event }
         self._last_events: dict[str, int] = {}
         self._ep = EventParser()
@@ -283,12 +283,12 @@ class Github(BaseResponder):
 
         Syntax: github_track OWNER REPO CHANNEL ...
         """
-        owner = args.owner[0]
-        repo = args.repo[0]
+        owner = args['owner'][0]
+        repo = args['repo'][0]
 
         d = self.config_get_tracking_data(owner, repo)
         if d is not None:
-            for channel in args.channels:
+            for channel in args['channels']:
                 if channel not in d['channels']:
                     d['channels'].append(channel)
             config_changed.send(self)
@@ -296,7 +296,7 @@ class Github(BaseResponder):
             data = {
                 'owner': owner,
                 'repo': repo,
-                'channels': args.channels
+                'channels': args['channels']
             }
             self.config_append('track', data)
 
@@ -314,16 +314,16 @@ class Github(BaseResponder):
 
         Syntax: github_untrack OWNER REPO [CHANNEL ...]
         """
-        owner = args.owner[0]
-        repo = args.repo[0]
+        owner = args['owner'][0]
+        repo = args['repo'][0]
 
         d = self.config_get_tracking_data(owner, repo)
         if d is not None:
             # remove channels
-            if not args.channels:
+            if not args['channels']:
                 d['channels'] = []
             else:
-                d['channels'] = [c for c in d['channels'] if c not in args.channels]
+                d['channels'] = [c for c in d['channels'] if c not in args['channels']]
             # remove entire entry if no channels left
             if not d['channels']:
                 self.config_get('track').remove(d)
@@ -361,7 +361,7 @@ class Github(BaseResponder):
 
         Syntax: github PHRASE
         """
-        phrase = ' '.join(args.phrase)
+        phrase = ' '.join(args['phrase'])
 
         def f():
             try:
@@ -379,7 +379,7 @@ class Github(BaseResponder):
 
         Syntax: github_user PHRASE
         """
-        phrase = ' '.join(args.phrase)
+        phrase = ' '.join(args['phrase'])
 
         def f():
             try:

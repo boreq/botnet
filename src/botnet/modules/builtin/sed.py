@@ -1,10 +1,10 @@
 import os
 import threading
 from typing import Callable
-from ...helpers import save_json, load_json, is_channel_name
+from ...helpers import save_json, load_json
 from .. import BaseResponder
 from ...config import Config
-from ...message import IncomingPrivateMessage
+from ...message import IncomingPrivateMessage, Channel
 import re
 
 
@@ -55,18 +55,10 @@ class MessageStore:
 
     def __init__(self, path: Callable[[], str], limit: Callable[[str], int]) -> None:
         self.lock = threading.Lock()
-        self.set_limit(limit)
-        self.set_path(path)
+        self._limit = limit
+        self._path = path
         self._store: dict[str, list[dict[str, str]]] = {}
         self._load()
-
-    def set_path(self, path: Callable[[], str]) -> None:
-        with self.lock:
-            self._path = path
-
-    def set_limit(self, limit: Callable[[str], int]) -> None:
-        with self.lock:
-            self._limit = limit
 
     def _load(self) -> None:
         p = self._path()
@@ -79,21 +71,23 @@ class MessageStore:
     def _save(self) -> None:
         save_json(self._path(), self._store)
 
-    def add_message(self, channel: str, author: str, message: str) -> bool:
+    def add_message(self, channel: Channel, author: str, message: str) -> bool:
+        ch = channel.s.lower()
         with self.lock:
-            if channel not in self._store:
-                self._store[channel] = []
-            self._store[channel].insert(0, make_msg_entry(author, message))
-            while len(self._store[channel]) > self._limit(channel):
-                self._store[channel].pop()
+            if ch not in self._store:
+                self._store[ch] = []
+            self._store[ch].insert(0, make_msg_entry(author, message))
+            while len(self._store[ch]) > self._limit(ch):
+                self._store[ch].pop()
             self._save()
         return True
 
-    def get_messages(self, channel: str) -> list[dict[str, str]]:
+    def get_messages(self, channel: Channel) -> list[dict[str, str]]:
         """Returns a list of messages for the given channel."""
+        ch = channel.s.lower()
         with self.lock:
-            if channel in self._store:
-                return list(self._store[channel])
+            if ch in self._store:
+                return list(self._store[ch])
         return []
 
 
@@ -119,12 +113,13 @@ class Sed(BaseResponder):
         self.store = MessageStore(lambda: self.config_get('message_data'), lambda c: self.config_get('message_limit', 100))
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
-        if is_channel_name(msg.target):
+        channel = msg.target.channel
+        if channel is not None:
             try:
-                nick, a, b, flags = parse_message(msg.text)
+                nick, a, b, flags = parse_message(msg.text.s)
                 if nick is None:
-                    nick = msg.sender
-                messages = self.store.get_messages(msg.target)
+                    nick = msg.sender.s
+                messages = self.store.get_messages(channel)
                 message = replace(messages, nick, a, b, flags)
                 if message is not None:
                     if nick == msg.sender:
@@ -133,7 +128,7 @@ class Sed(BaseResponder):
                         text = '%s thinks %s meant to say: %s' % (msg.sender, nick, message)
                     self.respond(msg, text)
             except ValueError:
-                self.store.add_message(msg.target, msg.sender, msg.text)
+                self.store.add_message(channel, msg.sender.s, msg.text.s)
 
 
 mod = Sed

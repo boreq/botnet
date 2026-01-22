@@ -50,7 +50,7 @@ class Mastodon(BaseResponder):
             if msg.target not in entry['channels']:
                 continue
 
-            parts = msg.text.split(" ", 1)
+            parts = msg.text.s.split(" ", 1)
             text = parts[1].strip()
             if len(text) > self.max_toot_len:
                 return

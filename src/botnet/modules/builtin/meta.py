@@ -1,7 +1,6 @@
 from ...signals import _request_list_commands, _list_commands
-from ...message import IncomingPrivateMessage
-from .. import BaseResponder, AuthContext, command
-from ..lib import parse_command, Args
+from ...message import IncomingPrivateMessage, Text
+from .. import BaseResponder, AuthContext, command, parse_command, Args
 from ...config import Config
 
 
@@ -32,7 +31,7 @@ class Meta(BaseResponder):
 
         Syntax: help [COMMAND ...]
         """
-        if len(args.command_names) == 0:
+        if len(args['command_names']) == 0:
             _request_list_commands.send(self, msg=msg, auth=auth)
         else:
             super().command_help(msg, auth)
@@ -43,7 +42,7 @@ class Meta(BaseResponder):
         self.respond(msg, text)
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
-        if msg.text == '.bots':
+        if msg.text == Text('.bots'):
             self._respond_with_ibip(msg)
 
     def _respond_with_ibip(self, msg: IncomingPrivateMessage) -> None:

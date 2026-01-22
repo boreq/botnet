@@ -2,12 +2,11 @@ import datetime
 import os
 import threading
 from typing import Any, Callable
-from ...helpers import save_json, load_json, is_channel_name
+from ...helpers import save_json, load_json
 from ...signals import on_exception
-from .. import BaseResponder, command, AuthContext
-from ..lib import parse_command, Args
+from .. import BaseResponder, command, AuthContext, parse_command, Args
 from ...config import Config
-from ...message import IncomingPrivateMessage
+from ...message import IncomingPrivateMessage, Nick, Target
 import re
 
 
@@ -94,9 +93,9 @@ class RemindersStore:
     def _save(self) -> None:
         save_json(self._path(), self._store)
 
-    def add_message(self, author: str, target: str, message: str, time: float) -> bool:
+    def add_message(self, author: Nick, target: Target, message: str, time: float) -> bool:
         with self.lock:
-            self._store.append(make_msg_entry(author, target, message, time))
+            self._store.append(make_msg_entry(author.s.lower(), target.nick_or_channel.s.lower(), message, time))
             self._save()
         return True
 
@@ -153,12 +152,13 @@ class Reminders(BaseResponder):
         Syntax: in AMOUNT UNIT MESSAGE
         """
         author = msg.sender
-        seconds, message = parse_message(' '.join(args.message))
+        seconds, message = parse_message(' '.join(args['message']))
         time = datetime.datetime.utcnow().timestamp() + seconds
-        if not is_channel_name(msg.target):
-            target = msg.sender
+        channel = msg.target.channel
+        if channel is None:
+            target = Target(msg.sender)
         else:
-            target = msg.target
+            target = Target(channel)
         if self.store.add_message(author, target, message, time):
             self.respond(msg, 'Will do!')
 

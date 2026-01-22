@@ -2,11 +2,10 @@ from datetime import datetime, timezone
 import os
 import threading
 from typing import Callable
-from ...helpers import save_json, load_json, is_channel_name
-from .. import BaseResponder, command, AuthContext
-from ..lib import parse_command, Args
+from ...helpers import save_json, load_json
+from .. import BaseResponder, command, AuthContext, parse_command, Args
 from ...config import Config
-from ...message import IncomingPrivateMessage
+from ...message import IncomingPrivateMessage, Nick, Target, Channel
 
 
 def make_msg_entry(author: str, target: str, message: str, channel: str | None, time: datetime) -> dict:
@@ -20,7 +19,7 @@ def make_msg_entry(author: str, target: str, message: str, channel: str | None, 
     }
 
 
-def format_msg_entry(target: str, msg_entry: dict) -> str:
+def format_msg_entry(target: Nick, msg_entry: dict) -> str:
     """Converts an object stored by the message store to plaintext."""
     dt = datetime.fromtimestamp(msg_entry['time'], timezone.utc)
     return '%s: %s <%s> %s' % (target,
@@ -42,41 +41,41 @@ class MessageStore:
         self._msg_store: list[dict] = []
         self._load()
 
-    def add_message(self, author: str, target: str, message: str, channel: str | None, time: datetime) -> bool:
+    def add_message(self, author: Nick, target: Target, message: str, channel: Channel | None, time: datetime) -> bool:
         """Leaves a `message` for `target` from `author`."""
         with self._lock:
             # abort if similar message already present
             for m in self._msg_store:
-                if m['author'] == author \
-                   and m['target'].lower() == target.lower() \
-                   and m['channel'] == channel \
+                if Nick(m['author']) == author \
+                   and Target.new_from_string(m['target']) == target \
+                   and Channel(m['channel']) == channel \
                    and m['message'] == message:
                     return False
             # add the new message
-            self._msg_store.append(make_msg_entry(author, target, message, channel, time))
+            self._msg_store.append(make_msg_entry(author.s, target.nick_or_channel.s, message, channel.s if channel is not None else None, time))
             self._save()
         return True
 
-    def get_channel_messages(self, target: str, channel: str) -> list[dict]:
+    def get_channel_messages(self, target: Nick, channel: Channel) -> list[dict]:
         """Returns a list of messages for `target`."""
         # This could be a generator to ensure that not all messages are lost in
         # case of an error.
         rw = []
         with self._lock:
             for i, m in reversed(list(enumerate(self._msg_store))):
-                if m['target'].lower() == target.lower() and m['channel'].lower() == channel.lower():
+                if m['target'].lower() == target.s.lower() and m['channel'].lower() == channel.s.lower():
                     rw.append(self._msg_store.pop(i))
             self._save()
         return list(reversed(rw))
 
-    def get_private_messages(self, target: str) -> list[dict]:
+    def get_private_messages(self, target: Nick) -> list[dict]:
         """Returns a list of messages for `target`."""
         # This could be a generator to ensure that not all messages are lost in
         # case of an error.
         rw = []
         with self._lock:
             for i, m in reversed(list(enumerate(self._msg_store))):
-                if m['target'].lower() == target.lower() and m['channel'] is None:
+                if m['target'].lower() == target.s.lower() and m['channel'] is None:
                     rw.append(self._msg_store.pop(i))
             self._save()
         return list(reversed(rw))
@@ -125,9 +124,9 @@ class Tell(BaseResponder):
         Syntax: tell TARGET MESSAGE
         """
         author = msg.sender
-        target = args.target[0]
-        message = ' '.join(args.message)
-        channel = msg.target if is_channel_name(msg.target) else None
+        target = Target.new_from_string(args['target'][0])
+        message = ' '.join(args['message'])
+        channel = msg.target.channel
         time = self.now()
         if self.ms.add_message(author, target, message, channel, time):
             self.respond(msg, 'Will do!')
@@ -136,8 +135,9 @@ class Tell(BaseResponder):
         for stored_msg in self.ms.get_private_messages(msg.sender):
             self.respond(msg, format_msg_entry(msg.sender, stored_msg), pm=True)
 
-        if is_channel_name(msg.target):
-            for stored_msg in self.ms.get_channel_messages(msg.sender, msg.target):
+        channel = msg.target.channel
+        if channel is not None:
+            for stored_msg in self.ms.get_channel_messages(msg.sender, channel):
                 self.respond(msg, format_msg_entry(msg.sender, stored_msg))
 
     def now(self) -> datetime:

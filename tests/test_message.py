@@ -1,4 +1,4 @@
-from botnet.message import Message
+from botnet.message import Message, Channel, Nick, Target, Text, IncomingPrivateMessage
 from botnet.codes import Code
 
 
@@ -94,3 +94,209 @@ def test_message_to_string(subtests):
         with subtests.test(test_case=test_case):
             msg = Message(prefix=test_case['prefix'], command=test_case['command'], params=test_case['params'])
             assert msg.to_string() == test_case['expected_message']
+
+
+def test_nick(subtests):
+    test_cases = [
+        {
+            'nick': 'nick',
+            'error': None,
+        },
+        {
+            'nick': 'nick|m',
+            'error': None,
+        },
+        {
+            'nick': 'nick-m',
+            'error': None,
+        },
+        {
+            'nick': 'nick_m',
+            'error': None,
+        },
+        {
+            'nick': 'nick0m',
+            'error': None,
+        },
+        {
+            'nick': 'n',
+            'error': None,
+        },
+        {
+            'nick': None,
+            'error': 'nick cannot be none or empty',
+        },
+        {
+            'nick': '',
+            'error': 'nick cannot be none or empty',
+        },
+        {
+            'nick': '@nick',
+            'error': 'nick \'@nick\' is invalid',
+        },
+        {
+            'nick': '+nick',
+            'error': 'nick \'+nick\' is invalid',
+        },
+        {
+            'nick': '|nick',
+            'error': 'nick \'|nick\' is invalid',
+        },
+        {
+            'nick': '-nick',
+            'error': 'nick \'-nick\' is invalid',
+        },
+        {
+            'nick': '_nick',
+            'error': None,
+        },
+        {
+            'nick': '0nick',
+            'error': 'nick \'0nick\' is invalid',
+        },
+    ]
+
+    for test_case in test_cases:
+        with subtests.test(test_case=test_case):
+            try:
+                nick = Nick(test_case['nick'])
+                if test_case['error'] is not None:
+                    raise Exception('error expected')
+                else:
+                    assert nick.s == test_case['nick']
+            except Exception as e:
+                if test_case['error'] is not None:
+                    assert str(e) == test_case['error']
+                else:
+                    raise
+
+
+def test_nick_is_not_case_sensitive(subtests):
+    assert Nick('a') != Nick('b')
+    assert hash(Nick('a')) != hash(Nick('b'))
+
+    assert Nick('test') == Nick('test')
+    assert hash(Nick('test')) == hash(Nick('test'))
+
+    assert Nick('test') == Nick('TEST')
+    assert hash(Nick('test')) == hash(Nick('TEST'))
+
+
+def test_channel(subtests):
+    test_cases = [
+        {
+            'channel': '#channel',
+            'error': None,
+        },
+        {
+            'channel': '##channel',
+            'error': None,
+        },
+        {
+            'channel': 'channel',
+            'error': 'channel \'channel\' is invalid',
+        },
+        {
+            'channel': 'c#hannel',
+            'error': 'channel \'c#hannel\' is invalid',
+        },
+        {
+            'channel': '',
+            'error': 'channel cannot be none or empty',
+        },
+        {
+            'channel': None,
+            'error': 'channel cannot be none or empty',
+        },
+    ]
+
+    for test_case in test_cases:
+        with subtests.test(test_case=test_case):
+            try:
+                nick = Channel(test_case['channel'])
+                if test_case['error'] is not None:
+                    raise Exception('error expected')
+                else:
+                    assert nick.s == test_case['channel']
+            except Exception as e:
+                if test_case['error'] is not None:
+                    assert str(e) == test_case['error']
+                else:
+                    raise
+
+
+def test_channel_is_not_case_sensitive(subtests):
+    assert Channel('#a') != Channel('#b')
+    assert hash(Channel('#a')) != hash(Channel('#b'))
+
+    assert Channel('#test') == Channel('#test')
+    assert hash(Channel('#test')) == hash(Channel('#test'))
+
+    assert Channel('#test') == Channel('#TEST')
+    assert hash(Channel('#test')) == hash(Channel('#TEST'))
+
+
+def test_target(subtests):
+    test_cases = [
+        {
+            'target': '#channel',
+            'channel': True,
+        },
+        {
+            'target': 'nick',
+            'channel': False,
+        },
+    ]
+
+    for test_case in test_cases:
+        with subtests.test(test_case=test_case):
+            target = Target.new_from_string(test_case['target'])
+            if test_case['channel']:
+                assert target.is_channel
+                assert not target.is_nick
+                assert target.channel is not None
+                assert target.nick is None
+            else:
+                assert not target.is_channel
+                assert target.is_nick
+                assert target.channel is None
+                assert target.nick is not None
+
+
+def test_text(subtests):
+    test_cases = [
+        {
+            'text': 'message text',
+            'error': None,
+        },
+        {
+            'text': '',
+            'error': 'text cannot be none or empty',
+        },
+        {
+            'text': None,
+            'error': 'text cannot be none or empty',
+        },
+    ]
+
+    for test_case in test_cases:
+        with subtests.test(test_case=test_case):
+            try:
+                text = Text(test_case['text'])
+                if test_case['error'] is not None:
+                    raise Exception('error expected')
+                else:
+                    assert text.s == test_case['text']
+            except Exception as e:
+                if test_case['error'] is not None:
+                    assert str(e) == test_case['error']
+                else:
+                    raise
+
+
+def test_incoming_private_message_from_message():
+    msg = Message(command='PRIVMSG', prefix='nick!~user@example.com', params=['#channel', 'message text'])
+    ipm = IncomingPrivateMessage.new_from_message(msg)
+    assert ipm.sender == Nick('nick')
+    assert ipm.target == Target(Channel('#channel'))
+    assert ipm.text == Text('message text')

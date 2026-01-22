@@ -1,60 +1,211 @@
 from datetime import datetime, timezone
 from botnet.message import Message
 from botnet.config import Config
-from botnet.modules.builtin.tell import MessageStore, Tell
+from botnet.modules.builtin.tell import Tell
 import pytest
 
 
-def test_message_store(tmp_file):
-    ms = MessageStore(lambda: tmp_file)
+def test_multiple_messages_for_multiple_users(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
+    msg = make_incoming_privmsg('.tell target1 message1', nick='author', target='#channel')
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    a = ms.get_channel_messages('target1', '#channel')
-    assert a == []
+    msg = make_incoming_privmsg('.tell target1 message2', nick='author', target='#channel')
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    ms.add_message('author', 'target1', 'text1', '#channel', datetime.now())
-    ms.add_message('author', 'target1', 'text2', '#channel', datetime.now())
-    ms.add_message('author', 'target2', 'text', '#channel', datetime.now())
+    msg = make_incoming_privmsg('.tell target2 message1', nick='author', target='#channel')
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    a = ms.get_channel_messages('target1', '#channel')
-    assert len(a) == 2
+    msg = make_incoming_privmsg('.tell target2 message2', nick='author', target='#channel')
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    a = ms.get_channel_messages('target2', '#channel')
-    assert len(a) == 1
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+        ]
+    )
+
+    msg = make_privmsg('sth', nick='target1', target='#channel')
+    test_tell.receive_message_in(msg)
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13 UTC <author> message1')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13 UTC <author> message2')
+            },
+        ]
+    )
+
+    msg = make_privmsg('sth', nick='target2', target='#channel')
+    test_tell.receive_message_in(msg)
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13 UTC <author> message1')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13 UTC <author> message2')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :target2: 2026-01-02 11:12:13 UTC <author> message1')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :target2: 2026-01-02 11:12:13 UTC <author> message2')
+            },
+        ]
+    )
 
 
-def test_message_store_case_insensitive(tmp_file):
-    ms = MessageStore(lambda: tmp_file)
+def test_duplicate_messages_are_ignored(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
+    msg = make_incoming_privmsg('.tell target message', nick='author', target='#channel')
 
-    a = ms.get_channel_messages('target1', '#channel')
-    assert a == []
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    ms.add_message('author', 'tArget1', 'text1', '#channel', datetime.now())
-    ms.add_message('author', 'taRget1', 'text2', '#channel', datetime.now())
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            }
+        ]
+    )
 
-    a = ms.get_channel_messages('TaRget1', '#channel')
-    assert len(a) == 2
+    msg = make_privmsg('sth', nick='target', target='#channel')
+    test_tell.receive_message_in(msg)
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13 UTC <author> message')
+            },
+        ]
+    )
 
 
-def test_duplicate(tmp_file):
-    ms = MessageStore(lambda: tmp_file)
-    ms.add_message('author', 'target', 'text', '#channel', datetime.now())
-    ms.add_message('author', 'target', 'text', '#channel', datetime.now())
-    assert len(ms._msg_store) == 1
+def test_messages_arrive_in_the_same_order_they_were_sent(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
+    msg = make_incoming_privmsg('.tell target message1', nick='author', target='#channel')
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
+
+    msg = make_incoming_privmsg('.tell target message2', nick='author', target='#channel')
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
+
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            }
+        ]
+    )
+
+    msg = make_privmsg('sth', nick='target', target='#channel')
+    test_tell.receive_message_in(msg)
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13 UTC <author> message1')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13 UTC <author> message2')
+            },
+        ]
+    )
 
 
-def test_message_store_ordering(tmp_file):
-    ms = MessageStore(lambda: tmp_file)
+def test_channel_is_case_insensitive(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
+    msg = make_incoming_privmsg('.tell target message text', nick='author', target='#channel')
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            }
+        ]
+    )
 
-    a = ms.get_channel_messages('target1', '#channel')
-    assert a == []
+    msg = make_privmsg('sth', nick='target', target='#chAnnel')
+    test_tell.receive_message_in(msg)
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #chAnnel :target: 2026-01-02 11:12:13 UTC <author> message text')
+            }
+        ]
+    )
 
-    ms.add_message('author', 'target1', 'text1', '#channel', datetime.now())
-    ms.add_message('author', 'target1', 'text2', '#channel', datetime.now())
 
-    a = ms.get_channel_messages('target1', '#channel')
-    assert len(a) == 2
-    assert a[0]['message'] == 'text1'
-    assert a[1]['message'] == 'text2'
+def test_target_is_case_insensitive(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
+    msg = make_incoming_privmsg('.tell target message text', nick='author', target='#channel')
+    test_tell.receive_auth_message_in(msg, unauthorised_context)
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            }
+        ]
+    )
+
+    msg = make_privmsg('sth', nick='tArget', target='#channel')
+    test_tell.receive_message_in(msg)
+    test_tell.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :tArget: 2026-01-02 11:12:13 UTC <author> message text')
+            }
+        ]
+    )
 
 
 def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):

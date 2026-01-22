@@ -219,9 +219,9 @@ class MessageDispatcherMixin(BaseModule):
     def get_command_name(self, msg: IncomingPrivateMessage) -> str | None:
         """Extracts the command name from a PRIVMSG message."""
         command_prefix = self.get_command_prefix()
-        if not msg.text.startswith(command_prefix):
+        if not msg.text.s.startswith(command_prefix):
             return None
-        cmd_name = msg.text.split(' ')[0]
+        cmd_name = msg.text.s.split(' ')[0]
         cmd_name = cmd_name.strip(command_prefix)
         if len(cmd_name) == 0:
             return None

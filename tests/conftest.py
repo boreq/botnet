@@ -1,5 +1,5 @@
 from botnet.config import Config
-from botnet.message import Message, IncomingPrivateMessage
+from botnet.message import Message, IncomingPrivateMessage, Nick, Target, Text
 from botnet.modules import AuthContext
 from botnet.signals import message_out, message_in, auth_message_in, clear_state, on_exception, _request_list_commands
 import logging
@@ -44,9 +44,9 @@ def make_incoming_privmsg():
     """Provides a PRIVMSG message factory."""
     def f(text, nick='nick', target='#channel'):
         return IncomingPrivateMessage(
-            sender=nick,
-            target=target,
-            text=text,
+            sender=Nick(nick),
+            target=Target.new_from_string(target),
+            text=Text(text),
         )
     return f
 
@@ -82,17 +82,17 @@ def clear_signal_state():
 
 
 class Trap(object):
-    def __init__(self, signal):
-        self.trapped = []
+    def __init__(self, signal) -> None:
+        self.trapped: list[dict] = []
         signal.connect(self.on_signal)
 
-    def on_signal(self, sender, **kwargs):
+    def on_signal(self, sender, **kwargs) -> None:
         self.trapped.append(kwargs)
 
-    def reset(self):
+    def reset(self) -> None:
         self.trapped = []
 
-    def wait(self, assertion: Callable[[list], None], max_seconds=1):
+    def wait(self, assertion: Callable[[list], None], max_seconds=1) -> None:
         for i in range(max_seconds):
             try:
                 assertion(self.trapped)

@@ -1,5 +1,5 @@
 from botnet.config import Config
-from botnet.message import Message, IncomingPrivateMessage
+from botnet.message import Message, IncomingPrivateMessage, Nick, Target, Channel, Text
 from botnet.modules import BaseResponder
 
 
@@ -31,9 +31,9 @@ def test_respond(subtests, module_harness_factory):
     for test_case in test_cases:
         with subtests.test(test_case=test_case):
             msg = IncomingPrivateMessage(
-                sender='nick',
-                target=test_case['message_target'],
-                text='some text',
+                sender=Nick('nick'),
+                target=Target.new_from_string(test_case['message_target']),
+                text=Text('some text'),
             )
 
             m = module_harness_factory.make(BaseResponder, Config())
@@ -87,9 +87,9 @@ def test_get_command_name(subtests):
     for test_case in test_cases:
         with subtests.test(test_case=test_case):
             msg = IncomingPrivateMessage(
-                sender='nick',
-                target='#channel',
-                text=test_case['text'],
+                sender=Nick('nick'),
+                target=Target(Channel('#channel')),
+                text=Text(test_case['text']),
             )
 
             r = BaseResponder(Config())

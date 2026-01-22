@@ -1,7 +1,7 @@
 import threading
 from ...message import IncomingPrivateMessage
-from .. import BaseResponder, command
-from ..lib import parse_command, get_url, Args
+from .. import BaseResponder, command, parse_command, Args
+from ..lib import get_url
 from ..base import AuthContext
 
 

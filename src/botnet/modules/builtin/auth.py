@@ -1,7 +1,7 @@
 import datetime
-from collections import namedtuple
+from dataclasses import dataclass
 from typing import Any, Callable
-from ...message import Message, IncomingPrivateMessage
+from ...message import Message, IncomingPrivateMessage, Nick
 from ...signals import message_out, auth_message_in
 from .. import AuthContext, BaseResponder
 from ..lib import MemoryCache
@@ -9,7 +9,10 @@ from ..base import BaseModule
 from ...config import Config
 
 
-DeferredWhois = namedtuple('DeferredWhois', ['nick', 'on_complete'])
+@dataclass
+class DeferredWhois:
+    nick: Nick
+    on_complete: Callable[[dict[str, Any]], None]
 
 
 class WhoisMixin(BaseModule):
@@ -36,13 +39,14 @@ class WhoisMixin(BaseModule):
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self._whois_cache = MemoryCache(self.whois_cache_timeout)
+        self._whois_cache: MemoryCache[Nick, dict] = MemoryCache(self.whois_cache_timeout)
         self._whois_deferred: list[DeferredWhois] = []
-        self._whois_current: dict[str, dict[str, Any]] = {}
+        self._whois_current: dict[Nick, dict[str, Any]] = {}
 
     def handler_rpl_whoisuser(self, msg: Message) -> None:
         """Start of WHOIS."""
-        self._whois_current[msg.params[1]] = {
+        nick = Nick(msg.params[1])
+        self._whois_current[nick] = {
             'time': datetime.datetime.now(),
             'nick': msg.params[1],
             'user': msg.params[2],
@@ -52,33 +56,38 @@ class WhoisMixin(BaseModule):
 
     def handler_rpl_whoisserver(self, msg: Message) -> None:
         """WHOIS server."""
-        if msg.params[1] in self._whois_current:
-            self._whois_current[msg.params[1]]['server'] = msg.params[2]
-            self._whois_current[msg.params[1]]['server_info'] = msg.params[3]
+        nick = Nick(msg.params[1])
+        if nick in self._whois_current:
+            self._whois_current[nick]['server'] = msg.params[2]
+            self._whois_current[nick]['server_info'] = msg.params[3]
 
     def handler_rizon_rpl_whoisidentified(self, msg: Message) -> None:
         """WHOIS identification on Rizon."""
-        if msg.params[1] in self._whois_current:
-            self._whois_current[msg.params[1]]['nick_identified'] = msg.params[2]
+        nick = Nick(msg.params[1])
+        if nick in self._whois_current:
+            self._whois_current[nick]['nick_identified'] = msg.params[2]
 
     def handler_freenode_rpl_whoisidentified(self, msg: Message) -> None:
         """WHOIS identification on Freenode."""
-        if msg.params[1] in self._whois_current:
-            self._whois_current[msg.params[1]]['nick_identified'] = msg.params[1]
+        nick = Nick(msg.params[1])
+        if nick in self._whois_current:
+            self._whois_current[nick]['nick_identified'] = msg.params[1]
 
     def handler_rpl_away(self, msg: Message) -> None:
         """WHOIS away message."""
-        if msg.params[1] in self._whois_current:
-            self._whois_current[msg.params[1]]['away'] = msg.params[2]
+        nick = Nick(msg.params[1])
+        if nick in self._whois_current:
+            self._whois_current[nick]['away'] = msg.params[2]
 
     def handler_rpl_endofwhois(self, msg: Message) -> None:
         """End of WHOIS."""
-        if msg.params[1] not in self._whois_current:
+        nick = Nick(msg.params[1])
+        if nick not in self._whois_current:
             return
-        self._whois_cache.set(msg.params[1], self._whois_current.pop(msg.params[1]))
+        self._whois_cache.set(nick, self._whois_current.pop(nick))
         self._whois_run_deferred()
 
-    def whois_schedule(self, nick: str, on_complete: Callable[[dict[str, Any]], None]) -> None:
+    def whois_schedule(self, nick: Nick, on_complete: Callable[[dict[str, Any]], None]) -> None:
         """Schedules an action to be completed when the whois for the nick is
         available.
 
@@ -107,9 +116,9 @@ class WhoisMixin(BaseModule):
                 d.on_complete(data)
                 self._whois_deferred.pop(i)
 
-    def _whois_perform(self, nick: str) -> None:
+    def _whois_perform(self, nick: Nick) -> None:
         """Sends a message with the WHOIS command."""
-        msg = Message(command='WHOIS', params=[nick])
+        msg = Message(command='WHOIS', params=[nick.s])
         message_out.send(self, msg=msg)
 
     def handle_msg(self, msg: Message) -> None:

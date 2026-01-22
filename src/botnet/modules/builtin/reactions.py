@@ -1,6 +1,5 @@
 import random
-from .. import BaseResponder, command, AuthContext
-from ..lib import parse_command, Args
+from .. import BaseResponder, command, AuthContext, parse_command, Args
 from ...message import IncomingPrivateMessage
 
 
@@ -79,7 +78,7 @@ class Reactions(BaseResponder):
 
         Syntax: cute [TARGET ...]
         """
-        if len(args.target) > 0:
+        if len(args['target']) > 0:
             self.send_from_list(msg, args, cutelist_target)
         else:
             self.send_from_list(msg, args, cutelist)
@@ -94,7 +93,7 @@ class Reactions(BaseResponder):
         self.send_from_list(msg, args, magiclist)
 
     def send_from_list(self, msg: IncomingPrivateMessage, args: Args, reactions_list: list[str]) -> None:
-        target = ' '.join(args.target)
+        target = ' '.join(args['target'])
         response = random.choice(reactions_list).format(sender=msg.sender,
                                                         target=target)
         self.respond(msg, response)

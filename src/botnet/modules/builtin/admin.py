@@ -3,8 +3,7 @@ from typing import Any
 from ...message import IncomingPrivateMessage
 from ...signals import module_load, module_unload, module_loaded, \
     module_unloaded, config_reload, config_reloaded
-from .. import BaseResponder, command, only_admins, AuthContext
-from ..lib import parse_command, Args
+from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
 from ...config import Config
 
 
@@ -28,35 +27,35 @@ class Admin(BaseResponder):
 
     @command('module_load')
     @only_admins()
-    @parse_command([('module_names', '*')])
+    @parse_command([('module_names', '+')])
     def admin_command_module_load(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Loads a module.
 
         Syntax: module_load MODULE_NAME ...
         """
-        for name in args.module_names:
+        for name in args['module_names']:
             self._load_module(msg, name)
 
     @command('module_unload')
     @only_admins()
-    @parse_command([('module_names', '*')])
+    @parse_command([('module_names', '+')])
     def admin_command_module_unload(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Unloads a module.
 
         Syntax: module_unload MODULE_NAME ...
         """
-        for name in args.module_names:
+        for name in args['module_names']:
             self._unload_module(msg, name)
 
     @command('module_reload')
     @only_admins()
-    @parse_command([('module_names', '*')])
+    @parse_command([('module_names', '+')])
     def admin_command_module_reload(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Unloads and loads a module back.
 
         Syntax: module_reload MODULE_NAME ...
         """
-        for name in args.module_names:
+        for name in args['module_names']:
             self._reload_module(msg, name)
 
     @command('config_reload')

@@ -1,7 +1,7 @@
 from botnet.config import Config
 from botnet.modules import AuthContext
 from botnet.modules.builtin.auth import Auth
-from botnet.message import Message, IncomingPrivateMessage
+from botnet.message import Message, IncomingPrivateMessage, Nick, Target, Channel, Text
 from botnet.signals import message_out, auth_message_in
 
 
@@ -108,12 +108,12 @@ def test_whois_parsing(subtests, rec_msg) -> None:
                 rec_msg(Message.new_from_string(message_string))
 
             assert not a._whois_current
-            data = a._whois_cache.get(test_case['nick'])
+            data = a._whois_cache.get(Nick(test_case['nick']))
             del data['time']
             assert data == test_case['result']
 
 
-def test_identify_irc_user(subtests, make_signal_trap, rec_msg) -> None:
+def test_identify_user(subtests, make_signal_trap, rec_msg) -> None:
     config = {
         'module_config': {
             'botnet': {
@@ -198,7 +198,7 @@ def test_identify_irc_user(subtests, make_signal_trap, rec_msg) -> None:
             received_msg = Message.new_from_string(':someone!example.com PRIVMSG #channel :Hello!')
             rec_msg(received_msg)
 
-            def wait_condition(trapped):
+            def wait_condition(trapped) -> None:
                 assert trapped == [{
                     'msg': Message.new_from_string('WHOIS someone'),
                 }]
@@ -207,9 +207,9 @@ def test_identify_irc_user(subtests, make_signal_trap, rec_msg) -> None:
             for message_string in test_case['messages']:
                 rec_msg(Message.new_from_string(message_string))
 
-            def wait_condition(trapped):
+            def wait_condition(trapped) -> None:
                 assert trapped == [{
-                    'msg': IncomingPrivateMessage(sender='someone', target='#channel', text='Hello!'),
+                    'msg': IncomingPrivateMessage(sender=Nick('someone'), target=Target(Channel('#channel')), text=Text('Hello!')),
                     'auth': test_case['context'],
                 }]
             auth_message_in_trap.wait(wait_condition)

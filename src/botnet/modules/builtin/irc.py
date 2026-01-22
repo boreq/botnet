@@ -8,8 +8,7 @@ from typing import Any, Generator
 from ...logging import get_logger
 from ...message import Message, IncomingPrivateMessage
 from ...signals import message_in, message_out, on_exception, config_changed
-from .. import BaseResponder, command, only_admins, AuthContext
-from ..lib import parse_command, Args
+from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
 from ...config import Config
 
 
@@ -168,7 +167,8 @@ class IRC(BaseResponder):
 
         Syntax: channel_join CHANNEL_NAME [CHANNEL_PASSWORD]
         """
-        self.join(args.name[0], args.password)
+        password = args['password'][0] if 'password' in args else None
+        self.join(args['name'][0], password)
 
     @command('channel_part')
     @only_admins()
@@ -178,7 +178,7 @@ class IRC(BaseResponder):
 
         Syntax: channel_part CHANNEL_NAME
         """
-        self.part(args.name[0])
+        self.part(args['name'][0])
 
     @command('ignore')
     @only_admins()
@@ -189,7 +189,7 @@ class IRC(BaseResponder):
 
         Syntax: ignore PATTERN
         """
-        self.config_append('ignore', args.pattern[0])
+        self.config_append('ignore', args['pattern'][0])
         config_changed.send(self)
         self.respond(msg, 'Done!')
 
@@ -202,7 +202,7 @@ class IRC(BaseResponder):
         Syntax: unignore PATTERN
         """
         try:
-            self.config_get('ignore', auto=[]).remove(args.pattern[0])
+            self.config_get('ignore', auto=[]).remove(args['pattern'][0])
             config_changed.send(self)
             self.respond(msg, 'Done!')
         except ValueError:

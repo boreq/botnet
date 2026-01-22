@@ -2,10 +2,9 @@ import datetime
 import os
 import threading
 from typing import Any, Callable
-from ...helpers import save_json, load_json, is_channel_name
-from .. import BaseResponder, command, AuthContext
-from ..lib import parse_command, Args
-from ...message import IncomingPrivateMessage
+from ...helpers import save_json, load_json
+from .. import BaseResponder, command, AuthContext, parse_command, Args
+from ...message import IncomingPrivateMessage, Nick, Channel, Text
 from ...config import Config
 
 
@@ -18,7 +17,7 @@ def make_msg_entry(channel: str, message: str) -> dict[str, Any]:
     }
 
 
-def format_msg_entry(nick: str, msg_entry: dict[str, Any]) -> str:
+def format_msg_entry(nick: Nick, msg_entry: dict[str, Any]) -> str:
     """Converts an object stored by the message store to plaintext."""
     time = datetime.datetime.fromtimestamp(msg_entry['time'])
     time_str = time.strftime('%Y-%m-%d %H:%MZ')
@@ -51,15 +50,15 @@ class MessageStore:
     def _save(self) -> None:
         save_json(self._path(), self._msg_store)
 
-    def register_message(self, author: str, channel: str, message: str) -> bool:
+    def register_message(self, author: Nick, channel: Channel, message: Text) -> bool:
         with self.lock:
-            self._msg_store[author] = make_msg_entry(channel, message)
+            self._msg_store[author.s.lower()] = make_msg_entry(channel.s.lower(), message.s)
             self._save()
         return True
 
-    def get_message(self, author: str) -> dict[str, Any] | None:
+    def get_message(self, author: Nick) -> dict[str, Any] | None:
         with self.lock:
-            return self._msg_store.get(author, None)
+            return self._msg_store.get(author.s.lower(), None)
 
 
 class Seen(BaseResponder):
@@ -89,16 +88,17 @@ class Seen(BaseResponder):
 
         Syntax: seen NICK
         """
-        nick = args.nick[0]
+        nick = Nick(args['nick'][0])
         msg_entry = self.ms.get_message(nick)
         if msg_entry is not None:
             self.respond(msg, format_msg_entry(nick, msg_entry))
         else:
-            self.respond(msg, 'I\'ve never seen %s' % args.nick[0])
+            self.respond(msg, 'I\'ve never seen %s' % nick)
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
-        if is_channel_name(msg.target):
-            self.ms.register_message(msg.sender, msg.target, msg.text)
+        channel = msg.target.channel
+        if channel is not None:
+            self.ms.register_message(msg.sender, channel, msg.text)
 
 
 mod = Seen

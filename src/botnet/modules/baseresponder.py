@@ -1,11 +1,10 @@
 import textwrap
-from ..helpers import is_channel_name
 from ..message import Message, IncomingPrivateMessage
 from ..signals import message_out
 from .base import BaseModule, AuthContext
 from .decorators import command
 from .mixins import ConfigMixin, MessageDispatcherMixin
-from .lib import parse_command, Args
+from .decorators import parse_command, Args
 
 
 _BREAK_PRIVMSG_EVERY = 400
@@ -63,16 +62,16 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
         """Send a text in response to a message. Text will be automatically
         sent to a proper channel or user.
 
-        priv_msg: Message object to which we are responding.
+        msg: Message to which we are responding.
         text: Response text.
         pm: If True response will be a private message.
         """
         # If this is supposed to be sent as a private message or was sent in
         # a private message to the bot respond also in private message.
-        if pm or not is_channel_name(msg.target):
-            target = msg.sender
+        if pm or msg.target.is_nick:
+            target = msg.sender.s
         else:
-            target = msg.target
+            target = msg.target.nick_or_channel.s
         self.message(target, text)
 
     def message(self, nick_or_channel: str, text: str) -> None:
@@ -89,7 +88,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
 
         Syntax: help [COMMAND ...]
         """
-        for name in args.command_names:
+        for name in args['command_names']:
             if self.ignore_help and name == 'help':
                 continue
 

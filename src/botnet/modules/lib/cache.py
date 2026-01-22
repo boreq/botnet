@@ -3,47 +3,66 @@
     to cache results acquired from various online APIs.
 """
 
+from typing import TypeVar, Generic
 import datetime
 import hashlib
 
 
-def get_md5(string):
+def get_md5(string) -> str:
     """Returns a hash of a string."""
     m = hashlib.md5()
     m.update(string.encode('utf-8'))
     return m.hexdigest()
 
 
-class BaseCache:
+K = TypeVar('K')
+V = TypeVar('V')
+
+
+class BaseCache(Generic[K, V]):
     """Base cache class."""
 
     def __init__(self, default_timeout=300):
         self.default_timeout = default_timeout
 
-    def set(self, key, value, timeout=None):
+    def set(self, key: K, value: V, timeout=None) -> bool:
         """Sets a value of a key. Returns True on sucess or False in case of
         errors.
         """
-        return True
+        raise NotImplementedError
 
-    def get(self, key):
+    def get(self, key: K) -> V | None:
         """Returns a value of a key or None if a key does not exist."""
-        return None
+        raise NotImplementedError
 
 
-class MemoryCache(BaseCache):
+class MemoryCache(BaseCache[K, V]):
     """Simple cache. 100% thread unsafety guaranteed.
 
     default_timeout: timeout used by the set method [seconds].
     """
 
-    def __init__(self, default_timeout=300):
+    def __init__(self, default_timeout=300) -> None:
         super().__init__(default_timeout)
-        self._data = {}
+        self._data: dict[K, tuple[datetime.datetime, V]] = {}
 
-    def _prepare_key(self, key):
-        """Prepares a key before using it."""
-        return get_md5(key)
+    def set(self, key: K, value: V, timeout=None) -> bool:
+        self._clean()
+        if timeout is None:
+            timeout = self.default_timeout
+        expires = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
+        self._data[key] = (expires, value)
+        return True
+
+    def get(self, key: K) -> V | None:
+        try:
+            expires, value = self._data[key]
+            if expires > datetime.datetime.now():
+                return value
+            else:
+                return None
+        except KeyError:
+            return None
 
     def _clean(self):
         """Removes expired values."""
@@ -54,23 +73,3 @@ class MemoryCache(BaseCache):
                     self._data.pop(key)
             except KeyError:
                 pass
-
-    def set(self, key, value, timeout=None):
-        self._clean()
-        key = self._prepare_key(key)
-        if timeout is None:
-            timeout = self.default_timeout
-        expires = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
-        self._data[key] = (expires, value)
-        return True
-
-    def get(self, key):
-        try:
-            key = self._prepare_key(key)
-            expires, value = self._data[key]
-            if expires > datetime.datetime.now():
-                return value
-            else:
-                return None
-        except KeyError:
-            return None
