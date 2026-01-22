@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import random
 import os
 import threading
@@ -122,14 +122,6 @@ class Gatekeep(NamesMixin, BaseResponder):
                 "data": "/path/to/data_file.json",
                 "channel": "#channel",
                 "authorised_group": "somegroup",
-                "people": [
-                    {
-                        "nicks": [
-                            "nick"
-                        ],
-                        "whitelist": true
-                    }
-                ]
             }
         }
 
@@ -168,7 +160,8 @@ class Gatekeep(NamesMixin, BaseResponder):
             self.respond(msg, 'People currently in the channel who were NOT endorsed by you: {}'.format(', '.join([v.for_display() for v in reversed(not_endorsed)])))
             self.respond(msg, f'If you would like to endorse anyone then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'.')
 
-        self.request_names(self.config_get('channel'), on_names_available)
+        channel = Channel(self.config_get('channel'))
+        self.request_names(channel, on_names_available)
 
     @command('endorse')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
@@ -189,7 +182,8 @@ class Gatekeep(NamesMixin, BaseResponder):
             else:
                 self.respond(msg, 'There is no {} in the channel.'.format(nick))
 
-        self.request_names(self.config_get('channel'), on_names_available)
+        channel = Channel(self.config_get('channel'))
+        self.request_names(channel, on_names_available)
 
     @command('unendorse')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
@@ -230,12 +224,13 @@ class Gatekeep(NamesMixin, BaseResponder):
             else:
                 self.respond(msg, 'At least one of those nicks isn\'t in the channel!')
 
-        self.request_names(self.config_get('channel'), on_names_available)
+        channel = Channel(self.config_get('channel'))
+        self.request_names(channel, on_names_available)
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         channel = msg.target.channel
         if channel is not None:
-            if channel.s == self.config_get('channel'):
+            if channel == Channel(self.config_get('channel')):
                 with self._store as state:
                     state.on_privmsg(msg.sender)
 
@@ -268,7 +263,8 @@ class Gatekeep(NamesMixin, BaseResponder):
                             self.message(nick, ', '.join([v.for_display() for v in reversed(not_endorsed)]))
                             self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}gatekeep\' command.')
 
-        self.request_names(self.config_get('channel'), on_names_available)
+        channel = Channel(self.config_get('channel'))
+        self.request_names(channel, on_names_available)
 
 
 class Store:
@@ -291,10 +287,10 @@ class Store:
     def _load(self) -> None:
         if os.path.isfile(self._path()):
             j = load_json(self._path())
-            self._state = dacite.from_dict(data_class=State, data=j)
+            self._state = dacite.from_dict(data_class=TransportState, data=j).to()
 
     def _save(self) -> None:
-        save_json(self._path(), asdict(self._state))
+        save_json(self._path(), asdict(TransportState.create(self._state)))
 
 
 @dataclass
@@ -386,13 +382,13 @@ class Persona:
 
 @dataclass
 class NickInfo:
-    first_message: None | float
-    last_message: None | float
+    first_message: None | datetime
+    last_message: None | datetime
     endorsements: list[str]
 
     @classmethod
     def new_due_to_privmsg(cls) -> NickInfo:
-        return cls(datetime.datetime.now().timestamp(), datetime.datetime.now().timestamp(), [])
+        return cls(datetime.now(), datetime.now(), [])
 
     @classmethod
     def new_due_to_endorsement(cls, endorser_uuid: str) -> NickInfo:
@@ -400,8 +396,8 @@ class NickInfo:
 
     def on_privmsg(self) -> None:
         if self.first_message is None:
-            self.first_message = datetime.datetime.now().timestamp()
-        self.last_message = datetime.datetime.now().timestamp()
+            self.first_message = datetime.now()
+        self.last_message = datetime.now()
 
     def endorse(self, endorser_uuid: str) -> None:
         if endorser_uuid not in self.endorsements:
@@ -416,33 +412,33 @@ class NickInfo:
 
 @dataclass
 class AuthorisedPersonInfo:
-    last_pestered_at: None | float
-    last_command_executed_at: None | float
+    last_pestered_at: None | datetime
+    last_command_executed_at: None | datetime
 
     @classmethod
     def new_due_to_pestering(cls) -> AuthorisedPersonInfo:
-        return cls(datetime.datetime.now().timestamp(), None)
+        return cls(datetime.now(), None)
 
     @classmethod
     def new_due_to_command_execution(cls) -> AuthorisedPersonInfo:
-        return cls(None, datetime.datetime.now().timestamp())
+        return cls(None, datetime.now())
 
     def update_due_to_pestering(self) -> None:
-        self.last_pestered_at = datetime.datetime.now().timestamp()
+        self.last_pestered_at = datetime.now()
 
     def update_due_to_command_execution(self) -> None:
-        self.last_command_executed_at = datetime.datetime.now().timestamp()
+        self.last_command_executed_at = datetime.now()
 
     def should_pester(self) -> bool:
-        now = datetime.datetime.now().timestamp()
+        now = datetime.now().timestamp()
 
         if self.last_pestered_at is not None:
-            seconds_since_pestering = now - self.last_pestered_at
+            seconds_since_pestering = now - self.last_pestered_at.timestamp()
             if seconds_since_pestering < _PESTER_IF_NOT_PESTERED_FOR:
                 return False
 
         if self.last_command_executed_at is not None:
-            seconds_since_executing_a_command = now - self.last_command_executed_at
+            seconds_since_executing_a_command = now - self.last_command_executed_at.timestamp()
             if seconds_since_executing_a_command < _PESTER_IF_NO_COMMAND_FOR:
                 return False
 
@@ -493,6 +489,82 @@ class PersonaReport:
 
     def for_display(self) -> str:
         return '{} ({})'.format('/'.join([v.s for v in self.nicks]), len(self.endorsements))
+
+
+@dataclass
+class TransportState:
+    authorised_people_infos: dict[str, TransportAuthorisedPersonInfo]
+    personas: list[TransportPersona]
+    nick_infos: dict[str, TransportNickInfo]
+
+    @classmethod
+    def create(cls, state: State) -> TransportState:
+        return TransportState(
+            {k: TransportAuthorisedPersonInfo.create(v) for k, v in state.authorised_people_infos.items()},
+            [TransportPersona.create(v) for v in state.personas],
+            {k.s: TransportNickInfo.create(v) for k, v in state.nick_infos.items()},
+        )
+
+    def to(self) -> State:
+        authorised_people_infos = {k: v.to() for k, v in self.authorised_people_infos.items()}
+        personas = [v.to() for v in self.personas]
+        nick_infos = {Nick(k): v.to() for k, v in self.nick_infos.items()}
+        return State(authorised_people_infos, personas, nick_infos)
+
+
+@dataclass
+class TransportPersona:
+    nicks: list[str]
+
+    @classmethod
+    def create(cls, v: Persona) -> TransportPersona:
+        return cls(
+            [nick.s for nick in v.nicks]
+        )
+
+    def to(self) -> Persona:
+        return Persona([Nick(v) for v in self.nicks])
+
+
+@dataclass
+class TransportNickInfo:
+    first_message: None | float
+    last_message: None | float
+    endorsements: list[str]
+
+    @classmethod
+    def create(cls, v: NickInfo) -> TransportNickInfo:
+        return cls(
+            v.first_message.timestamp() if v.first_message is not None else None,
+            v.last_message.timestamp() if v.last_message is not None else None,
+            v.endorsements,
+        )
+
+    def to(self) -> NickInfo:
+        return NickInfo(
+            datetime.fromtimestamp(self.first_message) if self.first_message is not None else None,
+            datetime.fromtimestamp(self.last_message) if self.last_message is not None else None,
+            self.endorsements,
+        )
+
+
+@dataclass
+class TransportAuthorisedPersonInfo:
+    last_pestered_at: None | float
+    last_command_executed_at: None | float
+
+    @classmethod
+    def create(cls, v: AuthorisedPersonInfo) -> TransportAuthorisedPersonInfo:
+        return cls(
+            v.last_pestered_at.timestamp() if v.last_pestered_at is not None else None,
+            v.last_command_executed_at.timestamp() if v.last_command_executed_at is not None else None,
+        )
+
+    def to(self) -> AuthorisedPersonInfo:
+        return AuthorisedPersonInfo(
+            datetime.fromtimestamp(self.last_pestered_at) if self.last_pestered_at is not None else None,
+            datetime.fromtimestamp(self.last_command_executed_at) if self.last_command_executed_at is not None else None,
+        )
 
 
 mod = Gatekeep
