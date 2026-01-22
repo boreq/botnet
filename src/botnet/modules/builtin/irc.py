@@ -4,19 +4,21 @@ import socket
 import ssl
 import threading
 import fnmatch
+from typing import Any, Generator
 from ...logging import get_logger
 from ...message import Message
 from ...signals import message_in, message_out, on_exception, config_changed
 from .. import BaseResponder, command, only_admins, AuthContext
 from ..lib import parse_command, Args
+from ...config import Config
 
 
 class NoopWith:
 
-    def __enter__(self):
+    def __enter__(self) -> NoopWith:
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type: Any, exception_value: Any, traceback: Any) -> None:
         pass
 
 
@@ -38,50 +40,50 @@ class InactivityMonitor:
     # IRC module will be restarted after that many seconds without communication
     abort_timeout = 240
 
-    def __init__(self, irc_module):
+    def __init__(self, irc_module: IRC):
         self.logger = get_logger(self)
         self.irc_module = irc_module
 
-        self._timer_ping = None
-        self._timer_abort = None
+        self._timer_ping: threading.Timer | None = None
+        self._timer_abort: threading.Timer | None = None
 
-    def __enter__(self):
+    def __enter__(self) -> InactivityMonitor:
         message_in.connect(self.on_message_in)
         self._set_timers()
         return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type: Any, exception_value: Any, traceback: Any) -> None:
         message_in.disconnect(self.on_message_in)
         self._clear_timers()
 
-    def _clear_timers(self):
+    def _clear_timers(self) -> None:
         """Cancel scheduled execution of the timers."""
         for timer in [self._timer_ping, self._timer_abort]:
             if timer is not None:
                 timer.cancel()
 
-    def _set_ping(self, timeout):
+    def _set_ping(self, timeout: float) -> None:
         self._timer_ping = threading.Timer(timeout, self.on_timer_ping)
         self._timer_ping.start()
 
-    def _set_abort(self, timeout):
+    def _set_abort(self, timeout: float) -> None:
         self._timer_abort = threading.Timer(timeout, self.on_timer_abort)
         self._timer_abort.start()
 
-    def _set_timers(self):
+    def _set_timers(self) -> None:
         """Schedule the execution of the timers."""
         self._set_ping(self.ping_timeout)
         self._set_abort(self.abort_timeout)
 
-    def _reset_timers(self):
+    def _reset_timers(self) -> None:
         """Reschedule the execution of the timers."""
         self._clear_timers()
         self._set_timers()
 
-    def on_message_in(self, sender, msg):
+    def on_message_in(self, sender: Any, msg: Message) -> None:
         self._reset_timers()
 
-    def on_timer_ping(self):
+    def on_timer_ping(self) -> None:
         """Launched by _timer_ping."""
         self.logger.debug('ping the server')
         timestamp = datetime.datetime.now().timestamp()
@@ -89,7 +91,7 @@ class InactivityMonitor:
         message_out.send(self, msg=msg)
         self._set_ping(self.ping_repeat)
 
-    def on_timer_abort(self):
+    def on_timer_abort(self) -> None:
         """Launched by _timer_abort."""
         self.logger.debug('restart the connection')
         self.irc_module.restart()
@@ -102,10 +104,10 @@ class Buffer:
     next time process_data is called.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._data = b''
 
-    def process_data(self, received_data):
+    def process_data(self, received_data: bytes) -> Generator[bytes, None, None]:
         """Process the data received from the socket. Returns bytes.
 
         received_data: bytes.
@@ -146,14 +148,17 @@ class IRC(BaseResponder):
 
     deltatime = 5
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.register_config('botnet', 'base_responder')
         self.register_config('botnet', 'irc')
-        self.soc = None
+        self.soc: socket.socket | None = None
         message_out.connect(self.on_message_out)
         self.restart_event = threading.Event()
         self.send_lock = threading.Lock()
+        self.buffer = Buffer()
+        self.stop_event = threading.Event()
+        self.t = threading.Thread(target=self.run)
 
     @command('channel_join')
     @only_admins()
@@ -215,12 +220,10 @@ class IRC(BaseResponder):
         text = 'Ignored patterns: %s' % patterns_text
         self.respond(msg, text)
 
-    def start(self):
-        self.stop_event = threading.Event()
-        self.t = threading.Thread(target=self.run)
+    def start(self) -> None:
         self.t.start()
 
-    def stop(self):
+    def stop(self) -> None:
         """To stop correctly it is necessary to disconnect from the server
         because blocking sockets are used.
         """
@@ -229,12 +232,12 @@ class IRC(BaseResponder):
         self.stop_event.set()
         self.t.join()
 
-    def restart(self):
+    def restart(self) -> None:
         """Makes the module reconnect to the irc server."""
         self.disconnect()
         self.restart_event.set()
 
-    def on_message_out(self, sender, msg):
+    def on_message_out(self, sender: Any, msg: Message) -> None:
         """Handler for the message_out signal.
 
         sender: object sending the signal, most likely an other module.
@@ -242,15 +245,15 @@ class IRC(BaseResponder):
         """
         self.send(msg.to_string())
 
-    def line_to_message(self, line) -> Message:
+    def line_to_message(self, line: bytes) -> Message:
         """Converts a line received from the server to a message object.
 
         line: bytes.
         """
-        line = line.decode()
-        return Message.new_from_string(line)
+        line_str = line.decode()
+        return Message.new_from_string(line_str)
 
-    def process_data(self, data):
+    def process_data(self, data: bytes) -> None:
         """Processes data received from the servers, partitions it into lines
         and passes each line to process_line.
 
@@ -262,7 +265,7 @@ class IRC(BaseResponder):
             except Exception as e:
                 on_exception.send(self, e=e)
 
-    def process_line(self, line):
+    def process_line(self, line: bytes) -> None:
         """Process one line received from the server.
 
         line: bytes.
@@ -298,36 +301,36 @@ class IRC(BaseResponder):
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def should_ignore(self, msg):
+    def should_ignore(self, msg: Message) -> bool:
         if msg.prefix:
-            for ignore_pattern in self.config_get('ignore', '.'):
+            for ignore_pattern in self.config_get('ignore', []):
                 if fnmatch.fnmatch(msg.prefix, ignore_pattern):
                     return True
         return False
 
-    def handler_rpl_endofmotd(self, msg):
+    def handler_rpl_endofmotd(self, msg: Message) -> None:
         self.join_from_config()
 
-    def handler_ping(self, msg):
+    def handler_ping(self, msg: Message) -> None:
         rmsg = Message(command='PONG', params=msg.params)
         self.send(rmsg.to_string())
 
-    def send(self, text):
+    def send(self, text: str) -> bool:
         """Sends a text to the socket."""
         with self.send_lock:
             # To be honest I have never seen an exception here
             try:
                 if len(text) > 0 and self.soc:
                     self.logger.debug('Sending:  %s', text)
-                    text = '%s\r\n' % text
-                    text = text.encode('utf-8')
-                    self.soc.send(text)
+                    full_text = '%s\r\n' % text
+                    data = full_text.encode('utf-8')
+                    self.soc.send(data)
                     return True
             except (OSError, ssl.SSLError) as e:
                 on_exception.send(self, e=e)
             return False
 
-    def connect(self):
+    def connect(self) -> None:
         """Initiates the connection."""
         self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.config_get('ssl'):
@@ -341,30 +344,30 @@ class IRC(BaseResponder):
         self.soc.connect((self.config_get('server'), self.config_get('port')))
         self.soc.settimeout(5)
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         self.send('QUIT :Disconnecting')
 
-    def identify(self):
+    def identify(self) -> None:
         """Identifies with a server."""
         self.send('NICK ' + self.config_get('nick'))
         self.send('USER botnet botnet botnet :Python bot')
 
-    def join_from_config(self):
+    def join_from_config(self) -> None:
         """Joins all channels defined in the config."""
         for channel in self.config_get('channels'):
             self.join(channel['name'], channel['password'])
 
-    def join(self, channel_name, channel_password):
+    def join(self, channel_name: str, channel_password: str | None) -> None:
         msg = 'JOIN ' + channel_name
         if channel_password is not None:
             msg += ' ' + channel_password
         self.send(msg)
 
-    def part(self, channel_name):
+    def part(self, channel_name: str) -> None:
         msg = 'PART ' + channel_name
         self.send(msg)
 
-    def get_inactivity_monitor(self):
+    def get_inactivity_monitor(self) -> InactivityMonitor | NoopWith:
         if self.config_get('inactivity_monitor', True):
             self.logger.debug('InactivityMonitor is being used')
             return InactivityMonitor(self)
@@ -372,7 +375,7 @@ class IRC(BaseResponder):
             self.logger.debug('InactivityMonitor is NOT being used')
             return NoopWith()
 
-    def update(self):
+    def update(self) -> None:
         """Main method which should be called."""
         self.logger.debug('Update')
         with self.get_inactivity_monitor():
@@ -386,17 +389,18 @@ class IRC(BaseResponder):
                 if self.soc:
                     self.soc.close()
 
-    def loop(self):
+    def loop(self) -> None:
         while not self.stop_event.is_set() and not self.restart_event.is_set():
-            reads, writes, errors = select.select([self.soc], [], [], self.deltatime)
-            for sock in reads:
-                if sock == self.soc:
-                    data = self.soc.recv(4096)
-                    if not data:
-                        return
-                    self.process_data(data)
+            if self.soc is not None:
+                reads, writes, errors = select.select([self.soc], [], [], self.deltatime)
+                for sock in reads:
+                    if sock == self.soc:
+                        data = self.soc.recv(4096)
+                        if not data:
+                            return
+                        self.process_data(data)
 
-    def run(self):
+    def run(self) -> None:
         while not self.stop_event.is_set():
             try:
                 self.update()

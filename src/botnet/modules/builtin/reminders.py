@@ -1,15 +1,17 @@
 import datetime
 import os
 import threading
+from typing import Any, Callable
 from ...helpers import save_json, load_json, is_channel_name
 from ...signals import on_exception
 from .. import BaseResponder, command, AuthContext
 from ..lib import parse_command, Args
+from ...config import Config
 from ...message import Message
 import re
 
 
-def make_msg_entry(author, target, message, time):
+def make_msg_entry(author: str, target: str, message: str, time: float) -> dict[str, Any]:
     return {
         'author': author,
         'target': target,
@@ -19,20 +21,21 @@ def make_msg_entry(author, target, message, time):
     }
 
 
-def format_msg_entry(msg_entry):
+def format_msg_entry(msg_entry: dict[str, Any]) -> str:
     time = datetime.datetime.fromtimestamp(msg_entry['set_on'])
-    time = time.replace(microsecond=0).isoformat()
-    return '%s: %s (set on %s)' % (msg_entry['author'], msg_entry['message'], time)
+    return '%s: %s (set on %s)' % (msg_entry['author'],
+                                   msg_entry['message'],
+                                   time.replace(microsecond=0).isoformat())
 
 
-def get_amount_of_seconds(amount, unit):
-    units = [
-        [1, ['s', 'sec', 'second', 'seconds']],
-        [60, ['m', 'min', 'mins', 'minute', 'minutes']],
-        [60 * 60, ['h', 'hour', 'hours']],
-        [60 * 60 * 24, ['d', 'day', 'days']],
-        [60 * 60 * 24 * 30, ['month', 'months']],
-        [60 * 60 * 24 * 365, ['y', 'year', 'years']],
+def get_amount_of_seconds(amount: float, unit: str) -> float:
+    units: list[tuple[int, list[str]]] = [
+        (1, ['s', 'sec', 'second', 'seconds']),
+        (60, ['m', 'min', 'mins', 'minute', 'minutes']),
+        (60 * 60, ['h', 'hour', 'hours']),
+        (60 * 60 * 24, ['d', 'day', 'days']),
+        (60 * 60 * 24 * 30, ['month', 'months']),
+        (60 * 60 * 24 * 365, ['y', 'year', 'years']),
     ]
     for u in units:
         if unit in u[1]:
@@ -40,7 +43,7 @@ def get_amount_of_seconds(amount, unit):
     raise ValueError
 
 
-def parse_message(message_text):
+def parse_message(message_text: str) -> tuple[float, str]:
     parts = message_text.split()
     if len(parts) < 2:
         raise ValueError
@@ -70,17 +73,17 @@ class RemindersStore:
     path: function to call to get path to the data file.
     """
 
-    def __init__(self, path):
+    def __init__(self, path: Callable[[], str]) -> None:
         self.lock = threading.Lock()
         self.set_path(path)
-        self._store = []
+        self._store: list[dict[str, Any]] = []
         self._load()
 
-    def set_path(self, path):
+    def set_path(self, path: Callable[[], str]) -> None:
         with self.lock:
             self._path = path
 
-    def _load(self):
+    def _load(self) -> None:
         p = self._path()
         if os.path.isfile(p):
             try:
@@ -88,16 +91,16 @@ class RemindersStore:
             except:
                 self._store = []
 
-    def _save(self):
+    def _save(self) -> None:
         save_json(self._path(), self._store)
 
-    def add_message(self, author, target, message, time):
+    def add_message(self, author: str, target: str, message: str, time: float) -> bool:
         with self.lock:
             self._store.append(make_msg_entry(author, target, message, time))
             self._save()
         return True
 
-    def get_messages(self, time):
+    def get_messages(self, time: float) -> list[dict[str, Any]]:
         """Returns a list of messages with `time` smaller than the provided
         value.
         """
@@ -127,14 +130,14 @@ class Reminders(BaseResponder):
     config_name = 'reminders'
     deltatime = 1  # [s]
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.store = RemindersStore(lambda: self.config_get('reminder_data'))
         self.stop_event = threading.Event()
         self.t = threading.Thread(target=self.run)
         self.t.start()
 
-    def stop(self):
+    def stop(self) -> None:
         super().stop()
         self.stop_event.set()
         self.t.join()
@@ -149,6 +152,8 @@ class Reminders(BaseResponder):
 
         Syntax: in AMOUNT UNIT MESSAGE
         """
+        assert msg.nickname is not None
+
         author = msg.nickname
         seconds, message = parse_message(' '.join(args.message))
         time = datetime.datetime.utcnow().timestamp() + seconds
@@ -159,7 +164,7 @@ class Reminders(BaseResponder):
         if self.store.add_message(author, target, message, time):
             self.respond(msg, 'Will do!')
 
-    def run(self):
+    def run(self) -> None:
         while not self.stop_event.is_set():
             try:
                 self.update()
@@ -167,7 +172,7 @@ class Reminders(BaseResponder):
             except Exception as e:
                 on_exception.send(self, e=e)
 
-    def update(self):
+    def update(self) -> None:
         now = datetime.datetime.utcnow().timestamp()
         for stored_msg in self.store.get_messages(now):
             target = stored_msg['target']

@@ -93,7 +93,7 @@ class Reactions(BaseResponder):
         """
         self.send_from_list(msg, args, magiclist)
 
-    def send_from_list(self, msg, args, reactions_list):
+    def send_from_list(self, msg: Message, args: Args, reactions_list: list[str]) -> None:
         target = ' '.join(args.target)
         response = random.choice(reactions_list).format(sender=msg.nickname,
                                                         target=target)

@@ -2,6 +2,7 @@ from ...signals import _request_list_commands, _list_commands
 from ...message import Message
 from .. import BaseResponder, AuthContext, command
 from ..lib import parse_command, Args
+from ...config import Config
 
 
 class Meta(BaseResponder):
@@ -11,7 +12,7 @@ class Meta(BaseResponder):
     ibip_repo = 'https://github.com/boreq/botnet'
     ibip_website = 'https://ibip.0x46.net/'
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         _list_commands.connect(self.on_list_commands)
 

@@ -1,13 +1,15 @@
 import os
 import random
+from typing import Iterator
 from ...signals import on_exception
 from ...message import Message
 from .. import BaseResponder, AuthContext
 
 
-def random_line(filename):
+def random_line(filename: str) -> str:
     """Gets a random line from file."""
-    return random.choice(list(open(filename)))
+    with open(filename) as f:
+        return random.choice(list(f))
 
 
 class Quotes(BaseResponder):
@@ -63,13 +65,13 @@ class Quotes(BaseResponder):
         if filename is not None:
             self.send_random_line(msg, filename)
 
-    def get_command_files(self):
+    def get_command_files(self) -> Iterator[tuple[str, str]]:
         for directory in self.config_get('directories', []):
             for root, dirs, files in os.walk(directory, followlinks=True):
                 for filename in files:
                     yield (root, filename)
 
-    def send_random_line(self, msg, filepath):
+    def send_random_line(self, msg: Message, filepath: str) -> None:
         try:
             line = random_line(filepath)
             self.respond(msg, line)

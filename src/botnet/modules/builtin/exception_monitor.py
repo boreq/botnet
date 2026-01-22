@@ -1,7 +1,9 @@
 import traceback
+from typing import Any
 from .. import BaseModule
 from ..mixins import ConfigMixin
 from ...signals import on_exception
+from ...config import Config
 
 
 class ExceptionMonitor(ConfigMixin, BaseModule):
@@ -17,23 +19,23 @@ class ExceptionMonitor(ConfigMixin, BaseModule):
 
     """
 
-    default_config = {
+    default_config = Config({
         'log': True
-    }
+    })
 
     error_text = '{error}\nTraceback:\n{tb}'
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.register_default_config(self.default_config)
         self.register_config('botnet', 'exception_monitor')
         on_exception.connect(self.on_exception)
 
-    def get_text(self, e):
+    def get_text(self, e: Exception) -> str:
         tb = ''.join(traceback.format_tb(e.__traceback__))
         return self.error_text.format(error=repr(e), tb=tb)
 
-    def on_exception(self, sender, **kwargs):
+    def on_exception(self, sender: Any, **kwargs: Any) -> None:
         e = kwargs['e']
         text = self.get_text(e)
 

@@ -1,10 +1,12 @@
 import datetime
 from collections import namedtuple
+from typing import Any, Callable
 from ...message import Message
 from ...signals import message_out, auth_message_in
 from .. import AuthContext, BaseResponder
 from ..lib import MemoryCache
 from ..base import BaseModule
+from ...config import Config
 
 
 DeferredWhois = namedtuple('DeferredWhois', ['nick', 'on_complete'])
@@ -32,13 +34,13 @@ class WhoisMixin(BaseModule):
 
     whois_cache_timeout = 120
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         self._whois_cache = MemoryCache(self.whois_cache_timeout)
-        self._whois_deferred = []
-        self._whois_current = {}
+        self._whois_deferred: list[DeferredWhois] = []
+        self._whois_current: dict[str, dict[str, Any]] = {}
 
-    def handler_rpl_whoisuser(self, msg):
+    def handler_rpl_whoisuser(self, msg: Message) -> None:
         """Start of WHOIS."""
         self._whois_current[msg.params[1]] = {
             'time': datetime.datetime.now(),
@@ -48,35 +50,35 @@ class WhoisMixin(BaseModule):
             'real_name': msg.params[5],
         }
 
-    def handler_rpl_whoisserver(self, msg):
+    def handler_rpl_whoisserver(self, msg: Message) -> None:
         """WHOIS server."""
         if msg.params[1] in self._whois_current:
             self._whois_current[msg.params[1]]['server'] = msg.params[2]
             self._whois_current[msg.params[1]]['server_info'] = msg.params[3]
 
-    def handler_rizon_rpl_whoisidentified(self, msg):
+    def handler_rizon_rpl_whoisidentified(self, msg: Message) -> None:
         """WHOIS identification on Rizon."""
         if msg.params[1] in self._whois_current:
             self._whois_current[msg.params[1]]['nick_identified'] = msg.params[2]
 
-    def handler_freenode_rpl_whoisidentified(self, msg):
+    def handler_freenode_rpl_whoisidentified(self, msg: Message) -> None:
         """WHOIS identification on Freenode."""
         if msg.params[1] in self._whois_current:
             self._whois_current[msg.params[1]]['nick_identified'] = msg.params[1]
 
-    def handler_rpl_away(self, msg):
+    def handler_rpl_away(self, msg: Message) -> None:
         """WHOIS away message."""
         if msg.params[1] in self._whois_current:
             self._whois_current[msg.params[1]]['away'] = msg.params[2]
 
-    def handler_rpl_endofwhois(self, msg):
+    def handler_rpl_endofwhois(self, msg: Message) -> None:
         """End of WHOIS."""
         if msg.params[1] not in self._whois_current:
             return
         self._whois_cache.set(msg.params[1], self._whois_current.pop(msg.params[1]))
         self._whois_run_deferred()
 
-    def whois_schedule(self, nick, on_complete):
+    def whois_schedule(self, nick: str, on_complete: Callable[[dict[str, Any]], None]) -> None:
         """Schedules an action to be completed when the whois for the nick is
         available.
 
@@ -93,7 +95,7 @@ class WhoisMixin(BaseModule):
             self._whois_deferred.append(data)
             self._whois_perform(data.nick)
 
-    def _whois_run_deferred(self):
+    def _whois_run_deferred(self) -> None:
         """Loops over the deferred functions and launches those for which WHOIS
         data is available.
         """
@@ -105,7 +107,7 @@ class WhoisMixin(BaseModule):
                 d.on_complete(data)
                 self._whois_deferred.pop(i)
 
-    def _whois_perform(self, nick):
+    def _whois_perform(self, nick: str) -> None:
         """Sends a message with the WHOIS command."""
         msg = Message(command='WHOIS', params=[nick])
         message_out.send(self, msg=msg)
@@ -161,13 +163,14 @@ class Auth(WhoisMixin, BaseResponder):
     config_namespace = 'botnet'
     config_name = 'auth'
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
 
     def handle_privmsg(self, msg: Message) -> None:
         super().handle_privmsg(msg)
+        assert msg.nickname is not None
 
-        def on_complete(whois_data) -> None:
+        def on_complete(whois_data: dict[str, Any]) -> None:
             for person in self.config_get('people', []):
                 uuid = person.get('uuid')
                 groups = person.get('groups')

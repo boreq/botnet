@@ -1,6 +1,8 @@
 from ...message import Message
 from .. import BaseResponder, AuthContext
+from ...config import Config
 from datetime import date
+from typing import Any
 
 
 class Countdown(BaseResponder):
@@ -27,7 +29,7 @@ class Countdown(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'countdown'
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
 
     def get_all_commands(self, msg: Message, auth: AuthContext) -> list[str]:
@@ -59,7 +61,7 @@ class Countdown(BaseResponder):
                     self.respond(msg, response)
                     break
 
-    def generate_response(self, target_date):
+    def generate_response(self, target_date: dict[str, Any]) -> str:
         year = int(target_date['year'])
         month = int(target_date['month'])
         day = int(target_date['day'])

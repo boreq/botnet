@@ -12,6 +12,7 @@ from ...message import Message
 from .. import BaseResponder, predicates, command, AuthContext
 from ..lib import MemoryCache, parse_command, Args
 from ..base import BaseModule
+from ...config import Config
 
 
 DeferredAction = namedtuple('DeferredAction', ['channel', 'on_names_available'])
@@ -26,27 +27,27 @@ class NamesMixin(BaseModule):
 
     cache_timeout = 60
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         self._cache = MemoryCache(self.cache_timeout)
         self._deferred: list[DeferredAction] = []
         self._current: dict[str, list[str]] = {}
 
-    def handler_rpl_namreply(self, msg) -> None:
+    def handler_rpl_namreply(self, msg: Message) -> None:
         """Names reply."""
         channel = msg.params[2]
         if channel not in self._current:
             self._current[channel] = []
         self._current[channel].extend([cleanup_nick(v) for v in msg.params[3].split(' ')])
 
-    def handler_rpl_endofnames(self, msg) -> None:
+    def handler_rpl_endofnames(self, msg: Message) -> None:
         """End of WHOIS."""
         if msg.params[1] not in self._current:
             return
         self._cache.set(msg.params[1], self._current.pop(msg.params[1]))
         self._run_deferred()
 
-    def request_names(self, channel, on_names_available) -> None:
+    def request_names(self, channel: str, on_names_available: Callable[[list[str]], None]) -> None:
         """Schedules an action to be completed when the names for the channel
         are available.
 
@@ -74,7 +75,7 @@ class NamesMixin(BaseModule):
                 d.on_names_available(data)
                 self._deferred.pop(i)
 
-    def _request(self, channel) -> None:
+    def _request(self, channel: str) -> None:
         """Sends a message with the NAMES command."""
         msg = Message(command='NAMES', params=[channel])
         message_out.send(self, msg=msg)
@@ -136,7 +137,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     store: Store
     deltatime = 60 * 15  # [s]
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         self._store = Store(lambda: self.config_get('data'))
         self._stop_event = threading.Event()
@@ -151,7 +152,7 @@ class Gatekeep(NamesMixin, BaseResponder):
         Syntax: gatekeep
         """
 
-        def on_names_available(names) -> None:
+        def on_names_available(names: list[str]) -> None:
             assert auth.uuid is not None
 
             with self._store as state:
@@ -173,7 +174,7 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         Syntax: endorse NICK
         """
-        def on_names_available(names) -> None:
+        def on_names_available(names: list[str]) -> None:
             assert auth.uuid is not None
 
             nick = cleanup_nick(args.nick[0])
@@ -215,7 +216,7 @@ class Gatekeep(NamesMixin, BaseResponder):
         nick1 = cleanup_nick(args.nick1[0])
         nick2 = cleanup_nick(args.nick2[0])
 
-        def on_names_available(names) -> None:
+        def on_names_available(names: list[str]) -> None:
             assert auth.uuid is not None
 
             if nick1 in names and nick2 in names:
@@ -228,6 +229,8 @@ class Gatekeep(NamesMixin, BaseResponder):
         self.request_names(self.config_get('channel'), on_names_available)
 
     def handle_privmsg(self, msg: Message) -> None:
+        assert msg.nickname is not None
+
         if is_channel_name(msg.params[0]) and msg.params[0] == self.config_get('channel'):
             with self._store as state:
                 state.on_privmsg(msg.nickname)
@@ -245,8 +248,8 @@ class Gatekeep(NamesMixin, BaseResponder):
             except Exception as e:
                 on_exception.send(self, e=e)
 
-    def _update(self):
-        def on_names_available(names) -> None:
+    def _update(self) -> None:
+        def on_names_available(names: list[str]) -> None:
             authorised_group = self.config_get('authorised_group')
             for person in self.peek_loaded_config_for_module('botnet', 'auth', 'people', default=[]):
                 if authorised_group in person['groups']:
@@ -274,12 +277,12 @@ class Store:
         self._lock.acquire()
         return self._state
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def __exit__(self, exc_type: Any, exc_value: Any, exc_traceback: Any) -> None:
         if exc_type is None and exc_value is None and exc_traceback is None:
             self._save()
         self._lock.release()
 
-    def _load(self):
+    def _load(self) -> None:
         if os.path.isfile(self._path()):
             j = load_json(self._path())
             self._state = dacite.from_dict(data_class=State, data=j)
@@ -294,7 +297,7 @@ class State:
     personas: list[Persona]
     nick_infos: dict[str, NickInfo]
 
-    def on_privmsg(self, nick):
+    def on_privmsg(self, nick: str) -> None:
         if nick not in self.nick_infos:
             self.nick_infos[nick] = NickInfo.new_due_to_privmsg()
             return

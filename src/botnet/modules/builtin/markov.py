@@ -1,7 +1,9 @@
 import threading
 import os
+from typing import Iterator
 from ...signals import on_exception
 from .. import BaseResponder, AuthContext
+from ...config import Config
 from ...message import Message
 from markov import Chain
 
@@ -33,9 +35,9 @@ class Markov(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'markov'
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.cache = {}
+        self.cache: dict[str, Chain] = {}
         t = threading.Thread(target=self.cache_chains, daemon=True)
         t.start()
 
@@ -49,7 +51,7 @@ class Markov(BaseResponder):
         rw.extend(new_commands)
         return rw
 
-    def handle_privmsg(self, msg):
+    def handle_privmsg(self, msg: Message) -> None:
         command_name = self.get_command_name(msg)
 
         if command_name is None:
@@ -57,13 +59,13 @@ class Markov(BaseResponder):
 
         self.send_random_line(msg, command_name)
 
-    def get_command_files(self):
+    def get_command_files(self) -> Iterator[tuple[str, str]]:
         for directory in self.config_get('directories', []):
             for root, dirs, files in os.walk(directory, followlinks=True):
                 for filename in files:
                     yield (root, filename)
 
-    def cache_chains(self):
+    def cache_chains(self) -> None:
         # Directories
         for root, filename in self.get_command_files():
             path = os.path.join(root, filename)
@@ -73,7 +75,7 @@ class Markov(BaseResponder):
         for filename, path in self.config_get('files', {}).items():
             self.load_chain(path, filename)
 
-    def load_chain(self, filepath, key):
+    def load_chain(self, filepath: str, key: str) -> None:
         print(filepath, key)
         c = Chain()
         with open(filepath) as f:
@@ -81,7 +83,7 @@ class Markov(BaseResponder):
                 c.grow(line.split())
         self.cache[key] = c
 
-    def send_random_line(self, msg, key):
+    def send_random_line(self, msg: Message, key: str) -> None:
         try:
             c = self.cache.get(key, None)
             if c is not None:

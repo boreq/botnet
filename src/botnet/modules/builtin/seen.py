@@ -1,13 +1,15 @@
 import datetime
 import os
 import threading
+from typing import Any, Callable
 from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder, command, AuthContext
 from ..lib import parse_command, Args
 from ...message import Message
+from ...config import Config
 
 
-def make_msg_entry(channel, message):
+def make_msg_entry(channel: str, message: str) -> dict[str, Any]:
     """Creates an object stored by the message_store."""
     return {
         'channel': channel,
@@ -16,11 +18,11 @@ def make_msg_entry(channel, message):
     }
 
 
-def format_msg_entry(nick, msg_entry):
+def format_msg_entry(nick: str, msg_entry: dict[str, Any]) -> str:
     """Converts an object stored by the message store to plaintext."""
     time = datetime.datetime.fromtimestamp(msg_entry['time'])
-    time = time.strftime('%Y-%m-%d %H:%MZ')
-    return '%s was last seen on %s' % (nick, time)
+    time_str = time.strftime('%Y-%m-%d %H:%MZ')
+    return '%s was last seen on %s' % (nick, time_str)
 
 
 class MessageStore:
@@ -29,33 +31,33 @@ class MessageStore:
     path: function to call to get path to the data file.
     """
 
-    def __init__(self, path):
+    def __init__(self, path: Callable[[], str]) -> None:
         self.lock = threading.Lock()
         self.set_path(path)
-        self._msg_store = {}
+        self._msg_store: dict[str, dict[str, Any]] = {}
         self._load()
 
-    def set_path(self, path):
+    def set_path(self, path: Callable[[], str]) -> None:
         with self.lock:
             self._path = path
 
-    def _load(self):
+    def _load(self) -> None:
         if os.path.isfile(self._path()):
             try:
                 self._msg_store = load_json(self._path())
             except:
                 self._msg_store = {}
 
-    def _save(self):
+    def _save(self) -> None:
         save_json(self._path(), self._msg_store)
 
-    def register_message(self, author, channel, message):
+    def register_message(self, author: str, channel: str, message: str) -> bool:
         with self.lock:
             self._msg_store[author] = make_msg_entry(channel, message)
             self._save()
         return True
 
-    def get_message(self, author):
+    def get_message(self, author: str) -> dict[str, Any] | None:
         with self.lock:
             return self._msg_store.get(author, None)
 
@@ -76,7 +78,7 @@ class Seen(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'seen'
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.ms = MessageStore(lambda: self.config_get('message_data'))
 
@@ -96,6 +98,7 @@ class Seen(BaseResponder):
 
     def handle_privmsg(self, msg: Message) -> None:
         if is_channel_name(msg.params[0]):
+            assert msg.nickname is not None
             self.ms.register_message(msg.nickname, msg.params[0], msg.params[1])
 
 

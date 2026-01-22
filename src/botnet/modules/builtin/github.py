@@ -1,5 +1,6 @@
 from collections import defaultdict
 import threading
+from typing import Any, Callable
 from .. import BaseResponder, command, only_admins, AuthContext
 from ..lib import MemoryCache, get_url, parse_command, catch_other, Args
 from ...signals import on_exception, config_changed
@@ -13,7 +14,7 @@ class APIError(Exception):
 class EventParser:
     """Converts events downloaded from the API into readable texts."""
 
-    def parse_CreateEvent(self, events):
+    def parse_CreateEvent(self, events: list[dict[str, Any]]) -> list[str]:
         repos = []
         branches = []
         tags = []
@@ -24,7 +25,7 @@ class EventParser:
             if event['payload']['ref_type'] == 'branch':
                 branches.append(event['payload']['ref'])
             if event['payload']['ref_type'] == 'tag':
-                branches.append(event['payload']['ref'])
+                tags.append(event['payload']['ref'])
 
         text = []
         if repos:
@@ -35,50 +36,50 @@ class EventParser:
             text.append('created tags: %s' % ', '.join(tags))
         return text
 
-    def parse_ForkEvent(self, events):
+    def parse_ForkEvent(self, events: list[dict[str, Any]]) -> list[str]:
         forks = [e['payload']['forkee']['html_url'] for e in events]
         text = 'forked to: %s' % ', '.join(forks)
         return [text]
 
-    def parse_IssueCommentEvent(self, events):
+    def parse_IssueCommentEvent(self, events: list[dict[str, Any]]) -> list[str]:
         comments = [e['payload']['comment']['html_url'] for e in events]
         text = 'issue comments created: %s' % ', '.join(comments)
         return [text]
 
-    def parse_IssuesEvent(self, events):
+    def parse_IssuesEvent(self, events: list[dict[str, Any]]) -> list[str]:
         actions = []
         for e in events:
             actions.append('%s was %s' % (e['payload']['issue']['html_url'], e['payload']['action']))
         text = 'issues: %s' % ', '.join(actions)
         return [text]
 
-    def parse_PullRequestEvent(self, events):
+    def parse_PullRequestEvent(self, events: list[dict[str, Any]]) -> list[str]:
         actions = []
         for e in events:
             actions.append('%s was %s' % (e['payload']['pull_request']['html_url'], e['payload']['action']))
         text = 'pull requests: %s' % ', '.join(actions)
         return [text]
 
-    def parse_PushEvent(self, events):
+    def parse_PushEvent(self, events: list[dict[str, Any]]) -> list[str]:
         texts = []
         for e in events:
             text = '%s commits to %s' % (e['payload']['size'], e['payload']['ref'])
             texts.append(text)
         return texts
 
-    def parse_ReleaseEvent(self, events):
+    def parse_ReleaseEvent(self, events: list[dict[str, Any]]) -> list[str]:
         actions = []
         for e in events:
             actions.append('%s was %s' % (e['payload']['release']['html_url'], e['payload']['action']))
         text = 'releases: %s' % ', '.join(actions)
         return [text]
 
-    def parse_WatchEvent(self, events):
+    def parse_WatchEvent(self, events: list[dict[str, Any]]) -> list[str]:
         starred_by = [e['actor']['login'] for e in events]
         text = 'starred by: %s' % ', '.join(starred_by)
         return [text]
 
-    def parse(self, event_dict):
+    def parse(self, event_dict: dict[str, list[dict[str, Any]]]) -> list[str]:
         """Call this to convert `event_dict` into a list of human readable
         strings.
 
@@ -101,14 +102,14 @@ class GithubAPI:
 
     url_root = 'https://api.github.com'
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._repo_cache = MemoryCache(default_timeout=600)
         self._user_cache = MemoryCache(default_timeout=600)
         # { '<owner>/<repo>': id of the last processed event }
-        self._last_events = {}
+        self._last_events: dict[str, int] = {}
         self._ep = EventParser()
 
-    def _get(self, url, **params):
+    def _get(self, url: str, **params: Any) -> Any:
         """Performs an API GET request.
 
         params: GET request parameters.
@@ -121,25 +122,25 @@ class GithubAPI:
         except Exception:
             raise APIError('API error')
 
-    def search_repositories(self, q):
+    def search_repositories(self, q: str) -> Any:
         rw = self._repo_cache.get(q)
         if rw is None:
             rw = self._get('/search/repositories', q=q)
             self._repo_cache.set(q, rw)
         return rw
 
-    def search_users(self, q):
+    def search_users(self, q: str) -> Any:
         rw = self._user_cache.get(q)
         if rw is None:
             rw = self._get('/search/users', q=q)
             self._user_cache.set(q, rw)
         return rw
 
-    def get_raw_repo_events(self, owner, repo):
+    def get_raw_repo_events(self, owner: str, repo: str) -> list[dict[str, Any]]:
         """Gets the fresh event data directly from the API."""
         return self._get('/repos/%s/%s/events' % (owner, repo))
 
-    def get_new_repo_events(self, owner, repo):
+    def get_new_repo_events(self, owner: str, repo: str) -> dict[str, list[dict[str, Any]]]:
         """Gets the fresh event data directly from the API, selects only
         new ones and puts them in the dictionary."""
         key = '%s/%s' % (owner, repo)
@@ -157,7 +158,7 @@ class GithubAPI:
         self._last_events[key] = highest_id
         return events
 
-    def get_event_texts(self, owner, repo):
+    def get_event_texts(self, owner: str, repo: str) -> list[str]:
         """Returns a new array with human readable string about events in the
         repository which occured since the last call to this function with
         the same parameters.
@@ -202,11 +203,11 @@ class Github(BaseResponder):
         # run the code checking the events in a separate thread
         self.t.start()
 
-    def stop(self):
+    def stop(self) -> None:
         super().stop()
         self.stop_event.set()
 
-    def run(self):
+    def run(self) -> None:
         """Runs in a separate threads to query the event API periodically."""
         while not self.stop_event.is_set():
             try:
@@ -235,35 +236,35 @@ class Github(BaseResponder):
                 on_exception.send(self, e=e)
 
     @catch_other(APIError, 'API error')
-    def get_repo(self, phrase):
+    def get_repo(self, phrase: str) -> str:
         r = self.api.search_repositories(phrase)
         return self.get_first(r)
 
     @catch_other(APIError, 'API error')
-    def get_user(self, phrase):
+    def get_user(self, phrase: str) -> str:
         r = self.api.search_users(phrase)
         return self.get_first(r)
 
-    def get_first(self, r):
+    def get_first(self, r: dict[str, Any]) -> str:
         d = r['items']
         if not d:
             raise APIError('No results')
         return d[0]['html_url']
 
-    def in_background(self, f):
+    def in_background(self, f: Callable[[], Any]) -> None:
         """Launches a function in a separate thread."""
         t = threading.Thread(target=f)
         t.daemon = True
         t.run()
 
-    def config_get_tracking_data(self, owner, repo):
+    def config_get_tracking_data(self, owner: str, repo: str) -> dict[str, Any] | None:
         tracked = self.config_get('track', [])
         for data in tracked:
             if data['owner'] == owner and data['repo'] == repo:
                 return data
         return None
 
-    def get_subscription_info_text(self, owner, repo):
+    def get_subscription_info_text(self, owner: str, repo: str) -> str:
         d = self.config_get_tracking_data(owner, repo)
         if d is not None:
             text = 'Channels subscribed to %s/%s: %s' % (owner, repo, ', '.join(d['channels']))

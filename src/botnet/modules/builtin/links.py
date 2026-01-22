@@ -2,6 +2,8 @@ import threading
 from ...helpers import is_channel_name
 from ...signals import on_exception
 from .. import BaseResponder
+from ...config import Config
+from ...message import Message
 from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
@@ -31,14 +33,14 @@ class Links(BaseResponder):
     timeout = 30  # [seconds]
     max_links = 5
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
 
-    def get_domain(self, url):
+    def get_domain(self, url: str) -> str:
         parsed_uri = urlparse(url)
         return '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
 
-    def get_title(self, url):
+    def get_title(self, url: str) -> str | None:
         headers = {
             'Accept-Language': 'en-US,en;q=0.5'
         }
@@ -53,7 +55,7 @@ class Links(BaseResponder):
             return title
         return None
 
-    def handle_privmsg(self, msg):
+    def handle_privmsg(self, msg: Message) -> None:
         if not is_channel_name(msg.params[0]):
             return
 
@@ -67,7 +69,7 @@ class Links(BaseResponder):
 
         if len(urls) <= self.config_get('max_links', self.max_links):
             for url in urls:
-                def f():
+                def f() -> None:
                     try:
                         title = self.get_title(url)
                         if title:

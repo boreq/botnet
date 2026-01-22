@@ -36,7 +36,7 @@ class Bricked(BaseResponder):
         rw.extend(new_commands)
         return rw
 
-    def handle_privmsg(self, msg):
+    def handle_privmsg(self, msg: Message) -> None:
         command_name = self.get_command_name(msg)
 
         if command_name is None:

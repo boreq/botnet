@@ -1,53 +1,54 @@
 import os
 import threading
-from typing import Any
+from typing import Any, Callable
 from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder, AuthContext, command
 from ...message import Message
 from ..decorators import predicates
 from ..lib import parse_command, Args
+from ...config import Config
 
 
 class NewsStore:
 
-    def __init__(self, get_path):
+    def __init__(self, get_path: Callable[[], str]) -> None:
         self._lock = threading.Lock()
         self._get_path = get_path
-        self._news = {}
+        self._news: dict[str, list[str]] = {}
         self._load()
 
-    def _load(self):
+    def _load(self) -> None:
         if os.path.isfile(self._get_path()):
             try:
                 self._news = load_json(self._get_path())
             except:
                 self._news = {}
 
-    def _save(self):
+    def _save(self) -> None:
         save_json(self._get_path(), self._news)
 
-    def push(self, channel, index, message):
+    def push(self, channel: str, index: int, message: str) -> None:
         with self._lock:
             news = self._news.get(channel, [])
             news.insert(index, message)
             self._news[channel] = news
             self._save()
 
-    def pop(self, channel, index):
+    def pop(self, channel: str, index: int) -> None:
         with self._lock:
             news = self._news.get(channel, [])
             news.pop(index)
             self._news[channel] = news
             self._save()
 
-    def update(self, channel, index, message):
+    def update(self, channel: str, index: int, message: str) -> None:
         with self._lock:
             news = self._news.get(channel, [])
             news[index] = message
             self._news[channel] = news
             self._save()
 
-    def get(self, channel):
+    def get(self, channel: str) -> list[str]:
         with self._lock:
             return self._news.get(channel, []).copy()
 
@@ -78,7 +79,7 @@ class News(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'news'
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.store = NewsStore(lambda: self.config_get('news_data'))
 
