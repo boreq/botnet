@@ -491,7 +491,7 @@ class PersonaReport:
             nicks = irccodes.colored(nicks, 'green')
         else:
             nicks = irccodes.colored(nicks, 'light red')
-        return '{} ({}{})'.format(nicks, len(self.endorsements), '+' if endorsed else '')
+        return '{} ({})'.format(nicks, '^' if endorsed else '?')
 
 
 @dataclass

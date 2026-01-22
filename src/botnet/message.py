@@ -151,6 +151,9 @@ class Nick:
     def __str__(self) -> str:
         return self.s
 
+    def __repr__(self):
+        return f'\'{self.s}\''
+
     def __eq__(self, other) -> bool:
         if not isinstance(other, Nick):
             raise NotImplementedError
