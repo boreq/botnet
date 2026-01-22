@@ -93,11 +93,11 @@ class Trap(object):
         self.trapped = []
 
     def wait(self, assertion: Callable[[list], None], max_seconds=1) -> None:
-        for i in range(max_seconds):
+        for i in range(max_seconds * 10):
             try:
+                time.sleep(0.1)
                 assertion(self.trapped)
             except AssertionError:
-                time.sleep(1)
                 continue
             return
         assertion(self.trapped)
@@ -147,6 +147,9 @@ class ModuleHarness:
         def wait_condition(trapped):
             assert trapped == expected_signals
         self._message_out_trap.wait(wait_condition)
+
+    def reset_message_out_signals(self) -> None:
+        self._message_out_trap.reset()
 
     def _stop(self) -> None:
         self.module.stop()

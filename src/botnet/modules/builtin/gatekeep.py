@@ -1,13 +1,10 @@
-from datetime import datetime
-import random
+import irccodes
 import os
 import threading
 import dacite
+from datetime import datetime
 from typing import Any, Callable
 from dataclasses import dataclass, asdict
-
-import irccodes
-
 from ...helpers import save_json, load_json, cleanup_nick
 from ...signals import message_out, on_exception
 from ...message import Message, IncomingPrivateMessage, Nick, Channel
@@ -460,8 +457,7 @@ class MinorityReport:
                 new = PersonaReport.new(state, nick)
                 report.persona_reports.append(new)
 
-        random.shuffle(report.persona_reports)
-        report.persona_reports.sort(key=lambda x: len(x.endorsements))
+        report.persona_reports.sort(key=lambda x: (len(x.endorsements), x.nicks[0]))
 
         return report
 

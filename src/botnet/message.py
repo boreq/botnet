@@ -156,6 +156,11 @@ class Nick:
             raise NotImplementedError
         return self.s.lower() == other.s.lower()
 
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, Nick):
+            raise NotImplementedError
+        return self.s.lower() < other.s.lower()
+
     def __hash__(self):
         return hash(self.s.lower())
 
@@ -182,6 +187,11 @@ class Channel:
         if not isinstance(other, Channel):
             raise NotImplementedError
         return self.s.lower() == other.s.lower()
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, Channel):
+            raise NotImplementedError
+        return self.s.lower() < other.s.lower()
 
     def __hash__(self):
         return hash(self.s.lower())
