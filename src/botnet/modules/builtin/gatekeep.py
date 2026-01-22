@@ -151,6 +151,7 @@ class Gatekeep(NamesMixin, BaseResponder):
 
         Syntax: gatekeep
         """
+        command_prefix = self.get_command_prefix()
 
         def on_names_available(names: list[str]) -> None:
             assert auth.uuid is not None
@@ -160,9 +161,9 @@ class Gatekeep(NamesMixin, BaseResponder):
 
             not_endorsed: list[PersonaReport] = [v for v in report.persona_reports if auth.uuid not in v.endorsements]
 
-            self.respond(msg, 'Everyone: {}'.format(', '.join([v.for_display() for v in reversed(report.persona_reports)])))
+            self.respond(msg, 'Everyone currently in the channel: {}'.format(', '.join([v.for_display() for v in reversed(report.persona_reports)])))
             self.respond(msg, 'People who were NOT endorsed by you: {}'.format(', '.join([v.for_display() for v in reversed(not_endorsed)])))
-            self.respond(msg, 'If you would like to endorse anyone then you can privately use the \'endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'unendorse NICK\'.')
+            self.respond(msg, f'If you would like to endorse anyone then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'.')
 
         self.request_names(self.config_get('channel'), on_names_available)
 
@@ -247,6 +248,8 @@ class Gatekeep(NamesMixin, BaseResponder):
                 on_exception.send(self, e=e)
 
     def _update(self) -> None:
+        command_prefix = self.get_command_prefix()
+
         def on_names_available(names: list[str]) -> None:
             authorised_group = self.config_get('authorised_group')
             for person in self.peek_loaded_config_for_module('botnet', 'auth', 'people', default=[]):
@@ -256,9 +259,9 @@ class Gatekeep(NamesMixin, BaseResponder):
                     if report is not None:
                         not_endorsed: list[PersonaReport] = [v for v in report.persona_reports if person['uuid'] not in v.endorsements]
                         for nick in person['contact']:
-                            self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to endorse people who were previusly NOT endorsed by you:')
+                            self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to endorse people who were previously NOT endorsed by you:')
                             self.message(nick, ', '.join([v.for_display() for v in reversed(not_endorsed)]))
-                            self.message(nick, 'If you would like to endorse any of them then you can privately use the \'endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'unendorse NICK\'. If you want to see the full report use the \'gatekeep\' command.')
+                            self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}gatekeep\' command.')
 
         self.request_names(self.config_get('channel'), on_names_available)
 
