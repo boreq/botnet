@@ -5,7 +5,7 @@ from ..signals import message_out
 from .base import BaseModule, AuthContext
 from .decorators import command
 from .mixins import ConfigMixin, MessageDispatcherMixin
-from .lib import parse_command
+from .lib import parse_command, Args
 
 
 _BREAK_PRIVMSG_EVERY = 400
@@ -84,7 +84,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
 
     @command('help')
     @parse_command([('command_names', '+')])
-    def command_help(self, msg: Message, auth: AuthContext, args) -> None:
+    def command_help(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Sends a list of commands. If COMMAND is specified sends more
         detailed help about a single command.
 

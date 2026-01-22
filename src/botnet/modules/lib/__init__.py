@@ -6,5 +6,5 @@
 # flake8: noqa: F401
 
 from .cache import BaseCache, MemoryCache
-from .decorators import parse_command, catch_other
+from .decorators import parse_command, catch_other, Args
 from .network import get_url

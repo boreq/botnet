@@ -2,8 +2,9 @@ import threading
 from ...message import Message
 from ...signals import module_load, module_unload, module_loaded, \
     module_unloaded, config_reload, config_reloaded
-from .. import BaseResponder, command, only_admins
-from ..lib import parse_command
+from .. import BaseResponder, command, only_admins, AuthContext
+from ..lib import parse_command, Args
+from ..config import Config
 
 
 class Admin(BaseResponder):
@@ -12,7 +13,7 @@ class Admin(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'admin'
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         module_loaded.connect(self._on_module_loaded)
         module_unloaded.connect(self._on_module_unloaded)
@@ -27,7 +28,7 @@ class Admin(BaseResponder):
     @command('module_load')
     @only_admins()
     @parse_command([('module_names', '*')])
-    def admin_command_module_load(self, msg, auth, args):
+    def admin_command_module_load(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Loads a module.
 
         Syntax: module_load MODULE_NAME ...
@@ -38,7 +39,7 @@ class Admin(BaseResponder):
     @command('module_unload')
     @only_admins()
     @parse_command([('module_names', '*')])
-    def admin_command_module_unload(self, msg, auth, args):
+    def admin_command_module_unload(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Unloads a module.
 
         Syntax: module_unload MODULE_NAME ...
@@ -49,7 +50,7 @@ class Admin(BaseResponder):
     @command('module_reload')
     @only_admins()
     @parse_command([('module_names', '*')])
-    def admin_command_module_reload(self, msg, auth, args):
+    def admin_command_module_reload(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Unloads and loads a module back.
 
         Syntax: module_reload MODULE_NAME ...
@@ -59,7 +60,7 @@ class Admin(BaseResponder):
 
     @command('config_reload')
     @only_admins()
-    def admin_command_config_reload(self, msg, auth):
+    def admin_command_config_reload(self, msg: Message, auth: AuthContext) -> None:
         """Reloads the config.
 
         Syntax: config_reload
@@ -74,7 +75,7 @@ class Admin(BaseResponder):
         self._unload_commands.append(msg)
         module_unload.send(self, name=name)
 
-    def _reload_module(self, msg, name) -> None:
+    def _reload_module(self, msg: Message, name: str) -> None:
         def f():
             self.unload(msg, name)
             self.load(msg, name)

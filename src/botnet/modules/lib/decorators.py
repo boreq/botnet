@@ -7,8 +7,11 @@ from ...message import Message
 from ..base import AuthContext
 
 
+type Args = argparse.Namespace
+
+
 class CommandHandlerWithArguments(Protocol):
-    def __call__(self, instance: Any, msg: Message, auth: AuthContext, args: Any) -> None:
+    def __call__(self, instance: Any, msg: Message, auth: AuthContext, args: Args) -> None:
         ...
 
 
