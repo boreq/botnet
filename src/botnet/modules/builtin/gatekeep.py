@@ -162,7 +162,7 @@ class Gatekeep(NamesMixin, BaseResponder):
             not_endorsed: list[PersonaReport] = [v for v in report.persona_reports if auth.uuid not in v.endorsements]
 
             self.respond(msg, 'Everyone currently in the channel: {}'.format(', '.join([v.for_display() for v in reversed(report.persona_reports)])))
-            self.respond(msg, 'People who were NOT endorsed by you: {}'.format(', '.join([v.for_display() for v in reversed(not_endorsed)])))
+            self.respond(msg, 'People currently in the channel who were NOT endorsed by you: {}'.format(', '.join([v.for_display() for v in reversed(not_endorsed)])))
             self.respond(msg, f'If you would like to endorse anyone then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'.')
 
         self.request_names(self.config_get('channel'), on_names_available)
@@ -259,7 +259,7 @@ class Gatekeep(NamesMixin, BaseResponder):
                     if report is not None:
                         not_endorsed: list[PersonaReport] = [v for v in report.persona_reports if person['uuid'] not in v.endorsements]
                         for nick in person['contact']:
-                            self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to endorse people who were previously NOT endorsed by you:')
+                            self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to endorse people who are in the channel and were previously NOT endorsed by you:')
                             self.message(nick, ', '.join([v.for_display() for v in reversed(not_endorsed)]))
                             self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}gatekeep\' command.')
 
