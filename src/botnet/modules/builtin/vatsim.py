@@ -32,8 +32,8 @@ class Vatsim(BaseResponder):
 
         Syntax: metar ICAO
         """
-        def f():
-            r = get_url(self.config_get('metar_api_url') % args.icao[0])
+        def f() -> None:
+            r = get_url(self.config_get('metar_api_url') % args['icao'][0])
             r.raise_for_status()
             if not r.text:
                 self.respond(msg, 'Server didn\'t return an error but the response is empty.')

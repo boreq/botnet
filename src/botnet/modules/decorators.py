@@ -110,12 +110,10 @@ def parse_command(params):
     """Decorator which parses the last argument of PRIVMSG, which is the
     message itself, using argparse.
 
-        class TestResponder(BaseResponder):
-            @parse_command([('person', '?'), ('colors', '+')])
-            def command_colors(self, msg, args):
-                colors = ' '.join(args.colors)
-                self.respond(msg, '%s likes those colors: %s' % (args.person,
-                                                                 colors))
+        @parse_command([('person', '1'), ('colors', '+')])
+        def command_colors(self, msg, auth, args):
+            colors = ' '.join(args['colors'])
+            self.respond(msg, '%s likes those colors: %s' % (args['person'][0], colors))
 
     """
     params.insert(0, ('command', 1))
