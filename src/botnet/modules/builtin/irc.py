@@ -155,10 +155,6 @@ class IRC(BaseResponder):
         self.restart_event = threading.Event()
         self.send_lock = threading.Lock()
 
-    def get_command_prefix(self):
-        """This method should return the command prefix."""
-        return self.config_get('command_prefix', '.')
-
     @command('channel_join')
     @only_admins()
     @parse_command([('name', 1), ('password', '?')])
@@ -218,9 +214,6 @@ class IRC(BaseResponder):
         patterns_text = ', '.join(patterns) if len(patterns) > 0 else 'none'
         text = 'Ignored patterns: %s' % patterns_text
         self.respond(msg, text)
-
-    def get_all_admin_commands(self):
-        return ['channel_join', 'channel_part']
 
     def start(self):
         self.stop_event = threading.Event()
