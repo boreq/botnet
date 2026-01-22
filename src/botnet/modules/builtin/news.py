@@ -5,7 +5,7 @@ from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder, AuthContext, command
 from ...message import Message
 from ..decorators import predicates
-from ..lib import parse_command
+from ..lib import parse_command, Args
 
 
 class NewsStore:
@@ -101,7 +101,7 @@ class News(BaseResponder):
     @command('news_add')
     @_is_enabled_for_this_channel()
     @parse_command([('message', '+')])
-    def command_news_add(self, msg: Message, auth: AuthContext, args) -> None:
+    def command_news_add(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Add a news entry for the current channel at the top of the list.
 
         Syntax: news_add MESSAGE
@@ -113,7 +113,7 @@ class News(BaseResponder):
     @command('news_push')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1), ('message', '+')])
-    def command_news_push(self, msg: Message, auth: AuthContext, args) -> None:
+    def command_news_push(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Add a news entry for the current channel.
 
         Syntax: news_push INDEX MESSAGE
@@ -125,7 +125,7 @@ class News(BaseResponder):
     @command('news_pop')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1)])
-    def command_news_pop(self, msg: Message, auth: AuthContext, args) -> None:
+    def command_news_pop(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Remove a news entry for the current channel.
 
         Syntax: news_pop INDEX
@@ -137,7 +137,7 @@ class News(BaseResponder):
     @command('news_update')
     @_is_enabled_for_this_channel()
     @parse_command([('index', 1), ('message', '+')])
-    def command_news_update(self, msg: Message, auth: AuthContext, args) -> None:
+    def command_news_update(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Update a news entry for the current channel.
 
         Syntax: news_update INDEX MESSAGE

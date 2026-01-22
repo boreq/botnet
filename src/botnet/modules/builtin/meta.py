@@ -1,7 +1,7 @@
 from ...signals import _request_list_commands, _list_commands
 from ...message import Message
 from .. import BaseResponder, AuthContext, command
-from ..lib import parse_command
+from ..lib import parse_command, Args
 
 
 class Meta(BaseResponder):
@@ -25,7 +25,7 @@ class Meta(BaseResponder):
 
     @command('help')
     @parse_command([('command_names', '*')])
-    def command_help(self, msg: Message, auth: AuthContext, args) -> None:
+    def command_help(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Sends a list of commands. If COMMAND is specified sends more
         detailed help about a single command.
 

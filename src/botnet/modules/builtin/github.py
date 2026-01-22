@@ -1,8 +1,9 @@
 from collections import defaultdict
 import threading
-from .. import BaseResponder, command, only_admins
-from ..lib import MemoryCache, get_url, parse_command, catch_other
+from .. import BaseResponder, command, only_admins, AuthContext
+from ..lib import MemoryCache, get_url, parse_command, catch_other, Args
 from ...signals import on_exception, config_changed
+from ...message import Message
 
 
 class APIError(Exception):
@@ -273,7 +274,7 @@ class Github(BaseResponder):
     @command('github_track')
     @only_admins()
     @parse_command([('owner', 1), ('repo', 1), ('channels', '+')])
-    def admin_command_github_track(self, msg, auth, args):
+    def admin_command_github_track(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Starts tracking a repo. Events from a tracked repository (such as new
         created issues or pushed commits) are sent to the specified channels.
         If the repo is already tracked subscribes additional channels to the
@@ -304,7 +305,7 @@ class Github(BaseResponder):
     @command('github_untrack')
     @only_admins()
     @parse_command([('owner', 1), ('repo', 1), ('channels', '*')])
-    def admin_command_github_untrack(self, msg, auth, args):
+    def admin_command_github_untrack(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Unsubscribes a channel from receiving updates about events occuring
         in a repository. If no CHANNELs are passed as an argument all channels
         are unsubscribed from the updates and the repository is in effect no
@@ -334,7 +335,7 @@ class Github(BaseResponder):
 
     @command('github_tracked')
     @only_admins()
-    def admin_command_github_tracked(self, auth, msg):
+    def admin_command_github_tracked(self, msg: Message, auth: AuthContext) -> None:
         """Lists tracked repositories.
 
         Syntax: github_tracked
@@ -354,7 +355,7 @@ class Github(BaseResponder):
 
     @command('github')
     @parse_command([('phrase', '+')])
-    def command_github(self, msg, auth, args):
+    def command_github(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Search Github repositories.
 
         Syntax: github PHRASE
@@ -372,7 +373,7 @@ class Github(BaseResponder):
 
     @command('github_user')
     @parse_command([('phrase', '+')])
-    def command_github_user(self, msg, auth, args):
+    def command_github_user(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Search Github users.
 
         Syntax: github_user PHRASE

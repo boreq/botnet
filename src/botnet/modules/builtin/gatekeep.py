@@ -9,9 +9,8 @@ from dataclasses import dataclass, asdict
 from ...helpers import save_json, load_json, is_channel_name, cleanup_nick
 from ...signals import message_out, on_exception
 from ...message import Message
-from .. import BaseResponder, predicates, command
-from ..lib import MemoryCache, parse_command
-from .auth import AuthContext
+from .. import BaseResponder, predicates, command, AuthContext
+from ..lib import MemoryCache, parse_command, Args
 from ..base import BaseModule
 
 
@@ -169,7 +168,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     @command('endorse')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
     @parse_command([('nick', 1)])
-    def auth_command_endorse(self, msg: Message, auth: AuthContext, args) -> None:
+    def auth_command_endorse(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Adds your endorsement for a nick.
 
         Syntax: endorse NICK
@@ -190,7 +189,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     @command('unendorse')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
     @parse_command([('nick', 1)])
-    def auth_command_unendorse(self, msg: Message, auth: AuthContext, args) -> None:
+    def auth_command_unendorse(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Removes your endorsement for a nick.
 
         Syntax: unendorse NICK
@@ -208,7 +207,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     @command('merge_personas')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
     @parse_command([('nick1', 1), ('nick2', 1)])
-    def auth_command_merge_personas(self, msg: Message, auth: AuthContext, args) -> None:
+    def auth_command_merge_personas(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Merges two personas (use if one physical person has multiple clients in the channel).
 
         Syntax: merge_personas NICK1 NICK2

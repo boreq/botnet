@@ -3,8 +3,9 @@ import os
 import threading
 from ...helpers import save_json, load_json, is_channel_name
 from ...signals import on_exception
-from .. import BaseResponder, command
-from ..lib import parse_command
+from .. import BaseResponder, command, AuthContext
+from ..lib import parse_command, Args
+from ...message import Message
 import re
 
 
@@ -140,7 +141,7 @@ class Reminders(BaseResponder):
 
     @command('in')
     @parse_command([('message', '+')])
-    def command_in(self, msg, auth, args):
+    def command_in(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Set a reminder. Amount is a floating point number, unit is either
         seconds, minutes, hours, days or years. You will receive a message in
         the channel you created this reminder in or privately if you PM this

@@ -2,8 +2,9 @@ import datetime
 import os
 import threading
 from ...helpers import save_json, load_json, is_channel_name
-from .. import BaseResponder, command
-from ..lib import parse_command
+from .. import BaseResponder, command, AuthContext
+from ..lib import parse_command, Args
+from ...message import Message
 
 
 def make_msg_entry(channel, message):
@@ -81,7 +82,7 @@ class Seen(BaseResponder):
 
     @command('seen')
     @parse_command([('nick', 1)])
-    def command_seen(self, msg, auth, args):
+    def command_seen(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Check when was the last time someone said something.
 
         Syntax: seen NICK
@@ -93,7 +94,7 @@ class Seen(BaseResponder):
         else:
             self.respond(msg, 'I\'ve never seen %s' % args.nick[0])
 
-    def handle_privmsg(self, msg):
+    def handle_privmsg(self, msg: Message) -> None:
         if is_channel_name(msg.params[0]):
             self.ms.register_message(msg.nickname, msg.params[0], msg.params[1])
 

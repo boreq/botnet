@@ -4,7 +4,7 @@ import threading
 from typing import Callable
 from ...helpers import save_json, load_json, is_channel_name
 from .. import BaseResponder, command, AuthContext
-from ..lib import parse_command
+from ..lib import parse_command, Args
 from ...config import Config
 from ...message import Message
 
@@ -118,7 +118,7 @@ class Tell(BaseResponder):
 
     @command('tell')
     @parse_command([('target', 1), ('message', '+')])
-    def command_tell(self, msg: Message, auth: AuthContext, args) -> None:
+    def command_tell(self, msg: Message, auth: AuthContext, args: Args) -> None:
         """Leave a message for someone. The user will receive the message the
         next time he sends anything in any of the channels.
 
