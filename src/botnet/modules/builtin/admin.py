@@ -4,7 +4,7 @@ from ...signals import module_load, module_unload, module_loaded, \
     module_unloaded, config_reload, config_reloaded
 from .. import BaseResponder, command, only_admins, AuthContext
 from ..lib import parse_command, Args
-from ..config import Config
+from ...config import Config
 
 
 class Admin(BaseResponder):
