@@ -126,11 +126,11 @@ class ModuleHarnessFactory:
 class ModuleHarness:
 
     def __init__(self, module_class, config: Config) -> None:
-        self.module = module_class(config)
-
         self._request_list_commands_trap = Trap(_request_list_commands)
         self._message_out_trap = Trap(message_out)
         self._on_exception_trap = Trap(on_exception)
+
+        self.module = module_class(config)
 
     def receive_message_in(self, msg: Message) -> None:
         message_in.send(None, msg=msg)
