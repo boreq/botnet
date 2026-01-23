@@ -1,9 +1,9 @@
-import textwrap
 from ..message import Message, IncomingPrivateMessage
 from ..signals import message_out
 from .base import BaseModule, AuthContext
 from .decorators import command
 from .mixins import ConfigMixin, MessageDispatcherMixin
+from .lib import divide_text
 from .decorators import parse_command, Args
 
 
@@ -76,7 +76,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
 
     def message(self, nick_or_channel: str, text: str) -> None:
         """Send the text as a message to the provided nick or channel."""
-        for part in textwrap.wrap(text, width=_BREAK_PRIVMSG_EVERY, drop_whitespace=False):
+        for part in divide_text(text, _BREAK_PRIVMSG_EVERY):
             response = Message(command='PRIVMSG', params=[nick_or_channel, part])
             message_out.send(self, msg=response)
 
