@@ -16,14 +16,14 @@ class BaseModule:
     def __init__(self, config) -> None:
         self._logger: Logger | None = None
 
-    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
-        """Should return a list of strings containing all commands supported by
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
+        """Should return a set of strings containing all commands supported by
         this module. Used to generate a help message.
 
         msg: message in which the user requested a list of commands.
         auth: the auth context associated with the message.
         """
-        return []
+        return set()
 
     def start(self) -> None:
         """Called when the module is loaded."""

@@ -67,7 +67,7 @@ class Manager:
         with self.wrappers_lock:
             for wrapper in self.module_wrappers:
                 commands.update(wrapper.module.get_all_commands(msg, auth))
-        _list_commands.send(self, msg=msg, auth=auth, commands=list(commands))
+        _list_commands.send(self, msg=msg, auth=auth, commands=commands)
 
     def on_config_changed(self, sender):
         """Handler for the config_changed signal."""

@@ -191,12 +191,12 @@ class MessageDispatcherMixin(BaseModule):
         """This method should return the command prefix."""
         raise NotImplementedError
 
-    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
-        command_names: set[str] = set()
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
+        rw = super().get_all_commands(msg, auth)
         for handler in self._get_all_command_handlers():
             if self._command_predicates_pass(handler, msg, auth):
-                command_names.add(getattr(handler, _ATTR_COMMAND_NAME))
-        return list(command_names)
+                rw.add(getattr(handler, _ATTR_COMMAND_NAME))
+        return rw
 
     def get_help_for_command(self, command_name: str, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
         help_texts: list[str] = []

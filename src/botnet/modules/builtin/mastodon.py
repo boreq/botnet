@@ -1,5 +1,5 @@
 from .. import BaseResponder, AuthContext
-from ...message import IncomingPrivateMessage
+from ...message import IncomingPrivateMessage, Channel
 from mastodon import Mastodon as MastodonLib
 
 
@@ -28,13 +28,13 @@ class Mastodon(BaseResponder):
 
     max_toot_len = 250
 
-    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
-        new_commands = set()
-        for entry in self.config_get('tooting', []):
-            if msg.target in entry['channels']:
-                new_commands.add(entry['command'])
-        rw.extend(new_commands)
+        channel = msg.target.channel
+        if channel is not None:
+            for entry in self.config_get('tooting', []):
+                if channel in [Channel(string_channel) for string_channel in entry['channels']]:
+                    rw.add(entry['command'])
         return rw
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:

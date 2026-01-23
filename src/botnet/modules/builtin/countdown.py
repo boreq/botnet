@@ -32,13 +32,11 @@ class Countdown(BaseResponder):
     def __init__(self, config: Config) -> None:
         super().__init__(config)
 
-    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
-        new_commands = set()
-        new_commands.add(self.config_get('summary_command'))
+        rw.add(self.config_get('summary_command'))
         for command in self.config_get('commands', []):
-            new_commands.add(command['names'][0])
-        rw.extend(new_commands)
+            rw.add(command['names'][0])
         return rw
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:

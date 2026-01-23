@@ -31,14 +31,12 @@ class Quotes(BaseResponder):
     config_namespace = 'botnet'
     config_name = 'quotes'
 
-    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> list[str]:
+    def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
-        new_commands = set()
         for command in self.config_get('files', {}).keys():
-            new_commands.add(command)
+            rw.add(command)
         for root, filename in self.get_command_files():
-            new_commands.add(filename)
-        rw.extend(new_commands)
+            rw.add(filename)
         return rw
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
