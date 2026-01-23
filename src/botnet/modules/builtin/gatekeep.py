@@ -1,4 +1,3 @@
-import irccodes
 import os
 import threading
 import dacite
@@ -9,7 +8,7 @@ from ...helpers import save_json, load_json, cleanup_nick
 from ...signals import message_out, on_exception
 from ...message import Message, IncomingPrivateMessage, Nick, Channel
 from .. import BaseResponder, predicates, command, AuthContext, parse_command, Args
-from ..lib import MemoryCache
+from ..lib import MemoryCache, colored, Color
 from ..base import BaseModule
 from ...config import Config
 
@@ -488,9 +487,9 @@ class PersonaReport:
         endorsed = uuid in self.endorsements
         nicks = '/'.join([v.s for v in self.nicks])
         if endorsed:
-            nicks = irccodes.colored(nicks, 'green')
+            nicks = colored(nicks, Color.GREEN)
         else:
-            nicks = irccodes.colored(nicks, 'light red')
+            nicks = colored(nicks, Color.RED)
         return '{} ({})'.format(nicks, '^' if endorsed else '?')
 
 

@@ -5,6 +5,8 @@
 
 # flake8: noqa: F401
 
+import irccodes
+from enum import Enum, unique
 from .cache import BaseCache, MemoryCache
 from .decorators import catch_other
 from .network import get_url
@@ -22,3 +24,13 @@ def divide_text(text: str, max_len: int) -> list[str]:
                 lines.append(part)
 
     return lines
+
+
+@unique
+class Color(Enum):
+    RED = 'light red'
+    GREEN = 'green'
+
+
+def colored(text: str, color: Color) -> str:
+    return irccodes.colored(text, color.value, padding='')

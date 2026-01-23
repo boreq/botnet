@@ -1,7 +1,6 @@
-import irccodes
 from botnet.modules import AuthContext
-
 from botnet.modules.builtin.gatekeep import Gatekeep
+from botnet.modules.lib import colored, Color
 from botnet.message import Message
 from botnet.config import Config
 from botnet.codes import Code
@@ -32,7 +31,7 @@ def test_pester(make_privmsg, make_incoming_privmsg, unauthorised_context, test_
                 'msg': Message.new_from_string('PRIVMSG person :Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG person :' + irccodes.colored('nick2', 'light red') + ' (?), ' + irccodes.colored('nick1', 'light red') + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG person :' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)'),
             },
             {
                 'msg': Message.new_from_string('PRIVMSG person :If you would like to endorse any of them then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'. If you want to see the full report use the \'.gatekeep\' command.')
@@ -59,7 +58,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
                 'msg': Message.new_from_string('PRIVMSG person :Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG person :' + irccodes.colored('nick2', 'light red') + ' (?), ' + irccodes.colored('nick1', 'light red') + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG person :' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)')
             },
             {
                 'msg': Message.new_from_string('PRIVMSG person :If you would like to endorse any of them then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'. If you want to see the full report use the \'.gatekeep\' command.')
@@ -74,7 +73,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     test_gatekeep.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + irccodes.colored('nick2', 'light red') + ' (?), ' + irccodes.colored('nick1', 'light red') + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)')
             },
             {
                 'msg': Message.new_from_string('PRIVMSG nick :If you would like to endorse anyone then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'.')
@@ -101,7 +100,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     test_gatekeep.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + irccodes.colored('nick1', 'green') + ' (^), ' + irccodes.colored('nick2', 'light red') + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick1', Color.GREEN) + ' (^), ' + colored('nick2', Color.RED) + ' (?)')
             },
             {
                 'msg': Message.new_from_string('PRIVMSG nick :If you would like to endorse anyone then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'.')
@@ -128,7 +127,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     test_gatekeep.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + irccodes.colored('nick2', 'green') + ' (^), ' + irccodes.colored('nick1', 'green') + ' (^)')
+                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick2', Color.GREEN) + ' (^), ' + colored('nick1', Color.GREEN) + ' (^)')
             },
             {
                 'msg': Message.new_from_string('PRIVMSG nick :If you would like to endorse anyone then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'.')
@@ -155,7 +154,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     test_gatekeep.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + irccodes.colored('nick1', 'green') + ' (^), ' + irccodes.colored('nick2', 'light red') + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick1', Color.GREEN) + ' (^), ' + colored('nick2', Color.RED) + ' (?)'),
             },
             {
                 'msg': Message.new_from_string('PRIVMSG nick :If you would like to endorse anyone then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'.')
