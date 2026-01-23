@@ -6,12 +6,6 @@ from ...message import IncomingPrivateMessage
 from .. import BaseResponder, AuthContext
 
 
-def random_line(filename: str) -> str:
-    """Gets a random line from file."""
-    with open(filename) as f:
-        return random.choice(list(f))
-
-
 class Quotes(BaseResponder):
     """Sends random lines from the files defined in config. This module will
     discover the files automatically by name if a directory containing them
@@ -73,10 +67,14 @@ class Quotes(BaseResponder):
 
     def _send_random_line(self, msg: IncomingPrivateMessage, filepath: str) -> None:
         try:
-            line = random_line(filepath)
+            line = self._random_line(filepath)
             self.respond(msg, line)
         except FileNotFoundError as e:
             on_exception.send(self, e=e)
+
+    def _random_line(self, filename: str) -> str:
+        with open(filename) as f:
+            return random.choice(list(f))
 
 
 mod = Quotes
