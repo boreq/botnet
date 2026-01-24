@@ -1,7 +1,8 @@
 from botnet.config import Config
 from botnet.message import Message, IncomingPrivateMessage, Nick, Target, Text
 from botnet.modules import AuthContext
-from botnet.signals import message_out, message_in, auth_message_in, clear_state, on_exception, _request_list_commands
+from botnet.signals import message_out, message_in, auth_message_in, clear_state, on_exception, \
+    _request_list_commands, module_load, module_unload, config_reload, module_loaded, module_unloaded, config_reloaded
 import logging
 import os
 import pytest
@@ -129,6 +130,9 @@ class ModuleHarness:
         self._request_list_commands_trap = Trap(_request_list_commands)
         self.message_out_trap = Trap(message_out)
         self.on_exception_trap = Trap(on_exception)
+        self.module_load_trap = Trap(module_load)
+        self.module_unload_trap = Trap(module_unload)
+        self.config_reload_trap = Trap(config_reload)
 
         self.module = module_class(config)
 
@@ -137,6 +141,15 @@ class ModuleHarness:
 
     def receive_auth_message_in(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         auth_message_in.send(None, msg=msg, auth=auth)
+
+    def send_module_loaded(self, cls: type) -> None:
+        module_loaded.send(None, cls=cls)
+
+    def send_module_unloaded(self, cls: type) -> None:
+        module_unloaded.send(None, cls=cls)
+
+    def send_config_reloaded(self) -> None:
+        config_reloaded.send(None)
 
     def expect_request_list_commands_signals(self, expected_signals: list[dict]) -> None:
         def wait_condition(trapped):
@@ -147,6 +160,21 @@ class ModuleHarness:
         def wait_condition(trapped):
             assert trapped == expected_signals
         self.message_out_trap.wait(wait_condition)
+
+    def expect_module_load_signals(self, expected_signals: list[dict]) -> None:
+        def wait_condition(trapped):
+            assert trapped == expected_signals
+        self.module_load_trap.wait(wait_condition)
+
+    def expect_module_unload_signals(self, expected_signals: list[dict]) -> None:
+        def wait_condition(trapped):
+            assert trapped == expected_signals
+        self.module_unload_trap.wait(wait_condition)
+
+    def expect_config_reload_signals(self, expected_signals: list[dict]) -> None:
+        def wait_condition(trapped):
+            assert trapped == expected_signals
+        self.config_reload_trap.wait(wait_condition)
 
     def reset_message_out_signals(self) -> None:
         self.message_out_trap.reset()

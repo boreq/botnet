@@ -5,6 +5,7 @@ from ...signals import module_load, module_unload, module_loaded, \
     module_unloaded, config_reload, config_reloaded
 from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
 from ...config import Config
+from ..utils import get_ident_string
 
 
 class Admin(BaseResponder):
@@ -90,14 +91,14 @@ class Admin(BaseResponder):
     def _on_module_loaded(self, sender: Any, cls: type) -> None:
         try:
             msg = self._load_commands.pop()
-            self.respond(msg, 'Loaded module %s' % cls)
+            self.respond(msg, 'Loaded module %s' % get_ident_string(cls))
         except IndexError:
             pass
 
     def _on_module_unloaded(self, sender: Any, cls: type) -> None:
         try:
             msg = self._unload_commands.pop()
-            self.respond(msg, 'Unloaded module %s' % cls)
+            self.respond(msg, 'Unloaded module %s' % get_ident_string(cls))
         except IndexError:
             pass
 
