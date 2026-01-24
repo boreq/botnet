@@ -113,7 +113,44 @@ def test_not_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_conte
     )
 
 
-def test_battery(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
+def test_battery_not_available(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
+    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+
+    mock_api.mocked_devices = [
+        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+    ]
+
+    mock_api.mocked_positions = [
+        Position(
+            id=1,
+            deviceId=1,
+            serverTime=datetime.now(),
+            deviceTime=datetime.now(),
+            fixTime=datetime.now(),
+            latitude=10,
+            longitude=20,
+            altitude=10,
+            speed=10,
+            course=180,
+            accuracy=10,
+            geofenceIds=[],
+            attributes={},
+        )
+    ]
+
+    msg = make_incoming_privmsg('.whatissomeonesbatterylevel', target='#channel')
+    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+
+    test_traccar.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :There is no battery level in the response from the server? Maybe this device sent no fixes yet?')
+            },
+        ],
+    )
+
+
+def test_battery_charging(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
     mock_api: FakeTraccarAPI = test_traccar.module.mock_api
 
     mock_api.mocked_devices = [
@@ -136,7 +173,46 @@ def test_battery(make_privmsg, make_incoming_privmsg, unauthorised_context, test
             geofenceIds=[],
             attributes={
                 'batteryLevel': 11,
-                'charge': False,
+                'charge': True,
+            },
+        )
+    ]
+
+    msg = make_incoming_privmsg('.whatissomeonesbatterylevel', target='#channel')
+    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+
+    test_traccar.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :11% (charging)')
+            },
+        ],
+    )
+
+
+def test_battery_not_charging(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
+    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+
+    mock_api.mocked_devices = [
+        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+    ]
+
+    mock_api.mocked_positions = [
+        Position(
+            id=1,
+            deviceId=1,
+            serverTime=datetime.now(),
+            deviceTime=datetime.now(),
+            fixTime=datetime.now(),
+            latitude=10,
+            longitude=20,
+            altitude=10,
+            speed=10,
+            course=180,
+            accuracy=10,
+            geofenceIds=[],
+            attributes={
+                'batteryLevel': 11,
             },
         )
     ]

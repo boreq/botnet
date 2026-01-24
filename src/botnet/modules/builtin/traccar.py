@@ -230,7 +230,12 @@ class Traccar(BaseResponder):
             self.respond(msg, 'Position for the device doesn\'t exist in the API response.')
             return
 
-        charging = ' (charging)' if position.attributes['charge'] else ''
+        batteryLevel = position.attributes.get('batteryLevel', None)
+        if batteryLevel is None:
+            self.respond(msg, 'There is no battery level in the response from the server? Maybe this device sent no fixes yet?')
+            return
+
+        charging = ' (charging)' if position.attributes.get('charge', False) else ''
         self.respond(msg, f'{position.attributes['batteryLevel']}%{charging}')
 
     def _confidence(self, position: Position) -> str:
