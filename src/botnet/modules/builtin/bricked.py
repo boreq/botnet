@@ -1,6 +1,37 @@
 from .. import BaseResponder, AuthContext
 from ...message import IncomingPrivateMessage, Channel
-from ..lib import get_url
+import requests
+import dacite
+from dataclasses import dataclass
+from urllib.parse import urljoin
+
+
+@dataclass
+class Status:
+    status: float
+
+
+class BrickedAPI:
+    def get_status(self, id: str) -> Status:
+        raise NotImplementedError
+
+
+class RestBrickedAPI(BrickedAPI):
+    def __init__(self, instance_url: str) -> None:
+        self._instance_url = instance_url
+
+    def get_status(self, id: str) -> Status:
+        r = self._get(f'/api/status/{id}')
+        j = r.json()
+        return dacite.from_dict(data_class=Status, data=j)
+
+    def _get(self, path: str) -> requests.Response:
+        r = requests.get(self._url(path))
+        r.raise_for_status()
+        return r
+
+    def _url(self, path: str) -> str:
+        return urljoin(self._instance_url, path)
 
 
 class Bricked(BaseResponder):
@@ -50,11 +81,12 @@ class Bricked(BaseResponder):
                 if channel.s.lower() not in entry['channels']:
                     continue
 
-                url = entry['instance'].rstrip('/') + '/api/status/' + entry['id']
-                r = get_url(url)
-                r.raise_for_status()
-                j = r.json()
-                self.respond(msg, '{:.0f}%'.format(j['status'] * 100))
+                api = self._create_api(entry['instance'])
+                status = api.get_status(entry['id'])
+                self.respond(msg, '{:.0f}%'.format(status.status * 100))
+
+    def _create_api(self, instance: str) -> BrickedAPI:
+        return RestBrickedAPI(instance)
 
 
 mod = Bricked
