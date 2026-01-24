@@ -3,7 +3,7 @@ ci: lint test
 
 .PHONY: test
 test:
-	py.test tests
+	py.test -vv tests
 
 .PHONY: lint
 lint: flake8 mypy

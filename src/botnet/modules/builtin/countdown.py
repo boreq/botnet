@@ -65,12 +65,15 @@ class Countdown(BaseResponder):
         day = int(target_date['day'])
 
         d0 = date(year, month, day)
-        d1 = date.today()
+        d1 = self.now()
         delta = d0 - d1
         if delta.days < 0:
             return 'It already happened'
         else:
             return '{} days left'.format(delta.days)
+
+    def now(self) -> date:
+        return date.today()
 
 
 mod = Countdown
