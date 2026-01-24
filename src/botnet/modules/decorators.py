@@ -116,12 +116,12 @@ def parse_command(params) -> Callable[[CommandHandlerWithArgs], CommandHandler]:
         new_params = [p for name, p in sig.parameters.items() if name != 'args']
 
         @wraps(f)
-        def decorated_function(self: Any, msg: IncomingPrivateMessage, auth: AuthContext, *a: Any, **kw: Any) -> None:
+        def decorated_function(self: Any, msg: IncomingPrivateMessage, auth: AuthContext, *args: Any, **kwargs: Any) -> None:
             try:
                 namespace = parser.parse_args(msg.text.s.split())
             except argparse.ArgumentError:
                 return
-            f(self, msg, auth, Args(namespace), *a, **kw)
+            f(self, msg, auth, Args(namespace), *args, **kwargs)
 
         setattr(decorated_function, '__signature__', sig.replace(parameters=new_params))
         return cast(CommandHandler, decorated_function)
