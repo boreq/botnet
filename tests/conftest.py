@@ -202,3 +202,8 @@ def module_harness_factory(request) -> ModuleHarnessFactory:
 @pytest.fixture()
 def unauthorised_context() -> AuthContext:
     return AuthContext(None, [])
+
+
+@pytest.fixture()
+def admin_context() -> AuthContext:
+    return AuthContext(uuid='admin-uuid', groups=['admin'])
