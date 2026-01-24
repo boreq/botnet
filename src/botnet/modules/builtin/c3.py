@@ -16,7 +16,7 @@ class C3(BaseResponder):
 
         Syntax: c3
         """
-        now = datetime.datetime.utcnow()
+        now = self.now()
         congress = datetime.datetime(year=now.year,
                                      month=self.CONGRESS_MONTH,
                                      day=self.CONGRESS_DAY)
@@ -30,6 +30,9 @@ class C3(BaseResponder):
 
         text = 'Time to {number}C3: {days} days'.format(number=number, days=days)
         self.respond(msg, text)
+
+    def now(self) -> datetime.datetime:
+        return datetime.datetime.now(datetime.timezone.utc)
 
 
 mod = C3
