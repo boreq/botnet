@@ -1,6 +1,29 @@
 from .. import BaseResponder, AuthContext
 from ...message import IncomingPrivateMessage, Channel
 from mastodon import Mastodon as MastodonLib
+from dataclasses import dataclass
+from typing import Protocol
+
+
+@dataclass
+class Toot:
+    url: str
+
+
+class MastodonAPI(Protocol):
+    def toot(self, text: str) -> Toot:
+        ...
+
+
+class RestMastodonAPI:
+    def __init__(self, instance: str, access_token: str) -> None:
+        self._instance = instance
+        self._access_token = access_token
+
+    def toot(self, text: str) -> Toot:
+        mastodon = MastodonLib(access_token=self._access_token, api_base_url=self._instance)
+        status = mastodon.toot(text)
+        return Toot(url=getattr(status, 'url', str(status)))
 
 
 class Mastodon(BaseResponder):
@@ -39,15 +62,18 @@ class Mastodon(BaseResponder):
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
-
         if command_name is None:
+            return
+
+        channel = msg.target.channel
+        if channel is None:
             return
 
         for entry in self.config_get('tooting', []):
             if entry['command'] != command_name:
                 continue
 
-            if msg.target not in entry['channels']:
+            if channel not in [Channel(c) for c in entry['channels']]:
                 continue
 
             parts = msg.text.s.split(" ", 1)
@@ -55,9 +81,12 @@ class Mastodon(BaseResponder):
             if len(text) > self.max_toot_len:
                 return
 
-            mastodon = MastodonLib(access_token=entry['access_token'], api_base_url=entry['instance'])
-            toot = mastodon.toot(text)
+            api = self._create_api(entry['instance'], entry['access_token'])
+            toot = api.toot(text)
             self.respond(msg, toot.url)
+
+    def _create_api(self, instance: str, access_token: str) -> MastodonAPI:
+        return RestMastodonAPI(instance, access_token)
 
 
 mod = Mastodon
