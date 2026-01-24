@@ -8,18 +8,9 @@ from ...message import IncomingPrivateMessage, Nick, Channel, Text
 from ...config import Config
 
 
-def make_msg_entry(channel: str, message: str) -> dict[str, Any]:
-    """Creates an object stored by the message_store."""
-    return {
-        'channel': channel,
-        'message': message,
-        'time': datetime.datetime.utcnow().timestamp(),
-    }
-
-
 def format_msg_entry(nick: Nick, msg_entry: dict[str, Any]) -> str:
     """Converts an object stored by the message store to plaintext."""
-    time = datetime.datetime.fromtimestamp(msg_entry['time'])
+    time = datetime.datetime.fromtimestamp(msg_entry['time'], datetime.timezone.utc)
     time_str = time.strftime('%Y-%m-%d %H:%MZ')
     return '%s was last seen on %s' % (nick, time_str)
 
@@ -28,11 +19,13 @@ class MessageStore:
     """Stores last messages sent by each user.
 
     path: function to call to get path to the data file.
+    now_func: function returning current datetime (used for testing).
     """
 
-    def __init__(self, path: Callable[[], str]) -> None:
+    def __init__(self, path: Callable[[], str], now_func: Callable[[], datetime.datetime] | None = None) -> None:
         self.lock = threading.Lock()
         self.set_path(path)
+        self._now_func = now_func or (lambda: datetime.datetime.now(datetime.timezone.utc))
         self._msg_store: dict[str, dict[str, Any]] = {}
         self._load()
 
@@ -52,13 +45,21 @@ class MessageStore:
 
     def register_message(self, author: Nick, channel: Channel, message: Text) -> bool:
         with self.lock:
-            self._msg_store[author.s.lower()] = make_msg_entry(channel.s.lower(), message.s)
+            self._msg_store[author.s.lower()] = self._make_msg_entry(channel, message, self._now_func())
             self._save()
         return True
 
     def get_message(self, author: Nick) -> dict[str, Any] | None:
         with self.lock:
             return self._msg_store.get(author.s.lower(), None)
+
+    def _make_msg_entry(self, channel: Channel, message: Text, now: datetime.datetime) -> dict[str, Any]:
+        """Creates an object stored by the message_store."""
+        return {
+            'channel': channel.s.lower(),
+            'message': message.s,
+            'time': now.timestamp(),
+        }
 
 
 class Seen(BaseResponder):
@@ -79,7 +80,7 @@ class Seen(BaseResponder):
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.ms = MessageStore(lambda: self.config_get('message_data'))
+        self.ms = MessageStore(lambda: self.config_get('message_data'), now_func=self.now)
 
     @command('seen')
     @parse_command([('nick', 1)])
@@ -99,6 +100,10 @@ class Seen(BaseResponder):
         channel = msg.target.channel
         if channel is not None:
             self.ms.register_message(msg.sender, channel, msg.text)
+
+    def now(self) -> datetime.datetime:
+        """Return current datetime in UTC. Tests may override this."""
+        return datetime.datetime.now(datetime.timezone.utc)
 
 
 mod = Seen
