@@ -1,18 +1,10 @@
-import time
+from datetime import datetime
+import pytest
 from botnet.config import Config
 from botnet.modules.builtin.irc import IRC, InactivityMonitor, Buffer
+from botnet.modules import BaseResponder
 from botnet import Message
-
-
-def make_config():
-    config = {
-        'module_config': {
-            'botnet': {
-                'irc': {}
-            }
-        }
-    }
-    return Config(config)
+from botnet.signals import message_out
 
 
 def test_process_data():
@@ -37,89 +29,95 @@ def test_process_invalid_data():
     assert len(lines) == 4
 
 
-def test_inactivity_monitor():
-
+def test_inactivity_monitor(make_signal_trap):
     class TestMonitor(InactivityMonitor):
+        ping_timeout = 0.1
+        abort_timeout = 0.2
 
-        ping_timeout = 0.5
-        abort_timeout = 1
+        def now(self):
+            return datetime.fromtimestamp(123.456)
 
-        def __init__(self, irc_module):
-            super(TestMonitor, self).__init__(irc_module)
-            self.pinged = False
-            self.aborted = False
+    class MockRestarter:
+        def __init__(self):
+            self.restarted = 0
 
-        def on_timer_ping(self):
-            self.pinged = True
+        def restart(self):
+            self.restarted += 1
 
-        def on_timer_abort(self):
-            self.aborted = True
+    restarter = MockRestarter()
+    trap = make_signal_trap(message_out)
 
-    config = make_config()
-    irc = IRC(config)
+    with TestMonitor(restarter):
+        def check_pings(trapped):
+            assert trapped == [
+                {'msg': Message(command='PING', params=['123.456'])}
+            ]
+            assert restarter.restarted > 0
+        trap.wait(check_pings)
 
-    with TestMonitor(irc) as t:
-        time.sleep(1.5)
-        assert t.pinged
-        assert t.aborted
+    trap.reset()
+    restarter.restarted = 0
+    with TestMonitor(restarter):
+        def check_pings(trapped):
+            assert trapped == [
+                {'msg': Message(command='PING', params=['123.456'])}
+            ]
+            assert restarter.restarted == 0
+        trap.wait(check_pings)
 
-    with TestMonitor(irc) as t:
-        time.sleep(.75)
-        assert t.pinged
-        assert not t.aborted
+    trap.reset()
+    restarter.restarted = 0
+    with TestMonitor(restarter):
+        def check_pings(trapped):
+            assert trapped == []
+            assert restarter.restarted == 0
+        trap.wait(check_pings)
 
-    with TestMonitor(irc) as t:
-        assert not t.pinged
-        assert not t.aborted
 
-
-def test_inactivity_monitor_repeated():
+def test_inactivity_monitor_repeated(make_signal_trap):
     class TestMonitor(InactivityMonitor):
+        ping_timeout = 0.1
+        ping_repeat = 0.05
+        abort_timeout = 0.2
 
-        ping_timeout = 0.5
-        ping_repeat = 0.1
-        abort_timeout = 1
+        def now(self):
+            return datetime.fromtimestamp(123.456)
 
-        def __init__(self, irc_module):
-            super(TestMonitor, self).__init__(irc_module)
-            self.pinged = 0
-            self.aborted = 0
+    class MockRestarter:
+        def __init__(self):
+            self.restarted = 0
 
-        def on_timer_ping(self):
-            super(TestMonitor, self).on_timer_ping()
-            self.pinged += 1
+        def restart(self):
+            self.restarted += 1
 
-        def on_timer_abort(self):
-            super(TestMonitor, self).on_timer_abort()
-            self.aborted += 1
+    restarter = MockRestarter()
+    trap = make_signal_trap(message_out)
 
-    config = make_config()
-    irc = IRC(config)
-
-    with TestMonitor(irc) as t:
-        time.sleep(1.5)
-        assert t.pinged > 3
-        assert t.aborted > 0
+    with TestMonitor(restarter):
+        def check_pings(trapped):
+            assert len(trapped) > 2
+            for entry in trapped:
+                assert entry['msg'] == Message(command='PING', params=['123.456'])
+            assert restarter.restarted > 0
+        trap.wait(check_pings)
 
 
-def test_ignore_empty_config():
-    config = make_config()
-    irc = IRC(config)
+def test_ignore_empty_config(test_irc):
+    irc = test_irc.module
 
     msg = Message.new_from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
     assert not irc.should_ignore(msg)
 
 
-def test_ignore():
+def test_ignore(test_irc, irc_config):
     ignore_list = [
         "nick!*@*",
         "*!*@example.com",
     ]
 
-    config = make_config()
-    config['module_config']['botnet']['irc']['ignore'] = ignore_list
+    irc_config['module_config']['botnet']['irc']['ignore'] = ignore_list
 
-    irc = IRC(config)
+    irc = test_irc.module
 
     msg = Message.new_from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
     assert irc.should_ignore(msg)
@@ -129,3 +127,28 @@ def test_ignore():
 
     msg = Message.new_from_string(':othernick!~user@example.net PRIVMSG #channel :lorem ipsum')
     assert not irc.should_ignore(msg)
+
+
+@pytest.fixture
+def irc_config():
+    config = {
+        'module_config': {
+            'botnet': {
+                'irc': {}
+            }
+        }
+    }
+    return Config(config)
+
+
+@pytest.fixture
+def test_irc(module_harness_factory, irc_config):
+    class TestIRC(IRC):
+        def start(self):
+            pass
+
+        def stop(self):
+            super(BaseResponder, self).stop()
+            self.stop_event.set()
+
+    return module_harness_factory.make(TestIRC, irc_config)

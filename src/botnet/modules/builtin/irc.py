@@ -4,12 +4,17 @@ import socket
 import ssl
 import threading
 import fnmatch
-from typing import Any, Generator
+from typing import Any, Generator, Protocol
 from ...logging import get_logger
 from ...message import Message, IncomingPrivateMessage
 from ...signals import message_in, message_out, on_exception, config_changed
 from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
 from ...config import Config
+
+
+class Restarter(Protocol):
+    def restart(self) -> None:
+        ...
 
 
 class NoopWith:
@@ -39,9 +44,9 @@ class InactivityMonitor:
     # IRC module will be restarted after that many seconds without communication
     abort_timeout = 240
 
-    def __init__(self, irc_module: IRC):
+    def __init__(self, restarter: Restarter):
         self.logger = get_logger(self)
-        self.irc_module = irc_module
+        self.restarter = restarter
 
         self._timer_ping: threading.Timer | None = None
         self._timer_abort: threading.Timer | None = None
@@ -85,15 +90,18 @@ class InactivityMonitor:
     def on_timer_ping(self) -> None:
         """Launched by _timer_ping."""
         self.logger.debug('ping the server')
-        timestamp = datetime.datetime.now().timestamp()
+        timestamp = self.now().timestamp()
         msg = Message(command='PING', params=[str(timestamp)])
         message_out.send(self, msg=msg)
         self._set_ping(self.ping_repeat)
 
+    def now(self) -> datetime.datetime:
+        return datetime.datetime.now()
+
     def on_timer_abort(self) -> None:
         """Launched by _timer_abort."""
         self.logger.debug('restart the connection')
-        self.irc_module.restart()
+        self.restarter.restart()
 
 
 class Buffer:
