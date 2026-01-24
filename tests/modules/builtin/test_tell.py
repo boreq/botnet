@@ -52,10 +52,10 @@ def test_multiple_messages_for_multiple_users(make_privmsg, make_incoming_privms
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13 UTC <author> message1')
+                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13Z <author> message1')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13 UTC <author> message2')
+                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13Z <author> message2')
             },
         ]
     )
@@ -77,16 +77,16 @@ def test_multiple_messages_for_multiple_users(make_privmsg, make_incoming_privms
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13 UTC <author> message1')
+                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13Z <author> message1')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13 UTC <author> message2')
+                'msg': Message.new_from_string('PRIVMSG #channel :target1: 2026-01-02 11:12:13Z <author> message2')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target2: 2026-01-02 11:12:13 UTC <author> message1')
+                'msg': Message.new_from_string('PRIVMSG #channel :target2: 2026-01-02 11:12:13Z <author> message1')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target2: 2026-01-02 11:12:13 UTC <author> message2')
+                'msg': Message.new_from_string('PRIVMSG #channel :target2: 2026-01-02 11:12:13Z <author> message2')
             },
         ]
     )
@@ -114,7 +114,7 @@ def test_duplicate_messages_are_ignored(make_privmsg, make_incoming_privmsg, una
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13 UTC <author> message')
+                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13Z <author> message')
             },
         ]
     )
@@ -149,10 +149,10 @@ def test_messages_arrive_in_the_same_order_they_were_sent(make_privmsg, make_inc
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13 UTC <author> message1')
+                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13Z <author> message1')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13 UTC <author> message2')
+                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13Z <author> message2')
             },
         ]
     )
@@ -177,7 +177,7 @@ def test_channel_is_case_insensitive(make_privmsg, make_incoming_privmsg, unauth
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #chAnnel :target: 2026-01-02 11:12:13 UTC <author> message text')
+                'msg': Message.new_from_string('PRIVMSG #chAnnel :target: 2026-01-02 11:12:13Z <author> message text')
             }
         ]
     )
@@ -202,7 +202,7 @@ def test_target_is_case_insensitive(make_privmsg, make_incoming_privmsg, unautho
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :tArget: 2026-01-02 11:12:13 UTC <author> message text')
+                'msg': Message.new_from_string('PRIVMSG #channel :tArget: 2026-01-02 11:12:13Z <author> message text')
             }
         ]
     )
@@ -227,7 +227,7 @@ def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context,
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13 UTC <author> message text')
+                'msg': Message.new_from_string('PRIVMSG #channel :target: 2026-01-02 11:12:13Z <author> message text')
             }
         ]
     )
@@ -274,7 +274,7 @@ def test_priv(make_privmsg, make_incoming_privmsg, unauthorised_context, test_te
                 'msg': Message.new_from_string('PRIVMSG author :Will do!')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG target :target: 2026-01-02 11:12:13 UTC <author> message text')
+                'msg': Message.new_from_string('PRIVMSG target :target: 2026-01-02 11:12:13Z <author> message text')
             }
         ]
     )

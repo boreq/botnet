@@ -23,7 +23,7 @@ def format_msg_entry(target: Nick, msg_entry: dict) -> str:
     """Converts an object stored by the message store to plaintext."""
     dt = datetime.fromtimestamp(msg_entry['time'], timezone.utc)
     return '%s: %s <%s> %s' % (target,
-                               dt.strftime('%Y-%m-%d %H:%M:%S UTC'),
+                               dt.strftime('%Y-%m-%d %H:%M:%SZ'),
                                msg_entry['author'],
                                msg_entry['message'])
 
