@@ -71,29 +71,31 @@ class Reactions(BaseResponder):
     """Defines several commands related to emotional reactions."""
 
     @command('cute')
-    @parse_command([('target', '*')])
+    @parse_command([('nicks', '*')])
     def command_cute(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Sends a random emoticon. The style of an emoticon changes if the
         TARGET is defined.
 
-        Syntax: cute [TARGET ...]
+        Syntax: cute [NICK ...]
         """
-        if len(args['target']) > 0:
-            self.send_from_list(msg, args, cutelist_target)
+        nicks = args['nicks']
+        if len(nicks) > 0:
+            self.send_from_list(msg, nicks, cutelist_target)
         else:
-            self.send_from_list(msg, args, cutelist)
+            self.send_from_list(msg, nicks, cutelist)
 
     @command('magic')
-    @parse_command([('target', '*')])
+    @parse_command([('nicks', '*')])
     def command_magic(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Sends a random emoticon.
 
-        Syntax: magic [TARGET ...]
+        Syntax: magic [NICK ...]
         """
-        self.send_from_list(msg, args, magiclist)
+        nicks = args['nicks']
+        self.send_from_list(msg, nicks, magiclist)
 
-    def send_from_list(self, msg: IncomingPrivateMessage, args: Args, reactions_list: list[str]) -> None:
-        target = ' '.join(args['target'])
+    def send_from_list(self, msg: IncomingPrivateMessage, nicks: list[str], reactions_list: list[str]) -> None:
+        target = ' '.join(nicks)
         response = random.choice(reactions_list).format(sender=msg.sender,
                                                         target=target)
         self.respond(msg, response)
