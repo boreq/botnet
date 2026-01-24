@@ -12,12 +12,12 @@ class FakeMastodonAPI(MastodonAPI):
         return self.toots.get(text, Toot(url=''))
 
 
-def test_help(make_privmsg, make_incoming_privmsg, unauthorised_context, test_mastodon):
+def test_help(make_privmsg, make_incoming_privmsg, unauthorised_context, test_mastodon) -> None:
     msg = make_incoming_privmsg('.help', target='#channel')
     assert test_mastodon.module.get_all_commands(msg, unauthorised_context) == {'help', 'toot'}
 
 
-def test_toot(make_privmsg, make_incoming_privmsg, unauthorised_context, test_mastodon):
+def test_toot(make_privmsg, make_incoming_privmsg, unauthorised_context, test_mastodon) -> None:
     api: FakeMastodonAPI = test_mastodon.module.mock_api
     api.toots['hello world'] = Toot(url='https://example.com/@user/1')
 

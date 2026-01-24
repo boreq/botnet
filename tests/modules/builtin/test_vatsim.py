@@ -17,7 +17,7 @@ def test_help(make_privmsg, make_incoming_privmsg, unauthorised_context, test_va
     assert test_vatsim.module.get_all_commands(msg, unauthorised_context) == {'help', 'metar'}
 
 
-def test_metar(make_privmsg, make_incoming_privmsg, unauthorised_context, test_vatsim):
+def test_metar(make_privmsg, make_incoming_privmsg, unauthorised_context, test_vatsim) -> None:
     api: FakeVatsimAPI = test_vatsim.module.mock_api
     api.mock_metars['EGLL'] = Metar(text='EGLL 241350Z 02010KT 9999 NCD 08/04 Q1013')
 
@@ -31,7 +31,7 @@ def test_metar(make_privmsg, make_incoming_privmsg, unauthorised_context, test_v
     ])
 
 
-def test_metar_empty(make_privmsg, make_incoming_privmsg, unauthorised_context, test_vatsim):
+def test_metar_empty(make_privmsg, make_incoming_privmsg, unauthorised_context, test_vatsim) -> None:
     api: FakeVatsimAPI = test_vatsim.module.mock_api
     api.mock_metars['EGLL'] = Metar(text='')
 

@@ -1,6 +1,6 @@
 import dacite
 import requests
-from typing import Any
+from typing import Any, Protocol
 from .. import BaseResponder, AuthContext
 from ...message import IncomingPrivateMessage, Channel
 from dataclasses import dataclass
@@ -44,16 +44,16 @@ _dacite_config = dacite.Config(type_hooks={
 })
 
 
-class TraccarAPI:
+class TraccarAPI(Protocol):
 
     def devices(self) -> list[Device]:
-        raise NotImplementedError
+        ...
 
     def positions(self) -> list[Position]:
-        raise NotImplementedError
+        ...
 
     def geofences(self) -> list[Geofence]:
-        raise NotImplementedError
+        ...
 
 
 class RestTraccarAPI(TraccarAPI):

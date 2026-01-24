@@ -4,6 +4,7 @@ import requests
 import dacite
 from dataclasses import dataclass
 from urllib.parse import urljoin
+from typing import Protocol
 
 
 @dataclass
@@ -11,9 +12,9 @@ class Status:
     status: float
 
 
-class BrickedAPI:
+class BrickedAPI(Protocol):
     def get_status(self, id: str) -> Status:
-        raise NotImplementedError
+        ...
 
 
 class RestBrickedAPI(BrickedAPI):
