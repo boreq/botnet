@@ -1,5 +1,7 @@
 import pytest
-from botnet.modules.builtin.sed import parse_message, make_msg_entry, replace
+from botnet.modules.builtin.sed import Sed, parse_message, make_msg_entry, replace
+from botnet.config import Config
+from botnet.message import Message
 
 
 def test_parse_message():
@@ -44,3 +46,32 @@ def test_replace_global():
         make_msg_entry('nick', 'lorem ipsum lorem'),
     ]
     assert replace(messages, *parse_message('nick: s/lorem/test/g')) == 'test ipsum test'
+
+
+def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context, test_sed):
+    msg = make_privmsg('Hellp!', nick='author', target='#channel')
+    test_sed.receive_message_in(msg)
+
+    msg = make_privmsg('s/Hellp!/Hello!', nick='author', target='#channel')
+    test_sed.receive_message_in(msg)
+
+    test_sed.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :author meant to say: Hello!')
+            }
+        ]
+    )
+
+
+@pytest.fixture()
+def test_sed(module_harness_factory, tmp_file):
+    class TestSed(Sed):
+
+        def __init__(self, *args, **kwargs):
+            self.default_config = {
+                'message_data': tmp_file,
+            }
+            super().__init__(*args, **kwargs)
+
+    return module_harness_factory.make(TestSed, Config())

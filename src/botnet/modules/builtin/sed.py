@@ -4,7 +4,7 @@ from typing import Callable
 from ...helpers import save_json, load_json
 from .. import BaseResponder
 from ...config import Config
-from ...message import IncomingPrivateMessage, Channel
+from ...message import IncomingPrivateMessage, Channel, Nick
 import re
 
 
@@ -122,7 +122,7 @@ class Sed(BaseResponder):
                 messages = self.store.get_messages(channel)
                 message = replace(messages, nick, a, b, flags)
                 if message is not None:
-                    if nick == msg.sender:
+                    if Nick(nick) == msg.sender:
                         text = '%s meant to say: %s' % (nick, message)
                     else:
                         text = '%s thinks %s meant to say: %s' % (msg.sender, nick, message)
