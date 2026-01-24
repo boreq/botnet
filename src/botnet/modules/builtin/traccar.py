@@ -163,13 +163,16 @@ class Traccar(BaseResponder):
                     if channel not in [Channel(v) for v in location_command['channels']]:
                         continue
 
-                    self._respond_with_location(
-                        msg,
-                        instance_definition['url'],
-                        instance_definition['token'],
-                        location_command['device_name'],
-                        location_command['geofences'],
-                    )
+                    try:
+                        self._respond_with_location(
+                            msg,
+                            instance_definition['url'],
+                            instance_definition['token'],
+                            location_command['device_name'],
+                            location_command['geofences'],
+                        )
+                    except ConnectionError:
+                        self.respond(msg, 'Connection error.')
 
                 for battery_command in instance_definition['battery_commands']:
                     if command_name not in battery_command['command_names']:
@@ -178,12 +181,15 @@ class Traccar(BaseResponder):
                     if channel not in [Channel(v) for v in battery_command['channels']]:
                         continue
 
-                    self._respond_with_battery(
-                        msg,
-                        instance_definition['url'],
-                        instance_definition['token'],
-                        battery_command['device_name'],
-                    )
+                    try:
+                        self._respond_with_battery(
+                            msg,
+                            instance_definition['url'],
+                            instance_definition['token'],
+                            battery_command['device_name'],
+                        )
+                    except ConnectionError:
+                        self.respond(msg, 'Connection error.')
 
     def _respond_with_location(self, msg: IncomingPrivateMessage, instance: str, token: str, device_name: str, sanitized_geofence_names: dict[str, str]) -> None:
         api = self._create_api(instance, token)

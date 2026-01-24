@@ -9,14 +9,23 @@ class FakeTraccarAPI(TraccarAPI):
     mocked_devices: list[Device] = []
     mocked_positions: list[Position] = []
     mocked_geofences: list[Geofence] = []
+    throw_on_devices: Exception | None = None
+    throw_on_positions: Exception | None = None
+    throw_on_geofences: Exception | None = None
 
     def devices(self) -> list[Device]:
+        if self.throw_on_devices is not None:
+            raise self.throw_on_devices
         return self.mocked_devices
 
     def positions(self) -> list[Position]:
+        if self.throw_on_positions is not None:
+            raise self.throw_on_positions
         return self.mocked_positions
 
     def geofences(self) -> list[Geofence]:
+        if self.throw_on_geofences is not None:
+            raise self.throw_on_geofences
         return self.mocked_geofences
 
 
@@ -224,6 +233,48 @@ def test_battery_not_charging(make_privmsg, make_incoming_privmsg, unauthorised_
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :11%')
+            },
+        ],
+    )
+
+
+def test_location_connection_error(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
+    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+
+    mock_api.mocked_devices = [
+        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+    ]
+
+    mock_api.throw_on_positions = ConnectionError('connection error')
+
+    msg = make_incoming_privmsg('.whereissomeone', target='#channel')
+    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+
+    test_traccar.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Connection error.')
+            },
+        ],
+    )
+
+
+def test_battery_connection_error(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
+    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+
+    mock_api.mocked_devices = [
+        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+    ]
+
+    mock_api.throw_on_positions = ConnectionError('connection error')
+
+    msg = make_incoming_privmsg('.whatissomeonesbatterylevel', target='#channel')
+    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+
+    test_traccar.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :Connection error.')
             },
         ],
     )
