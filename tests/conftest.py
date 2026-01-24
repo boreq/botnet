@@ -95,11 +95,14 @@ class Trap(object):
 
     def wait(self, assertion: Callable[[list], None], max_seconds=1) -> None:
         for i in range(max_seconds * 10):
-            try:
+            if i != 0:
                 time.sleep(0.1)
+
+            try:
                 assertion(self.trapped)
             except AssertionError:
                 continue
+
             return
         assertion(self.trapped)
 
