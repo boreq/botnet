@@ -1,7 +1,6 @@
 from botnet.message import Message
 from botnet.config import Config
 from botnet.modules.builtin.anonpost import Anonpost
-from botnet.modules import AuthContext
 import pytest
 
 

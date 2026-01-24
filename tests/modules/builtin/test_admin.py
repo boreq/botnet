@@ -1,7 +1,6 @@
 from botnet.message import Message
 from botnet.config import Config
 from botnet.modules.builtin.admin import Admin
-from botnet.modules import AuthContext
 import pytest
 
 
@@ -90,8 +89,6 @@ def test_config_reload(make_incoming_privmsg, admin_context, test_admin):
             'msg': Message.new_from_string("PRIVMSG #channel :Config reloaded")
         }
     ])
-
-
 
 
 @pytest.fixture()

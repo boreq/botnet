@@ -1,6 +1,5 @@
 from botnet.config import Config
 from botnet.message import Message
-from botnet.modules import AuthContext
 from botnet.modules.builtin.github import GithubAPI, Github
 import json
 
