@@ -23,7 +23,7 @@ class ExceptionMonitor(ConfigMixin, BaseModule):
         'log': True
     })
 
-    error_text = '{error}\nTraceback:\n{tb}'
+    error_text = '{text}, {error}\nTraceback:\n{tb}'
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
@@ -33,7 +33,7 @@ class ExceptionMonitor(ConfigMixin, BaseModule):
 
     def get_text(self, e: Exception) -> str:
         tb = ''.join(traceback.format_tb(e.__traceback__))
-        return self.error_text.format(error=repr(e), tb=tb)
+        return self.error_text.format(text=str(e), error=repr(e), tb=tb)
 
     def on_exception(self, sender: Any, **kwargs: Any) -> None:
         e = kwargs['e']
