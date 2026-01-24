@@ -22,7 +22,7 @@ class FakeTraccarAPI(TraccarAPI):
 
 def test_help(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
     msg = make_incoming_privmsg('.help', target='#channel')
-    assert test_traccar.module.get_all_commands(msg, unauthorised_context) == {'help', 'whereissomeone'}
+    assert test_traccar.module.get_all_commands(msg, unauthorised_context) == {'help', 'whatissomeonesbatterylevel', 'whereissomeone'}
 
 
 def test_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
@@ -46,6 +46,7 @@ def test_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_context, 
             course=180,
             accuracy=10,
             geofenceIds=[1],
+            attributes={},
         )
     ]
 
@@ -89,6 +90,7 @@ def test_not_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_conte
             course=180,
             accuracy=10,
             geofenceIds=[],
+            attributes={},
         )
     ]
 
@@ -106,6 +108,46 @@ def test_not_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_conte
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :The eagle has left the nest, over.')
+            },
+        ],
+    )
+
+
+def test_battery(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
+    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+
+    mock_api.mocked_devices = [
+        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+    ]
+
+    mock_api.mocked_positions = [
+        Position(
+            id=1,
+            deviceId=1,
+            serverTime=datetime.now(),
+            deviceTime=datetime.now(),
+            fixTime=datetime.now(),
+            latitude=10,
+            longitude=20,
+            altitude=10,
+            speed=10,
+            course=180,
+            accuracy=10,
+            geofenceIds=[],
+            attributes={
+                'batteryLevel': 11,
+                'charge': False,
+            },
+        )
+    ]
+
+    msg = make_incoming_privmsg('.whatissomeonesbatterylevel', target='#channel')
+    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+
+    test_traccar.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('PRIVMSG #channel :11%')
             },
         ],
     )
@@ -130,7 +172,7 @@ def test_traccar(module_harness_factory):
                             {
                                 'url': 'https://example.com',
                                 'token': 'some-token',
-                                'commands': [
+                                'location_commands': [
                                     {
                                         'command_names': ['whereissomeone'],
                                         'channels': ['#channel'],
@@ -138,6 +180,13 @@ def test_traccar(module_harness_factory):
                                         'geofences': {
                                             'geofence-name': 'Nice Geofence Name'
                                         },
+                                    }
+                                ],
+                                'battery_commands': [
+                                    {
+                                        'command_names': ['whatissomeonesbatterylevel'],
+                                        'channels': ['#channel'],
+                                        'device_name': 'device-name',
                                     }
                                 ],
                             },

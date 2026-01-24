@@ -1,5 +1,6 @@
 import dacite
 import requests
+from typing import Any
 from .. import BaseResponder, AuthContext
 from ...message import IncomingPrivateMessage, Channel
 from dataclasses import dataclass
@@ -29,6 +30,7 @@ class Position:
     course: float  # [degrees]
     accuracy: float  # [meters]
     geofenceIds: None | list[int]
+    attributes: dict[str, Any]
 
 
 @dataclass
@@ -106,7 +108,7 @@ class Traccar(BaseResponder):
                     {
                         "url": "https://example.com"
                         "token": "yourtoken",
-                        "commands": [
+                        "location_commands": [
                             {
                                 "command_names": ["whereissomeone"]
                                 "channels": ["#channel"],
@@ -114,6 +116,13 @@ class Traccar(BaseResponder):
                                 "geofences": {
                                     "geofence-name": "Sanitized Name"
                                 }
+                            }
+                        ],
+                        "battery_commands": [
+                            {
+                                "command_names": ["whatissomeonesphonebatterypercentage"]
+                                "channels": ["#channel"],
+                                "device_name": "device-name"
                             }
                         ]
                     }
@@ -129,7 +138,11 @@ class Traccar(BaseResponder):
     def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
         for instance in self.config_get('instances', []):
-            for command_definition in instance['commands']:
+            for command_definition in instance['location_commands']:
+                if msg.target.channel in [Channel(v) for v in command_definition['channels']]:
+                    for command in command_definition['command_names']:
+                        rw.add(command)
+            for command_definition in instance['battery_commands']:
                 if msg.target.channel in [Channel(v) for v in command_definition['channels']]:
                     for command in command_definition['command_names']:
                         rw.add(command)
@@ -143,19 +156,33 @@ class Traccar(BaseResponder):
         channel = msg.target.channel
         if channel is not None:
             for instance_definition in self.config_get('instances', []):
-                for command_definition in instance_definition['commands']:
-                    if command_name not in command_definition['command_names']:
+                for location_command in instance_definition['location_commands']:
+                    if command_name not in location_command['command_names']:
                         continue
 
-                    if channel not in [Channel(v) for v in command_definition['channels']]:
+                    if channel not in [Channel(v) for v in location_command['channels']]:
                         continue
 
                     self._respond_with_location(
                         msg,
                         instance_definition['url'],
                         instance_definition['token'],
-                        command_definition['device_name'],
-                        command_definition['geofences'],
+                        location_command['device_name'],
+                        location_command['geofences'],
+                    )
+
+                for battery_command in instance_definition['battery_commands']:
+                    if command_name not in battery_command['command_names']:
+                        continue
+
+                    if channel not in [Channel(v) for v in battery_command['channels']]:
+                        continue
+
+                    self._respond_with_battery(
+                        msg,
+                        instance_definition['url'],
+                        instance_definition['token'],
+                        battery_command['device_name'],
                     )
 
     def _respond_with_location(self, msg: IncomingPrivateMessage, instance: str, token: str, device_name: str, sanitized_geofence_names: dict[str, str]) -> None:
@@ -189,6 +216,22 @@ class Traccar(BaseResponder):
             return
 
         self.respond(msg, 'Currently at: {} ({})'.format(', '.join(sanitized_geofences), self._confidence(position)))
+
+    def _respond_with_battery(self, msg: IncomingPrivateMessage, instance: str, token: str, device_name: str) -> None:
+        api = self._create_api(instance, token)
+
+        device = self._find_device(api.devices(), device_name)
+        if device is None:
+            self.respond(msg, 'Device doesn\'t exist in the API response.')
+            return
+
+        position = self._find_position(api.positions(), device)
+        if position is None:
+            self.respond(msg, 'Position for the device doesn\'t exist in the API response.')
+            return
+
+        charging = ' (charging)' if position.attributes['charge'] else ''
+        self.respond(msg, f'{position.attributes['batteryLevel']}%{charging}')
 
     def _confidence(self, position: Position) -> str:
         if position.accuracy > 25:

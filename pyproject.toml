@@ -22,7 +22,8 @@ dependencies = [
     "markov @ git+https://github.com/boreq/markov",
     "Mastodon.py==2.1.1",
     "dacite==1.9.2",
-    "irccodes==1.2.0"
+    "irccodes==1.2.0",
+    'requests==2.32.*',
 ]
 
 [project.optional-dependencies]
@@ -41,6 +42,8 @@ where = ["src"]
 namespaces = false
 
 [tool.mypy]
+#strict = true
 ignore_missing_imports = true
 check_untyped_defs = false
 disallow_untyped_defs = false
+#strict_equality = true
