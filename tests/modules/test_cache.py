@@ -6,7 +6,7 @@ from botnet.modules.lib import cache
 class BaseCacheTests(object):
 
     def make_cache(self):
-        """Expected default timeout is 1 second."""
+        """Expected default timeout is 0.1 second."""
         raise NotImplementedError
 
     @pytest.fixture
@@ -28,27 +28,27 @@ class BaseCacheTests(object):
 
     def test_base_default_timeout(self, c):
         assert c.set('key', 'value')
-        time.sleep(1)
+        time.sleep(0.1)
         assert c.get('key') is None
 
     def test_base_custom_timeout(self, c):
-        assert c.set('key', 'value', 2)
-        time.sleep(1)
+        assert c.set('key', 'value', 0.2)
+        time.sleep(0.1)
         assert c.get('key') == 'value'
-        time.sleep(1)
+        time.sleep(0.11)
         assert c.get('key') is None
 
 
 class TestMemoryCache(BaseCacheTests):
 
     def make_cache(self):
-        return cache.MemoryCache(1)
+        return cache.MemoryCache(0.1)
 
     def test_cleanup(self, c):
         assert len(c._data) == 0
         assert c.set('key', 'value')
         assert c.set('key2', 'value')
         assert len(c._data) == 2
-        time.sleep(1)
+        time.sleep(0.1)
         assert c.set('key3', 'value')
         assert len(c._data) == 1
