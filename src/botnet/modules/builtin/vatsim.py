@@ -1,8 +1,31 @@
 import threading
+import requests
 from ...message import IncomingPrivateMessage
 from .. import BaseResponder, command, parse_command, Args
-from ..lib import get_url
 from ..base import AuthContext
+from dataclasses import dataclass
+from typing import Protocol
+
+
+@dataclass
+class Metar:
+    text: str
+
+
+class VatsimAPI(Protocol):
+    def get_metar(self, icao: str) -> Metar:
+        ...
+
+
+class RestVatsimAPI:
+    def __init__(self, api_url_template: str) -> None:
+        self._api_url_template = api_url_template
+
+    def get_metar(self, icao: str) -> Metar:
+        url = self._api_url_template % icao
+        r = requests.get(url)
+        r.raise_for_status()
+        return Metar(text=r.text)
 
 
 class Vatsim(BaseResponder):
@@ -32,15 +55,21 @@ class Vatsim(BaseResponder):
 
         Syntax: metar ICAO
         """
+        icao = args['icao'][0]
+
         def f() -> None:
-            r = get_url(self.config_get('metar_api_url') % args['icao'][0])
-            r.raise_for_status()
-            if not r.text:
+            api = self._create_api(self.config_get('metar_api_url'))
+            metar = api.get_metar(icao)
+            if not metar.text:
                 self.respond(msg, 'Server didn\'t return an error but the response is empty.')
             else:
-                self.respond(msg, r.text)
+                self.respond(msg, metar.text)
+
         t = threading.Thread(target=f)
         t.start()
+
+    def _create_api(self, api_url_template: str) -> VatsimAPI:
+        return RestVatsimAPI(api_url_template)
 
 
 mod = Vatsim
