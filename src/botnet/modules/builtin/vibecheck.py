@@ -111,13 +111,13 @@ def _is_authorised_has_uuid_and_sent_a_privmsg():
     return predicates([predicate])
 
 
-class Gatekeep(NamesMixin, BaseResponder):
+class Vibecheck(NamesMixin, BaseResponder):
     """Allows users to see when was the last time someone said something.
 
     Example module config:
 
         "botnet": {
-            "gatekeep": {
+            "vibecheck": {
                 "data": "/path/to/data_file.json",
                 "channel": "#channel",
                 "authorised_group": "somegroup",
@@ -127,7 +127,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     """
 
     config_namespace = 'botnet'
-    config_name = 'gatekeep'
+    config_name = 'vibecheck'
     store: Store
     deltatime = 60 * 15  # [s]
 
@@ -138,12 +138,13 @@ class Gatekeep(NamesMixin, BaseResponder):
         self._t = threading.Thread(target=self.run)
         self._t.start()
 
-    @command('gatekeep')
+    @command('vibecheck')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
-    def auth_command_gatekeep(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
-        """Prints a report containing the number of endorsements and other information.
+    def auth_command_vibecheck(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+        """Prints a report containing the number of endorsements and other information. This command works only in
+        direct messages.
 
-        Syntax: gatekeep
+        Syntax: vibecheck
         """
         command_prefix = self.get_command_prefix()
 
@@ -163,7 +164,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     @_is_authorised_has_uuid_and_sent_a_privmsg()
     @parse_command([('nick', '+')])
     def auth_command_endorse(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
-        """Adds your endorsement for a nick.
+        """Adds your endorsement for a nick. This command works only in direct messages.
 
         Syntax: endorse NICK...
         """
@@ -186,7 +187,7 @@ class Gatekeep(NamesMixin, BaseResponder):
     @_is_authorised_has_uuid_and_sent_a_privmsg()
     @parse_command([('nick', '+')])
     def auth_command_unendorse(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
-        """Removes your endorsement for a nick.
+        """Removes your endorsement for a nick. This command works only in direct messages.
 
         Syntax: unendorse NICK...
         """
@@ -205,7 +206,8 @@ class Gatekeep(NamesMixin, BaseResponder):
     @_is_authorised_has_uuid_and_sent_a_privmsg()
     @parse_command([('nick1', 1), ('nick2', 1)])
     def auth_command_merge_personas(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
-        """Merges two personas (use if one physical person has multiple clients in the channel).
+        """Merges two personas (use if one physical person has multiple clients in the channel). This command works
+        only in direct messages.
 
         Syntax: merge_personas NICK1 NICK2
         """
@@ -258,7 +260,7 @@ class Gatekeep(NamesMixin, BaseResponder):
                         for nick in person['contact']:
                             self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
                             self.message(nick, ', '.join([v.for_display(person['uuid']) for v in reversed(report.persona_reports)]))
-                            self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}gatekeep\' command.')
+                            self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}vibecheck\' command.')
 
         channel = Channel(self.config_get('channel'))
         self.request_names(channel, on_names_available)
@@ -569,4 +571,4 @@ class TransportAuthorisedPersonInfo:
         )
 
 
-mod = Gatekeep
+mod = Vibecheck
