@@ -92,9 +92,6 @@ def test_config_reload(make_incoming_privmsg, admin_context, test_admin):
     ])
 
 
-@pytest.fixture()
-def admin_context():
-    return AuthContext(None, ['admin'])
 
 
 @pytest.fixture()

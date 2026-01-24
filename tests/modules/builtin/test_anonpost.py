@@ -18,8 +18,7 @@ def test_person_anonpost_to_channel(make_incoming_privmsg, unauthorised_context,
     )
 
 
-def test_admin_anonpost_to_person(make_incoming_privmsg, test_anonpost) -> None:
-    admin_context = AuthContext(uuid='admin-uuid', groups=['admin'])
+def test_admin_anonpost_to_person(make_incoming_privmsg, admin_context, test_anonpost) -> None:
     msg = make_incoming_privmsg('.anonpost victim Hello from admin!')
     test_anonpost.receive_auth_message_in(msg, admin_context)
 
@@ -32,8 +31,7 @@ def test_admin_anonpost_to_person(make_incoming_privmsg, test_anonpost) -> None:
     )
 
 
-def test_admin_anonpost_to_channel(make_incoming_privmsg, test_anonpost) -> None:
-    admin_context = AuthContext(uuid='admin-uuid', groups=['admin'])
+def test_admin_anonpost_to_channel(make_incoming_privmsg, admin_context, test_anonpost) -> None:
     msg = make_incoming_privmsg('.anonpost #channel Hello from admin!')
     test_anonpost.receive_auth_message_in(msg, admin_context)
 
