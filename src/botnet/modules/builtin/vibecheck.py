@@ -112,7 +112,8 @@ def _is_authorised_has_uuid_and_sent_a_privmsg():
 
 
 class Vibecheck(NamesMixin, BaseResponder):
-    """Allows users to see when was the last time someone said something.
+    """Vibecheck enables people to better keep track of who's in a channel and if they are someone who people know or
+    not.
 
     Example module config:
 
@@ -129,7 +130,7 @@ class Vibecheck(NamesMixin, BaseResponder):
     config_namespace = 'botnet'
     config_name = 'vibecheck'
     store: Store
-    deltatime = 60 * 15  # [s]
+    maybe_pester_people_every = 60 * 15  # [s]
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
@@ -242,12 +243,12 @@ class Vibecheck(NamesMixin, BaseResponder):
     def run(self) -> None:
         while not self._stop_event.is_set():
             try:
-                self._update()
-                self._stop_event.wait(self.deltatime)
+                self._maybe_pester_people()
+                self._stop_event.wait(self.maybe_pester_people_every)
             except Exception as e:
                 on_exception.send(self, e=e)
 
-    def _update(self) -> None:
+    def _maybe_pester_people(self) -> None:
         command_prefix = self.get_command_prefix()
 
         def on_names_available(names: list[Nick]) -> None:
