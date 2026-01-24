@@ -127,8 +127,8 @@ class ModuleHarness:
 
     def __init__(self, module_class, config: Config) -> None:
         self._request_list_commands_trap = Trap(_request_list_commands)
-        self._message_out_trap = Trap(message_out)
-        self._on_exception_trap = Trap(on_exception)
+        self.message_out_trap = Trap(message_out)
+        self.on_exception_trap = Trap(on_exception)
 
         self.module = module_class(config)
 
@@ -146,14 +146,14 @@ class ModuleHarness:
     def expect_message_out_signals(self, expected_signals: list[dict]) -> None:
         def wait_condition(trapped):
             assert trapped == expected_signals
-        self._message_out_trap.wait(wait_condition)
+        self.message_out_trap.wait(wait_condition)
 
     def reset_message_out_signals(self) -> None:
-        self._message_out_trap.reset()
+        self.message_out_trap.reset()
 
     def _stop(self) -> None:
         self.module.stop()
-        for e in self._on_exception_trap.trapped:
+        for e in self.on_exception_trap.trapped:
             raise e['e']
 
 
