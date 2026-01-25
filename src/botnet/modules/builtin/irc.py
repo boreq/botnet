@@ -167,7 +167,6 @@ class IRC(BaseResponder):
 
         message_out.connect(self.on_message_out)
         self.restart_event = threading.Event()
-        self.buffer: Buffer | None  = None
         self.stop_event = threading.Event()
         self.t = threading.Thread(target=self.run)
 
@@ -265,13 +264,13 @@ class IRC(BaseResponder):
         line_str = line.decode()
         return Message.new_from_string(line_str)
 
-    def process_data(self, data: bytes) -> None:
+    def process_data(self, buffer: Buffer, data: bytes) -> None:
         """Processes data received from the servers, partitions it into lines
         and passes each line to process_line.
 
         data: bytes.
         """
-        for line in self.buffer.process_data(data):
+        for line in buffer.process_data(data):
             try:
                 self.process_line(line)
             except Exception as e:
@@ -397,7 +396,6 @@ class IRC(BaseResponder):
         with self.get_inactivity_monitor():
             try:
                 self.restart_event.clear()
-                self.buffer = Buffer()
                 self.connect()
                 self.identify()
                 self.receive_loop()
@@ -406,6 +404,7 @@ class IRC(BaseResponder):
                     self.soc.close()
 
     def receive_loop(self) -> None:
+        buffer = Buffer()
         while not self.stop_event.is_set() and not self.restart_event.is_set():
             if self.soc is not None:
                 reads, writes, errors = select.select([self.soc], [], [], self.select_timeout_seconds)
@@ -414,7 +413,7 @@ class IRC(BaseResponder):
                         data = self.soc.recv(4096)
                         if not data:
                             raise Exception('No data could be read')
-                        self.process_data(data)
+                        self.process_data(buffer, data)
 
     def run(self) -> None:
         while not self.stop_event.is_set():
