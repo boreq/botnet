@@ -1,7 +1,9 @@
 import importlib
+from .base import BaseModule
+from types import ModuleType
 
 
-def get_module(module_name: str):
+def get_module(module_name: str) -> ModuleType:
     """Attempts to find a bot module by name. This function looks for a
     Python module named `module_name` located in `botnet.modules`. If the name
     is prefixed with `botnet_` this function will look for an external module
@@ -14,12 +16,12 @@ def get_module(module_name: str):
     return importlib.import_module(import_name)
 
 
-def reload_module(module):
+def reload_module(module: ModuleType) -> ModuleType:
     """Reloads a loaded Python module."""
-    importlib.reload(module)
+    return importlib.reload(module)
 
 
-def get_ident_string(module_class) -> str:
+def get_ident_string(module_class: type[BaseModule]) -> str:
     """Returns a string which can be used to identify a module class.
     Normal comparison marks the same class as different after reloading it
     so this string has to be used to compare modules after reloading instead

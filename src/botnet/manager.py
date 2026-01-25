@@ -2,7 +2,7 @@ import threading
 from .config import Config
 from .logging import get_logger
 from .message import IncomingPrivateMessage
-from .modules import AuthContext
+from .modules import BaseModule, AuthContext
 from .modules.utils import get_module, reload_module, get_ident_string
 from .signals import module_loaded, module_unloaded, module_load, module_unload, \
     _request_list_commands, _list_commands, config_changed, on_exception, \
@@ -10,13 +10,13 @@ from .signals import module_loaded, module_unloaded, module_load, module_unload,
 from .wrappers import ModuleWrapper
 
 
+type ModuleClass = type[BaseModule]
+
+
 class Manager:
     """Main class which manages modules."""
 
-    # Class used for config
-    config_class = Config
-
-    def __init__(self, config_path=None) -> None:
+    def __init__(self, config_path: str | None = None) -> None:
         self.logger = get_logger(self)
 
         # List of ModuleWrapper objects, each with one module
@@ -29,20 +29,19 @@ class Manager:
         self.wrappers_lock = threading.Lock()
 
         # Handle config, load modules defined there
-        self.config = self.config_class()
+        self.config = Config()
         self.config_path = config_path
         if config_path:
             self.config.from_json_file(config_path)
 
-        for module_name in self.config.get('modules', []):
-            self.load_module_by_name(module_name)
-
-        # Connect signals
         module_load.connect(self.on_module_load)
         module_unload.connect(self.on_module_unload)
         _request_list_commands.connect(self.on_request_list_commands)
         config_reload.connect(self.on_config_reload)
         config_changed.connect(self.on_config_changed)
+
+        for module_name in self.config.get('modules', []):
+            self.load_module_by_name(module_name)
 
     def stop(self) -> None:
         """Stops all modules and then the entire program."""
@@ -51,15 +50,6 @@ class Manager:
             for wrapper in self.module_wrappers:
                 wrapper.stop()
             self.stop_event.set()
-
-    def get_wrapper(self, module_class) -> ModuleWrapper | None:
-        """Checks if a module is loaded. Returns ModuleWrapper or None on
-        failure.
-        """
-        for wrapper in self.module_wrappers:
-            if wrapper.name == get_ident_string(module_class):
-                return wrapper
-        return None
 
     def on_request_list_commands(self, sender, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Handler for the _request_list_commands signal."""
@@ -72,7 +62,7 @@ class Manager:
                     on_exception.send(self, e=e)
         _list_commands.send(self, msg=msg, auth=auth, commands=commands)
 
-    def on_config_changed(self, sender):
+    def on_config_changed(self, sender) -> None:
         """Handler for the config_changed signal."""
         self.logger.debug('Received config_changed signal')
         try:
@@ -82,7 +72,7 @@ class Manager:
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def on_config_reload(self, sender):
+    def on_config_reload(self, sender) -> None:
         """Handler for the config_reload signal."""
         self.logger.debug('Received config_reload signal')
         try:
@@ -93,43 +83,47 @@ class Manager:
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def on_module_load(self, sender, name):
+    def on_module_load(self, sender, module_name: str) -> None:
         """Handler for the module_load signal."""
+        self.logger.debug(f'Received module_load signal for module {module_name}.')
         try:
-            result = self.load_module_by_name(name)
-            if result:
+            if self.load_module_by_name(module_name) is not None:
                 with self.config.lock:
                     if 'modules' not in self.config:
                         self.config['modules'] = []
-                    self.config['modules'].append(name)
+                    self.config['modules'].append(module_name)
                 config_changed.send(self)
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def on_module_unload(self, sender, name):
+    def on_module_unload(self, sender, module_name: str) -> None:
         """Handler for the module_unload signal."""
+        self.logger.debug(f'Received module_unload signal for module {module_name}.')
         try:
-            result = self.unload_module_by_name(name)
-            if result:
+            if self.unload_module_by_name(module_name):
                 with self.config.lock:
                     if 'modules' in self.config:
-                        self.config['modules'].remove(name)
+                        self.config['modules'].remove(module_name)
                 config_changed.send(self)
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def load_module_by_name(self, module_name):
-        """Loads a module by name using the `modules.get_module` function."""
+    def load_module_by_name(self, module_name: str) -> ModuleWrapper | None:
+        """Loads a module by name. Returns a wrapper containing a loaded module
+        or None if the module was not loaded because it is already loaded.
+        """
         try:
             module = get_module(module_name)
-            reload_module(module)
+            module = reload_module(module)
             module_class = getattr(module, 'mod')
         except (ImportError, AttributeError) as e:
             raise ValueError('Could not import module %s.' % module_name) from e
         return self.load_module(module_class)
 
-    def unload_module_by_name(self, module_name):
-        """Unloads a module by name using the `modules.get_module` function."""
+    def unload_module_by_name(self, module_name: str) -> bool:
+        """Unloads a module. Returns False if the module wasn't loaded and
+        therefore there was nothing to do.
+        """
         try:
             module = get_module(module_name)
             module_class = getattr(module, 'mod')
@@ -137,13 +131,13 @@ class Manager:
             raise ValueError('Could not import module %s.' % module_name) from e
         return self.unload_module(module_class)
 
-    def load_module(self, module_class):
+    def load_module(self, module_class: ModuleClass) -> ModuleWrapper | None:
         """Loads a module. Returns a wrapper containing a loaded module or None
-        if the module was not loaded.
+        if the module was not loaded because it is already loaded.
         """
         self.logger.debug('Load module %s', module_class)
         with self.wrappers_lock:
-            if not self.get_wrapper(module_class):
+            if self._get_wrapper(module_class) is None:
                 module = module_class(self.config)
                 wrapper = ModuleWrapper(module)
                 wrapper.start()
@@ -151,23 +145,25 @@ class Manager:
                 self.logger.debug('Loaded module %s', module_class)
                 module_loaded.send(self, cls=module_class)
                 return wrapper
-            self.logger.debug('Module %s is already loaded', module_class)
-            return None
+        self.logger.debug('Module %s is already loaded so it was not loaded again', module_class)
+        return None
 
-    def unload_module(self, module_class):
-        """Unloads a module."""
+    def unload_module(self, module_class: ModuleClass) -> bool:
+        """Unloads a module. Returns False if the module wasn't loaded and
+        therefore there was nothing to do."""
         self.logger.debug('Unload module %s', module_class)
         with self.wrappers_lock:
-            wrapper = self.get_wrapper(module_class)
+            wrapper = self._get_wrapper(module_class)
             if wrapper is not None:
                 wrapper.stop()
                 self.module_wrappers.remove(wrapper)
                 self.logger.debug('Unloaded module %s', module_class)
                 module_unloaded.send(self, cls=module_class)
                 return True
+        self.logger.debug('Module %s is not loaded so it was not unloaded', module_class)
         return False
 
-    def run(self):
+    def run(self) -> None:
         """Method which can be used to block until the self.stop method has
         been called. There is nothing to do in the Manager because all modules
         are separate and if they want to do anything (generate signals out of
@@ -175,3 +171,12 @@ class Manager:
         run in a separate threads anyway to avoid blocking everything else.
         """
         self.stop_event.wait()
+
+    def _get_wrapper(self, module_class: ModuleClass) -> ModuleWrapper | None:
+        """Checks if a module is loaded. Returns ModuleWrapper or None on
+        failure.
+        """
+        for wrapper in self.module_wrappers:
+            if wrapper.name == get_ident_string(module_class):
+                return wrapper
+        return None

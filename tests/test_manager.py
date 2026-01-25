@@ -26,10 +26,10 @@ def test_load_module():
     manager = Manager()
 
     manager.load_module(DummyModule)
-    assert manager.get_wrapper(DummyModule) is not None
+    assert manager._get_wrapper(DummyModule) is not None
 
     manager.unload_module(DummyModule)
-    assert manager.get_wrapper(DummyModule) is None
+    assert manager._get_wrapper(DummyModule) is None
 
 
 def test_load_twice():
@@ -39,11 +39,11 @@ def test_load_twice():
     manager = Manager()
 
     manager.load_module(DummyModule)
-    assert manager.get_wrapper(DummyModule) is not None
+    assert manager._get_wrapper(DummyModule) is not None
     assert len(manager.module_wrappers) == 1
 
     manager.load_module(DummyModule)
-    assert manager.get_wrapper(DummyModule) is not None
+    assert manager._get_wrapper(DummyModule) is not None
     assert len(manager.module_wrappers) == 1
 
 
@@ -58,7 +58,7 @@ def test_load_twice_by_name():
 
 
 def test_get_wrapper():
-    """Checks if get_wrapper properly handles inheritance. Ensures that
+    """Checks if _get_wrapper properly handles inheritance. Ensures that
     a child is not returned when querying for a parent."""
     class DummyModule(modules.BaseModule):
         value = 'parent'
@@ -67,8 +67,8 @@ def test_get_wrapper():
         value = 'child'
 
     def test(manager):
-        parent = manager.get_wrapper(DummyModule)
-        child = manager.get_wrapper(DummyModuleChild)
+        parent = manager._get_wrapper(DummyModule)
+        child = manager._get_wrapper(DummyModuleChild)
         assert parent.module.value == 'parent'
         assert child.module.value == 'child'
 
