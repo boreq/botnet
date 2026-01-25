@@ -152,11 +152,21 @@ class Vibecheck(NamesMixin, BaseResponder):
         def on_names_available(names: list[Nick]) -> None:
             assert auth.uuid is not None
 
-            with self._store as state:
-                report = state.generate_report(auth.uuid, names)
+            auth_module_people = self._peek_auth_module_people()
+            auth_module_people_uuids = set([person['uuid'] for person in auth_module_people])
 
-            self.respond(msg, 'Everyone currently in the channel: {}'.format(', '.join([v.for_display(auth.uuid) for v in reversed(report.persona_reports)])))
+            with self._store as state:
+                report = state.generate_report(self._now(), auth.uuid, names, auth_module_people_uuids)
+
+            self.respond(
+                msg,
+                'Everyone currently in the channel: {}'.format(
+                    ', '.join([v.for_display(auth.uuid) for v in reversed(report.persona_reports)])
+                )
+            )
+
             self.respond(msg, f'If you would like to endorse anyone then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'.')
+            self.respond(msg, f'Transparency: {report.authorised_people_report.for_display()}')
 
         channel = Channel(self.config_get('channel'))
         self.request_names(channel, on_names_available)
@@ -248,23 +258,33 @@ class Vibecheck(NamesMixin, BaseResponder):
             except Exception as e:
                 on_exception.send(self, e=e)
 
+    def _now(self) -> datetime:
+        return datetime.now()
+
     def _maybe_pester_people(self) -> None:
         command_prefix = self.get_command_prefix()
 
         def on_names_available(names: list[Nick]) -> None:
-            authorised_group = self.config_get('authorised_group')
-            for person in self.peek_loaded_config_for_module('botnet', 'auth', 'people', default=[]):
-                if authorised_group in person['groups']:
-                    with self._store as state:
-                        report = state.generate_pestering_report(person['uuid'], names)
-                    if report is not None:
-                        for nick in person['contact']:
-                            self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
-                            self.message(nick, ', '.join([v.for_display(person['uuid']) for v in reversed(report.persona_reports)]))
-                            self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}vibecheck\' command.')
+            auth_module_people = self._peek_auth_module_people()
+            auth_module_people_uuids = set([person['uuid'] for person in auth_module_people])
+
+            for person in auth_module_people:
+                with self._store as state:
+                    report = state.generate_pestering_report(self._now(), person['uuid'], names, auth_module_people_uuids)
+                if report is not None:
+                    for nick in person['contact']:
+                        self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
+                        self.message(nick, ', '.join([v.for_display(person['uuid']) for v in reversed(report.persona_reports)]))
+                        self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}vibecheck\' command.')
 
         channel = Channel(self.config_get('channel'))
         self.request_names(channel, on_names_available)
+
+    def _peek_auth_module_people(self):
+        return [
+            person for person in self.peek_loaded_config_for_module('botnet', 'auth', 'people', default=[])
+            if self.config_get('authorised_group') in person['groups']
+        ]
 
 
 class Store:
@@ -327,16 +347,16 @@ class State:
                 return
         self.personas.append(Persona.new(nick1, nick2))
 
-    def generate_report(self, auth_uuid: str, nicks: list[Nick]) -> MinorityReport:
+    def generate_report(self, now: datetime, auth_uuid: str, nicks: list[Nick], authorised_group_auth_uuids: set[str]) -> MinorityReport:
         self._mark_command_executed(auth_uuid)
-        return MinorityReport.generate(self, nicks)
+        return MinorityReport.generate(now, self, nicks, authorised_group_auth_uuids)
 
-    def generate_pestering_report(self, auth_uuid: str, nicks: list[Nick]) -> MinorityReport | None:
+    def generate_pestering_report(self, now: datetime, auth_uuid: str, nicks: list[Nick], authorised_group_auth_uuids: set[str]) -> MinorityReport | None:
         if auth_uuid in self.authorised_people_infos:
             if not self.authorised_people_infos[auth_uuid].should_pester():
                 return None
         self._mark_pestered(auth_uuid)
-        return MinorityReport.generate(self, nicks)
+        return MinorityReport.generate(now, self, nicks, authorised_group_auth_uuids)
 
     def _all_nicks_of(self, nick: Nick) -> list[Nick]:
         all_nicks = set([nick])
@@ -448,10 +468,12 @@ class AuthorisedPersonInfo:
 @dataclass
 class MinorityReport:
     persona_reports: list[PersonaReport]
+    authorised_people_report: AuthorisedPeopleReport
 
     @classmethod
-    def generate(cls, state: State, nicks: list[Nick]) -> MinorityReport:
-        report = cls([])
+    def generate(cls, now: datetime, state: State, nicks: list[Nick], authorised_group_auth_uuids: set[str]) -> MinorityReport:
+        authorised_people_report = AuthorisedPeopleReport.new(now, state, authorised_group_auth_uuids)
+        report = cls([], authorised_people_report)
 
         for nick in nicks:
             existing = report._find_existing_persona_report(state, nick)
@@ -494,6 +516,70 @@ class PersonaReport:
         else:
             nicks = colored(nicks, Color.RED)
         return '{} ({})'.format(nicks, '^' if endorsed else '?')
+
+
+@dataclass
+class AuthorisedPeopleReport:
+    uuids: set[str]
+    median_last_interaction_days: None | float
+    max_last_interaction_days: None | float
+
+    @classmethod
+    def new(cls, now: datetime, state: State, authorised_people_uuids: set[str]) -> AuthorisedPeopleReport:
+        last_interaction_days: list[float | None] = []
+
+        for uuid in authorised_people_uuids:
+            info = state.authorised_people_infos.get(uuid)
+            if info is not None:
+                if info.last_command_executed_at is not None:
+                    delta = now - info.last_command_executed_at
+                    print('now', now)
+                    print('past', info.last_command_executed_at)
+                    print('delta = now - info.last_command_executed_at')
+                    print('delta', delta)
+                    print('delta.days', delta.days)
+                    if delta.days > 0:
+                        last_interaction_days.append(delta.days)
+                    else:
+                        last_interaction_days.append(0)
+                else:
+                    last_interaction_days.append(None)
+
+        if len(last_interaction_days) > 0:
+            sorted_data = sorted(last_interaction_days, key=lambda x: (x is None, x))
+            print('sorted_data:', sorted_data)
+            max_last_interaction_days = sorted_data[-1]
+            median_last_interaction_days = sorted_data[(len(sorted_data) - 1) // 2]
+        else:
+            print('sorted_data: empty')
+            median_last_interaction_days = None
+            max_last_interaction_days = None
+
+        return AuthorisedPeopleReport(authorised_people_uuids, median_last_interaction_days, max_last_interaction_days)
+
+    def for_display(self) -> str:
+        sorted_uuids = sorted(list(self.uuids))
+        if self.median_last_interaction_days is None:
+            age_median = colored('never (!)', Color.RED)
+        else:
+            if self.median_last_interaction_days < 30:
+                age_median = colored(f'in the last {self.median_last_interaction_days} days', Color.GREEN)
+            else:
+                age_median = colored(f'in the last {self.median_last_interaction_days} days', Color.RED)
+
+        if self.max_last_interaction_days is None:
+            age_max = colored('never (!)', Color.RED)
+        else:
+            if self.max_last_interaction_days < 30:
+                age_max = colored(f'in the last {self.max_last_interaction_days} days', Color.GREEN)
+            else:
+                age_max = colored(f'in the last {self.max_last_interaction_days} days', Color.RED)
+
+        return 'authorised group consists of {}; median last age of interaction with this module is {}, max last age of interaction with this module is {}.'.format(
+            ', '.join(sorted_uuids),
+            age_median,
+            age_max,
+        )
 
 
 @dataclass
