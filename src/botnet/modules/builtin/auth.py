@@ -35,7 +35,7 @@ class WhoisMixin(BaseModule):
 
     """
 
-    whois_cache_timeout = 120
+    whois_cache_timeout = 60 * 15
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
@@ -86,6 +86,18 @@ class WhoisMixin(BaseModule):
             return
         self._whois_cache.set(nick, self._whois_current.pop(nick))
         self._whois_run_deferred()
+
+    def handler_part(self, msg: Message) -> None:
+        """Handler for PART."""
+        assert msg.nickname is not None
+        nick = Nick(msg.nickname)
+        self._whois_cache.delete(nick)
+
+    def handler_quit(self, msg: Message) -> None:
+        """Handler for QUIT."""
+        assert msg.nickname is not None
+        nick = Nick(msg.nickname)
+        self._whois_cache.delete(nick)
 
     def whois_schedule(self, nick: Nick, on_complete: Callable[[dict[str, Any]], None]) -> None:
         """Schedules an action to be completed when the whois for the nick is

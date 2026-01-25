@@ -1,3 +1,4 @@
+import pytest
 from botnet.config import Config
 from botnet.modules import AuthContext
 from botnet.modules.builtin.auth import Auth
@@ -215,3 +216,140 @@ def test_identify_user(subtests, make_signal_trap, rec_msg) -> None:
             auth_message_in_trap.wait(wait_condition)
 
             a.stop()
+
+
+def test_cache_invalidation(subtests, make_tested_auth) -> None:
+    config = {
+        'module_config': {
+            'botnet': {
+                'auth': {
+                    'people': [
+                        {
+                            'uuid': 'someones_uuid',
+                            'authorisations': [
+                                {
+                                    'kind': 'irc',
+                                    'nick': 'ircnick',
+                                },
+                            ],
+                            'groups': ['group1', 'group2'],
+                        },
+                    ],
+                },
+            },
+        },
+    }
+
+    test_cases = [
+        {
+            'messages': [
+                ':someone!example.com QUIT :Client quit',
+            ],
+            'invalidates': True,
+        },
+        {
+            'messages': [
+                ':someone!example.com PART #channel',
+            ],
+            'invalidates': True,
+        },
+        {
+            'messages': [
+                ':someone!example.com PRIVMSG #channel :Hello!',
+            ],
+            'invalidates': False,
+        },
+    ]
+
+    whois_response = [
+        ':vindobona.hackint.org 311 target_nick someone ~user hackint/user/username * :real name',
+        ':vindobona.hackint.org 319 target_nick someone :@#channel1 @#channel2 #channel3',
+        ':vindobona.hackint.org 312 target_nick someone palermo.hackint.org :The HackINT irc network',
+        ':vindobona.hackint.org 671 target_nick someone :is using a secure connection',
+        ':vindobona.hackint.org 330 target_nick someone ircnick :is logged in as',
+        ':vindobona.hackint.org 318 target_nick someone :End of /WHOIS list.',
+    ]
+
+    for test_case in test_cases:
+        with subtests.test(test_case=test_case):
+            tested_auth = make_tested_auth()
+
+            received_msg = Message.new_from_string(':someone!example.com PRIVMSG #channel :Hello!')
+            tested_auth.receive_message_in(received_msg)
+
+            tested_auth.expect_message_out_signals(
+                [
+                    {
+                        'msg': Message.new_from_string('WHOIS someone'),
+                    },
+                ],
+            )
+
+            for message_string in whois_response:
+                tested_auth.receive_message_in(Message.new_from_string(message_string))
+
+            tested_auth.expect_auth_message_in_signals(
+                [
+                    {
+                        'msg': IncomingPrivateMessage(sender=Nick('someone'), target=Target(Channel('#channel')), text=Text('Hello!')),
+                        'auth': AuthContext('someones_uuid', ['group1', 'group2']),
+                    }
+                ]
+            )
+
+            for message_string in test_case['messages']:
+                received_msg = Message.new_from_string(message_string)
+                tested_auth.receive_message_in(received_msg)
+
+            tested_auth.reset_message_out_signals()
+
+            received_msg = Message.new_from_string(':someone!example.com PRIVMSG #channel :Hello!')
+            tested_auth.receive_message_in(received_msg)
+
+            if test_case['invalidates']:
+                tested_auth.expect_message_out_signals(
+                    [
+                        {
+                            'msg': Message.new_from_string('WHOIS someone'),
+                        },
+                    ],
+                )
+            else:
+                tested_auth.expect_message_out_signals(
+                    [
+                    ],
+                )
+
+            tested_auth.stop()
+
+
+@pytest.fixture()
+def make_tested_auth(module_harness_factory):
+    config = Config(
+        {
+            'module_config': {
+                'botnet': {
+                    'auth': {
+                        'people': [
+                            {
+                                'uuid': 'someones_uuid',
+                                'authorisations': [
+                                    {
+                                        'kind': 'irc',
+                                        'nick': 'ircnick',
+                                    },
+                                    {
+                                        'kind': 'matrix',
+                                        'nick': '@matrixnick:example.com',
+                                    },
+                                ],
+                                'groups': ['group1', 'group2'],
+                            },
+                        ],
+                    },
+                },
+            },
+        }
+    )
+
+    return lambda: module_harness_factory.make(Auth, config)

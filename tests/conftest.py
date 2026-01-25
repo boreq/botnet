@@ -124,13 +124,14 @@ class ModuleHarnessFactory:
 
     def _stop_all(self) -> None:
         for harness in self._harnesses:
-            harness._stop()
+            harness.stop()
 
 
 class ModuleHarness:
 
     def __init__(self, module_class, config: Config) -> None:
         self._request_list_commands_trap = Trap(_request_list_commands)
+        self.auth_message_in_trap = Trap(auth_message_in)
         self.message_out_trap = Trap(message_out)
         self.on_exception_trap = Trap(on_exception)
         self.module_load_trap = Trap(module_load)
@@ -159,10 +160,10 @@ class ModuleHarness:
             assert trapped == expected_signals
         self._request_list_commands_trap.wait(wait_condition)
 
-    def expect_message_out_signals(self, expected_signals: list[dict]) -> None:
+    def expect_auth_message_in_signals(self, expected_signals: list[dict]) -> None:
         def wait_condition(trapped):
             assert trapped == expected_signals
-        self.message_out_trap.wait(wait_condition)
+        self.auth_message_in_trap.wait(wait_condition)
 
     def expect_module_load_signals(self, expected_signals: list[dict]) -> None:
         def wait_condition(trapped):
@@ -179,10 +180,15 @@ class ModuleHarness:
             assert trapped == expected_signals
         self.config_reload_trap.wait(wait_condition)
 
+    def expect_message_out_signals(self, expected_signals: list[dict]) -> None:
+        def wait_condition(trapped):
+            assert trapped == expected_signals
+        self.message_out_trap.wait(wait_condition)
+
     def reset_message_out_signals(self) -> None:
         self.message_out_trap.reset()
 
-    def _stop(self) -> None:
+    def stop(self) -> None:
         self.module.stop()
         for e in self.on_exception_trap.trapped:
             raise e['e']
