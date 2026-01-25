@@ -15,11 +15,5 @@ def save_json(file_path: str, data: Any, **kwargs: Any) -> None:
     os.replace(tmp_file_path, file_path)
 
 
-def is_channel_name(text: str | None) -> bool:
-    if text:
-        return text[0] in ['&', '#', '+', '!']
-    return False
-
-
 def cleanup_nick(nick: str) -> str:
     return nick.lstrip("@+")

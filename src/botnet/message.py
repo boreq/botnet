@@ -8,7 +8,6 @@
 
 import re
 from .codes import Code
-from .helpers import is_channel_name
 
 
 class Message:
@@ -200,6 +199,12 @@ class Channel:
         return hash(self.s.lower())
 
 
+def _is_channel_name(text: str | None) -> bool:
+    if text:
+        return text[0] in ['&', '#', '+', '!']
+    return False
+
+
 class Target:
     nick_or_channel: Nick | Channel
 
@@ -209,7 +214,7 @@ class Target:
 
     @classmethod
     def new_from_string(cls, s: str) -> Target:
-        if is_channel_name(s):
+        if _is_channel_name(s):
             return cls(Channel(s))
         else:
             return cls(Nick(s))
