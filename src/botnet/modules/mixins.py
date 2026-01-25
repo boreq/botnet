@@ -1,6 +1,5 @@
 import re
 import inspect
-from typing import Protocol
 from ..signals import message_in, auth_message_in, on_exception, config_changed
 from ..config import Config
 from .base import BaseModule, AuthContext
@@ -10,11 +9,6 @@ from collections.abc import Callable
 
 
 _SENTI = object()
-
-
-class CommandHandler(Protocol):
-    def __call__(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
-        ...
 
 
 def _iterate_dict(d, key):
@@ -155,6 +149,9 @@ class ConfigMixin(BaseModule):
         return 'module_config.{}.{}.{}'.format(config_location[0], config_location[1], key)
 
 
+BoundCommandHandler = Callable[[IncomingPrivateMessage, AuthContext], None]
+
+
 class MessageDispatcherMixin(BaseModule):
     """Dispatches messages received via `message_in` and `auth_message_in`
     signals to appropriate methods.
@@ -255,7 +252,7 @@ class MessageDispatcherMixin(BaseModule):
             privmsg = IncomingPrivateMessage.new_from_message(msg)
             self.handle_privmsg(privmsg)
 
-    def _get_command_handlers(self, command_name: str) -> list[CommandHandler]:
+    def _get_command_handlers(self, command_name: str) -> list[BoundCommandHandler]:
         """Gets a list of command handlers which match this command name."""
         handlers: list[Callable] = []
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
@@ -263,7 +260,7 @@ class MessageDispatcherMixin(BaseModule):
                 handlers.append(method)
         return handlers
 
-    def _get_all_command_handlers(self) -> list[CommandHandler]:
+    def _get_all_command_handlers(self) -> list[BoundCommandHandler]:
         """Gets a list of all command handlers."""
         handlers: list[Callable] = []
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
@@ -271,7 +268,7 @@ class MessageDispatcherMixin(BaseModule):
                 handlers.append(method)
         return handlers
 
-    def _command_predicates_pass(self, handler: CommandHandler, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
+    def _command_predicates_pass(self, handler: BoundCommandHandler, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
         """Returns a handler for a command."""
         for predicate in getattr(handler, _ATTR_PREDICATES, []):
             if not predicate(self, msg, auth):

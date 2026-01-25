@@ -23,8 +23,6 @@ class Args(dict[str, list[str]]):
 
 CommandHandler = Callable[[Any, IncomingPrivateMessage, AuthContext], None]
 CommandHandlerWithArgs = Callable[[Any, IncomingPrivateMessage, AuthContext, Args], None]
-
-
 Predicate = Callable[[Any, IncomingPrivateMessage, AuthContext], bool]
 
 
