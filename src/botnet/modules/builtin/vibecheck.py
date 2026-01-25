@@ -533,11 +533,6 @@ class AuthorisedPeopleReport:
             if info is not None:
                 if info.last_command_executed_at is not None:
                     delta = now - info.last_command_executed_at
-                    print('now', now)
-                    print('past', info.last_command_executed_at)
-                    print('delta = now - info.last_command_executed_at')
-                    print('delta', delta)
-                    print('delta.days', delta.days)
                     if delta.days > 0:
                         last_interaction_days.append(delta.days)
                     else:
@@ -547,11 +542,9 @@ class AuthorisedPeopleReport:
 
         if len(last_interaction_days) > 0:
             sorted_data = sorted(last_interaction_days, key=lambda x: (x is None, x))
-            print('sorted_data:', sorted_data)
             max_last_interaction_days = sorted_data[-1]
             median_last_interaction_days = sorted_data[(len(sorted_data) - 1) // 2]
         else:
-            print('sorted_data: empty')
             median_last_interaction_days = None
             max_last_interaction_days = None
 
