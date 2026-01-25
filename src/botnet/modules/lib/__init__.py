@@ -5,7 +5,6 @@
 
 # flake8: noqa: F401
 
-import irccodes
 from enum import Enum, unique
 from .cache import BaseCache, MemoryCache
 from .decorators import catch_other
@@ -26,11 +25,18 @@ def divide_text(text: str, max_len: int) -> list[str]:
     return lines
 
 
+_COLOR = chr(0x03)
+
+
 @unique
 class Color(Enum):
-    RED = 'light red'
-    GREEN = 'green'
+    GREEN = '03'
+    RED = '04'
 
 
 def colored(text: str, color: Color) -> str:
-    return irccodes.colored(text, color.value, padding='')
+    # in theory spaces are allowed but if we naively break up long lines later then the colors will break unless we
+    # do what we do here
+    parts = text.split(' ')
+    parts = [_COLOR + color.value + part + _COLOR for part in parts]
+    return  ' '.join(parts)
