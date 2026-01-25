@@ -153,17 +153,21 @@ class IRC(BaseResponder):
 
     """
 
-    deltatime = 5
+    socket_timeout_seconds = 5
+    select_timeout_seconds = 1
+    wait_before_reconnecting_seconds = 5
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.register_config('botnet', 'base_responder')
         self.register_config('botnet', 'irc')
+
         self.soc: socket.socket | None = None
+        self.sock_lock = threading.Lock()
+
         message_out.connect(self.on_message_out)
         self.restart_event = threading.Event()
-        self.send_lock = threading.Lock()
-        self.buffer = Buffer()
+        self.buffer: Buffer | None  = None
         self.stop_event = threading.Event()
         self.t = threading.Thread(target=self.run)
 
@@ -319,38 +323,42 @@ class IRC(BaseResponder):
     def handler_rpl_endofmotd(self, msg: Message) -> None:
         self.join_from_config()
 
-    def handler_ping(self, msg: Message) -> None:
-        rmsg = Message(command='PONG', params=msg.params)
-        self.send(rmsg.to_string())
+    def handler_ping(self, ping: Message) -> None:
+        pong = Message(command='PONG', params=ping.params)
+        self.send(pong.to_string())
 
-    def send(self, text: str) -> bool:
-        """Sends a text to the socket."""
-        with self.send_lock:
-            # To be honest I have never seen an exception here
+    def send(self, text: str) -> None:
+        if len(text) == 0:
+            self.logger.warning('Tried sending an empty message, not sending')
+            return
+
+        with self.sock_lock:
+            if self.soc is None:
+                self.logger.warning('Tried sending while socket is None, not sending')
+                return
+
             try:
-                if len(text) > 0 and self.soc:
-                    self.logger.debug('Sending:  %s', text)
-                    full_text = '%s\r\n' % text
-                    data = full_text.encode('utf-8')
-                    self.soc.send(data)
-                    return True
+                self.logger.debug('Sending:  %s', text)
+                full_text = '%s\r\n' % text
+                data = full_text.encode('utf-8')
+                self.soc.send(data)
             except (OSError, ssl.SSLError) as e:
                 on_exception.send(self, e=e)
-            return False
 
     def connect(self) -> None:
         """Initiates the connection."""
-        self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if self.config_get('ssl'):
-            context = ssl.create_default_context()
-            certconf = self.config_get('cert', None)
-            if certconf is not None:
-                context.load_cert_chain(certfile=certconf['certfile'], keyfile=certconf['keyfile'])
-            self.soc = context.wrap_socket(self.soc, server_hostname=self.config_get('server'))
-        else:
-            self.logger.warning('SSL disabled')
-        self.soc.connect((self.config_get('server'), self.config_get('port')))
-        self.soc.settimeout(5)
+        with self.sock_lock:
+            self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            if self.config_get('ssl'):
+                context = ssl.create_default_context()
+                certconf = self.config_get('cert', None)
+                if certconf is not None:
+                    context.load_cert_chain(certfile=certconf['certfile'], keyfile=certconf['keyfile'])
+                self.soc = context.wrap_socket(self.soc, server_hostname=self.config_get('server'))
+            else:
+                self.logger.warning('SSL disabled')
+            self.soc.connect((self.config_get('server'), self.config_get('port')))
+            self.soc.settimeout(self.socket_timeout_seconds)
 
     def disconnect(self) -> None:
         self.send('QUIT :Disconnecting')
@@ -392,29 +400,29 @@ class IRC(BaseResponder):
                 self.buffer = Buffer()
                 self.connect()
                 self.identify()
-                self.loop()
+                self.receive_loop()
             finally:
                 if self.soc:
                     self.soc.close()
 
-    def loop(self) -> None:
+    def receive_loop(self) -> None:
         while not self.stop_event.is_set() and not self.restart_event.is_set():
             if self.soc is not None:
-                reads, writes, errors = select.select([self.soc], [], [], self.deltatime)
+                reads, writes, errors = select.select([self.soc], [], [], self.select_timeout_seconds)
                 for sock in reads:
                     if sock == self.soc:
                         data = self.soc.recv(4096)
                         if not data:
-                            return
+                            raise Exception('No data could be read')
                         self.process_data(data)
 
     def run(self) -> None:
         while not self.stop_event.is_set():
             try:
                 self.update()
-                self.stop_event.wait(self.deltatime)
             except Exception as e:
                 on_exception.send(self, e=e)
+                self.stop_event.wait(self.wait_before_reconnecting_seconds)
 
 
 mod = IRC
