@@ -1,6 +1,5 @@
 from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
-from ...message import IncomingPrivateMessage
-from ...helpers import is_channel_name
+from ...message import IncomingPrivateMessage, Target
 
 
 class Anonpost(BaseResponder):
@@ -11,30 +10,30 @@ class Anonpost(BaseResponder):
 
     @command('anonpost')
     @parse_command([('target', 1), ('message', '+')])
-    def command_anonpost(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
+    def command_anonpost_to_channel(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Send a message to a target channel anonymously.
 
         Syntax: anonpost TARGET MESSAGE
         """
-        target = args['target'][0]
-        message = 'ANONPOST: ' + ' '.join(args['message'])
-
-        if is_channel_name(target):
-            self.message(target, message)
+        target = Target.new_from_string(args['target'][0])
+        channel = target.channel
+        if channel is not None:
+            message = 'ANONPOST: ' + ' '.join(args['message'])
+            self.message(str(target), message)
 
     @command('anonpost')
     @only_admins()
     @parse_command([('target', 1), ('message', '+')])
-    def admin_command_anonpost(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
+    def command_anonpost_to_nick(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
         """Send a message to a target user anonymously.
 
         Syntax: anonpost TARGET MESSAGE
         """
-        target = args['target'][0]
-        message = 'ANONPOST: ' + ' '.join(args['message'])
-
-        if not is_channel_name(target):
-            self.message(target, message)
+        target = Target.new_from_string(args['target'][0])
+        nick = target.nick
+        if nick is not None:
+            message = 'ANONPOST: ' + ' '.join(args['message'])
+            self.message(str(nick), message)
 
 
 mod = Anonpost
