@@ -19,7 +19,7 @@ class Anonpost(BaseResponder):
         channel = target.channel
         if channel is not None:
             message = 'ANONPOST: ' + ' '.join(args['message'])
-            self.message(str(target), message)
+            self.message(target, message)
 
     @command('anonpost')
     @only_admins()
@@ -33,7 +33,7 @@ class Anonpost(BaseResponder):
         nick = target.nick
         if nick is not None:
             message = 'ANONPOST: ' + ' '.join(args['message'])
-            self.message(str(nick), message)
+            self.message(target, message)
 
 
 mod = Anonpost

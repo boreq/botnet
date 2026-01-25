@@ -4,7 +4,7 @@ from typing import Any, Callable
 from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
 from ..lib import MemoryCache, get_url, catch_other
 from ...signals import on_exception, config_changed
-from ...message import IncomingPrivateMessage
+from ...message import IncomingPrivateMessage, Target, Channel
 
 
 class APIError(Exception):
@@ -231,7 +231,7 @@ class Github(BaseResponder):
                 # send the text
                 if texts:
                     for channel in data['channels']:
-                        self.message(channel, text)
+                        self.message(Target(Channel(channel)), text)
             except Exception as e:
                 on_exception.send(self, e=e)
 

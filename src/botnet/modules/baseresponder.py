@@ -1,4 +1,4 @@
-from ..message import Message, IncomingPrivateMessage
+from ..message import Message, IncomingPrivateMessage, Target
 from ..signals import message_out
 from .base import BaseModule, AuthContext
 from .decorators import command
@@ -69,15 +69,15 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
         # If this is supposed to be sent as a private message or was sent in
         # a private message to the bot respond also in private message.
         if pm or msg.target.is_nick:
-            target = msg.sender.s
+            target = Target(msg.sender)
         else:
-            target = msg.target.nick_or_channel.s
+            target = msg.target
         self.message(target, text)
 
-    def message(self, nick_or_channel: str, text: str) -> None:
+    def message(self, nick_or_channel: Target, text: str) -> None:
         """Send the text as a message to the provided nick or channel."""
         for part in divide_text(text, _BREAK_PRIVMSG_EVERY):
-            response = Message(command='PRIVMSG', params=[nick_or_channel, part])
+            response = Message(command='PRIVMSG', params=[str(nick_or_channel), part])
             message_out.send(self, msg=response)
 
     @command('help')

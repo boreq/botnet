@@ -6,7 +6,7 @@ from typing import Any, Callable
 from dataclasses import dataclass, asdict
 from ...helpers import save_json, load_json, cleanup_nick
 from ...signals import message_out, on_exception
-from ...message import Message, IncomingPrivateMessage, Nick, Channel
+from ...message import Message, IncomingPrivateMessage, Nick, Channel, Target
 from .. import BaseResponder, predicates, command, AuthContext, parse_command, Args
 from ..lib import MemoryCache, colored, Color
 from ..base import BaseModule
@@ -272,7 +272,7 @@ class Vibecheck(NamesMixin, BaseResponder):
                 with self._store as state:
                     report = state.generate_pestering_report(self._now(), person['uuid'], names, auth_module_people_uuids)
                 if report is not None:
-                    for nick in person['contact']:
+                    for nick in [Target(Nick(nick_string)) for nick_string in person['contact']]:
                         self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
                         self.message(nick, ', '.join([v.for_display(person['uuid']) for v in reversed(report.persona_reports)]))
                         self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}vibecheck\' command.')

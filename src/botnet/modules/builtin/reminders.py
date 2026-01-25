@@ -173,7 +173,7 @@ class Reminders(BaseResponder):
     def update(self) -> None:
         now = datetime.datetime.utcnow().timestamp()
         for stored_msg in self.store.get_messages(now):
-            target = stored_msg['target']
+            target = Target.new_from_string(stored_msg['target'])
             text = format_msg_entry(stored_msg)
             self.message(target, text)
 
