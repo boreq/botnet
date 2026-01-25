@@ -29,9 +29,14 @@ class FakeTraccarAPI(TraccarAPI):
         return self.mocked_geofences
 
 
-def test_help(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
+def test_help_channel(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
     msg = make_incoming_privmsg('.help', target='#channel')
     assert test_traccar.module.get_all_commands(msg, unauthorised_context) == {'help', 'whatissomeonesbatterylevel', 'whereissomeone'}
+
+
+def test_help_direct(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
+    msg = make_incoming_privmsg('.help', target='bot_nick')
+    assert test_traccar.module.get_all_commands(msg, unauthorised_context) == {'help'}
 
 
 def test_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
