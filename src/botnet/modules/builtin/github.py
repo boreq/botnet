@@ -103,8 +103,8 @@ class GithubAPI:
     url_root = 'https://api.github.com'
 
     def __init__(self) -> None:
-        self._repo_cache: MemoryCache[str, dict] = MemoryCache(default_timeout=600)
-        self._user_cache: MemoryCache[str, dict] = MemoryCache(default_timeout=600)
+        self._repo_cache: MemoryCache[str, dict] = MemoryCache(default_timeout_in_seconds=60 * 10)
+        self._user_cache: MemoryCache[str, dict] = MemoryCache(default_timeout_in_seconds=60 * 10)
         # { '<owner>/<repo>': id of the last processed event }
         self._last_events: dict[str, int] = {}
         self._ep = EventParser()

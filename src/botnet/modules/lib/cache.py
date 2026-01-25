@@ -20,19 +20,21 @@ V = TypeVar('V')
 
 
 class BaseCache(Generic[K, V]):
-    """Base cache class."""
+    default_timeout_in_seconds: float
 
-    def __init__(self, default_timeout=300):
-        self.default_timeout = default_timeout
+    def __init__(self, default_timeout_in_seconds: float = 60 * 5):
+        self.default_timeout_in_seconds = default_timeout_in_seconds
 
-    def set(self, key: K, value: V, timeout=None) -> bool:
-        """Sets a value of a key. Returns True on sucess or False in case of
-        errors.
-        """
+    def set(self, key: K, value: V, timeout_in_seconds: float | None = None) -> None:
+        """Sets a value of a key."""
         raise NotImplementedError
 
     def get(self, key: K) -> V | None:
         """Returns a value of a key or None if a key does not exist."""
+        raise NotImplementedError
+
+    def delete(self, key: K) -> None:
+        """Deletes a key from the cache returning true if the key existed or false if the key didn't exist."""
         raise NotImplementedError
 
 
@@ -42,17 +44,16 @@ class MemoryCache(BaseCache[K, V]):
     default_timeout: timeout used by the set method [seconds].
     """
 
-    def __init__(self, default_timeout=300) -> None:
-        super().__init__(default_timeout)
+    def __init__(self, default_timeout_in_seconds: float = 60 * 5) -> None:
+        super().__init__(default_timeout_in_seconds)
         self._data: dict[K, tuple[datetime.datetime, V]] = {}
 
-    def set(self, key: K, value: V, timeout=None) -> bool:
-        self._clean()
-        if timeout is None:
-            timeout = self.default_timeout
-        expires = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
+    def set(self, key: K, value: V, timeout_in_seconds: float | None = None) -> None:
+        self._remove_expired_values()
+        if timeout_in_seconds is None:
+            timeout_in_seconds = self.default_timeout_in_seconds
+        expires = datetime.datetime.now() + datetime.timedelta(seconds=timeout_in_seconds)
         self._data[key] = (expires, value)
-        return True
 
     def get(self, key: K) -> V | None:
         try:
@@ -64,8 +65,13 @@ class MemoryCache(BaseCache[K, V]):
         except KeyError:
             return None
 
-    def _clean(self):
-        """Removes expired values."""
+    def delete(self, key: K) -> None:
+        try:
+            self._data.pop(key)
+        except KeyError:
+            pass
+
+    def _remove_expired_values(self):
         for key in self._data.copy().keys():
             try:
                 expires, value = self._data[key]
