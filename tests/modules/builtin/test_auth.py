@@ -219,27 +219,6 @@ def test_identify_user(subtests, make_signal_trap, rec_msg) -> None:
 
 
 def test_cache_invalidation(subtests, make_tested_auth) -> None:
-    config = {
-        'module_config': {
-            'botnet': {
-                'auth': {
-                    'people': [
-                        {
-                            'uuid': 'someones_uuid',
-                            'authorisations': [
-                                {
-                                    'kind': 'irc',
-                                    'nick': 'ircnick',
-                                },
-                            ],
-                            'groups': ['group1', 'group2'],
-                        },
-                    ],
-                },
-            },
-        },
-    }
-
     test_cases = [
         {
             'messages': [
@@ -297,7 +276,7 @@ def test_cache_invalidation(subtests, make_tested_auth) -> None:
                 ]
             )
 
-            for message_string in test_case['messages']:
+            for message_string in test_case['messages']:  # type: ignore
                 received_msg = Message.new_from_string(message_string)
                 tested_auth.receive_message_in(received_msg)
 
