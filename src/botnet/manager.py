@@ -66,7 +66,10 @@ class Manager:
         commands: set[str] = set()
         with self.wrappers_lock:
             for wrapper in self.module_wrappers:
-                commands.update(wrapper.module.get_all_commands(msg, auth))
+                try:
+                    commands.update(wrapper.module.get_all_commands(msg, auth))
+                except Exception as e:
+                    on_exception.send(self, e=e)
         _list_commands.send(self, msg=msg, auth=auth, commands=commands)
 
     def on_config_changed(self, sender):
