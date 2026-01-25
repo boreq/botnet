@@ -1,3 +1,4 @@
+import requests
 from datetime import datetime
 from botnet.modules.builtin.traccar import Traccar, TraccarAPI, Device, Position, Geofence
 from botnet.message import Message
@@ -250,7 +251,7 @@ def test_location_connection_error(make_privmsg, make_incoming_privmsg, unauthor
         Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
     ]
 
-    mock_api.throw_on_positions = ConnectionError('connection error')
+    mock_api.throw_on_positions = requests.ConnectionError('connection error')
 
     msg = make_incoming_privmsg('.whereissomeone', target='#channel')
     test_traccar.receive_auth_message_in(msg, unauthorised_context)
@@ -271,7 +272,7 @@ def test_battery_connection_error(make_privmsg, make_incoming_privmsg, unauthori
         Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
     ]
 
-    mock_api.throw_on_positions = ConnectionError('connection error')
+    mock_api.throw_on_positions = requests.ConnectionError('connection error')
 
     msg = make_incoming_privmsg('.whatissomeonesbatterylevel', target='#channel')
     test_traccar.receive_auth_message_in(msg, unauthorised_context)

@@ -173,7 +173,7 @@ class Traccar(BaseResponder):
                             location_command['device_name'],
                             location_command['geofences'],
                         )
-                    except ConnectionError:
+                    except requests.ConnectionError:
                         self.respond(msg, 'Connection error.')
 
                 for battery_command in instance_definition['battery_commands']:
@@ -190,7 +190,7 @@ class Traccar(BaseResponder):
                             instance_definition['token'],
                             battery_command['device_name'],
                         )
-                    except ConnectionError:
+                    except requests.ConnectionError:
                         self.respond(msg, 'Connection error.')
 
     def _respond_with_location(self, msg: IncomingPrivateMessage, instance: str, token: str, device_name: str, sanitized_geofence_names: dict[str, str]) -> None:
