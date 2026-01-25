@@ -137,15 +137,17 @@ class Traccar(BaseResponder):
 
     def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
-        for instance in self.config_get('instances', []):
-            for command_definition in instance['location_commands']:
-                if msg.target.channel in [Channel(v) for v in command_definition['channels']]:
-                    for command in command_definition['command_names']:
-                        rw.add(command)
-            for command_definition in instance['battery_commands']:
-                if msg.target.channel in [Channel(v) for v in command_definition['channels']]:
-                    for command in command_definition['command_names']:
-                        rw.add(command)
+        channel = msg.target.channel
+        if channel is not None:
+            for instance in self.config_get('instances', []):
+                for command_definition in instance['location_commands']:
+                    if msg.target.channel in [Channel(v) for v in command_definition['channels']]:
+                        for command in command_definition['command_names']:
+                            rw.add(command)
+                for command_definition in instance['battery_commands']:
+                    if msg.target.channel in [Channel(v) for v in command_definition['channels']]:
+                        for command in command_definition['command_names']:
+                            rw.add(command)
         return rw
 
     def handle_auth_privmsg(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
