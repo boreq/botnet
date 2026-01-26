@@ -71,7 +71,7 @@ _request_list_commands = _signals.signal('_request_list_commands')
 _list_commands = _signals.signal('_list_commands')
 
 
-def unsubscribe_from_all(module):
+def unsubscribe_from_all(module: object) -> None:
     """Unsubscribes a bot module from all signals. Called when a module is
     unloaded. That is necessary because if a module is a part of a reference
     cycle it will not be deleted by refcounting alone and it will stay in the
@@ -97,7 +97,7 @@ def unsubscribe_from_all(module):
                         signal.disconnect(obj)
 
 
-def clear_state():
+def clear_state() -> None:
     """Removes all state from signals. Used in unit tests."""
     for name, signal in _signals.items():
         signal._clear_state()

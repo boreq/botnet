@@ -1,17 +1,24 @@
+from dataclasses import dataclass
 import datetime
 from .. import BaseResponder, command, AuthContext
 from ...message import IncomingPrivateMessage
 
 
-class C3(BaseResponder):
-    """Defines functions related to Chaos Communication Congress."""
+@dataclass()
+class C3Config:
+    pass
 
-    FIRST_CONGRESS_YEAR = 1984
-    CONGRESS_MONTH = 12
-    CONGRESS_DAY = 27
+
+class C3(BaseResponder[C3Config]):
+    """Defines functions related to Chaos Communication Congress."""
 
     config_namespace = 'botnet'
     config_name = 'c3'
+    config_class = C3Config
+
+    first_congress_year = 1984
+    congress_month = 12
+    congress_day = 27
 
     @command('c3')
     def command_c3(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
@@ -21,12 +28,12 @@ class C3(BaseResponder):
         """
         now = self.now()
         congress = datetime.datetime(year=now.year,
-                                     month=self.CONGRESS_MONTH,
-                                     day=self.CONGRESS_DAY)
+                                     month=self.congress_month,
+                                     day=self.congress_day)
         if congress < now:
             congress = congress.replace(year=congress.year + 1)
 
-        number = congress.year - self.FIRST_CONGRESS_YEAR + 1
+        number = congress.year - self.first_congress_year + 1
         if number > 36:
             number = number - 3
         days = (congress - now).days

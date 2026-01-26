@@ -29,7 +29,7 @@ class Manager:
         self.wrappers_lock = threading.Lock()
 
         # Handle config, load modules defined there
-        self.config = Config()
+        self.config: Config = Config()
         self.config_path = config_path
         if config_path:
             self.config.from_json_file(config_path)
@@ -51,7 +51,7 @@ class Manager:
                 wrapper.stop()
             self.stop_event.set()
 
-    def on_request_list_commands(self, sender, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+    def on_request_list_commands(self, sender: object, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Handler for the _request_list_commands signal."""
         commands: set[str] = set()
         with self.wrappers_lock:
@@ -62,7 +62,7 @@ class Manager:
                     on_exception.send(self, e=e)
         _list_commands.send(self, msg=msg, auth=auth, commands=commands)
 
-    def on_config_changed(self, sender) -> None:
+    def on_config_changed(self, sender: object) -> None:
         """Handler for the config_changed signal."""
         self.logger.debug('Received config_changed signal')
         try:
@@ -72,7 +72,7 @@ class Manager:
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def on_config_reload(self, sender) -> None:
+    def on_config_reload(self, sender: object) -> None:
         """Handler for the config_reload signal."""
         self.logger.debug('Received config_reload signal')
         try:
@@ -83,7 +83,7 @@ class Manager:
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def on_module_load(self, sender, module_name: str) -> None:
+    def on_module_load(self, sender: object, module_name: str) -> None:
         """Handler for the module_load signal."""
         self.logger.debug(f'Received module_load signal for module {module_name}.')
         try:
@@ -96,7 +96,7 @@ class Manager:
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def on_module_unload(self, sender, module_name: str) -> None:
+    def on_module_unload(self, sender: object, module_name: str) -> None:
         """Handler for the module_unload signal."""
         self.logger.debug(f'Received module_unload signal for module {module_name}.')
         try:

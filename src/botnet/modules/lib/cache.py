@@ -5,14 +5,6 @@
 
 from typing import TypeVar, Generic
 import datetime
-import hashlib
-
-
-def get_md5(string) -> str:
-    """Returns a hash of a string."""
-    m = hashlib.md5()
-    m.update(string.encode('utf-8'))
-    return m.hexdigest()
 
 
 K = TypeVar('K')
@@ -71,7 +63,7 @@ class MemoryCache(BaseCache[K, V]):
         except KeyError:
             pass
 
-    def _remove_expired_values(self):
+    def _remove_expired_values(self) -> None:
         for key in self._data.copy().keys():
             try:
                 expires, value = self._data[key]

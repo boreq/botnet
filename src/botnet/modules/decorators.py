@@ -92,7 +92,7 @@ def only_admins() -> Callable[[CommandHandler], CommandHandler]:
     return _any_group(['admin'])
 
 
-def parse_command(params) -> Callable[[CommandHandlerWithArgs], CommandHandler]:
+def parse_command(params: list[tuple[str, int | str]]) -> Callable[[CommandHandlerWithArgs], CommandHandler]:
     """Decorator which parses the last argument of PRIVMSG, which is the
     message itself, using argparse.
 

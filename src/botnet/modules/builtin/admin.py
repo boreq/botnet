@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import threading
 from typing import Any
 from ...message import IncomingPrivateMessage
@@ -8,11 +9,17 @@ from ...config import Config
 from ..utils import get_ident_string
 
 
-class Admin(BaseResponder):
+@dataclass()
+class AdminConfig:
+    pass
+
+
+class Admin(BaseResponder[AdminConfig]):
     """Implements a few administrative commands."""
 
     config_namespace = 'botnet'
     config_name = 'admin'
+    config_class = AdminConfig
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)

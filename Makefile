@@ -6,7 +6,7 @@ test:
 	py.test -vv tests
 
 .PHONY: lint
-lint: flake8 mypy
+lint: flake8 mypy ruff
 
 .PHONY: flake8
 flake8:
@@ -17,3 +17,13 @@ flake8:
 mypy:
 	mypy src
 	mypy tests
+
+.PHONY: ruff
+ruff:
+	ruff check src
+	ruff check tests
+
+.PHONY: fix
+fix:
+	ruff check --fix src
+	ruff check --fix tests

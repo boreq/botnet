@@ -1,3 +1,4 @@
+from tests.conftest import ModuleHarnessFactory
 from botnet.message import Message
 from botnet.config import Config
 from botnet.modules.builtin.admin import Admin
@@ -92,5 +93,5 @@ def test_config_reload(make_incoming_privmsg, admin_context, test_admin):
 
 
 @pytest.fixture()
-def test_admin(module_harness_factory):
+def test_admin(module_harness_factory) -> ModuleHarnessFactory[Admin]:
     return module_harness_factory.make(Admin, Config())

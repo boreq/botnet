@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
+import dacite
 import os
 import threading
 from typing import Callable
@@ -9,24 +10,49 @@ from ...config import Config
 from ...message import IncomingPrivateMessage, Nick, Target, Channel
 
 
-def make_msg_entry(author: str, target: str, message: str, channel: str | None, time: datetime) -> dict:
-    """Creates an object stored by the message_store."""
-    return {
-        'author': author,
-        'target': target,
-        'message': message,
-        'channel': channel,
-        'time': time.timestamp(),
-    }
+@dataclass()
+class MsgEntry:
+    author: str
+    target: str
+    message: str
+    channel: str | None
+    time: float
+
+    def is_a_dupliate(self, author: Nick, target: Target, message: str, channel: Channel | None) -> bool:
+        if Nick(self.author) != author:
+            return False
+
+        if Target.new_from_string(self.target) == target:
+            return False
+
+        if self.channel is not None and channel is None:
+            return False
+
+        if self.channel is None and channel is not None:
+            return False
+
+        if self.channel is not None and channel is not None:
+            if Channel(self.channel) != channel:
+                return False
+
+        if self.message != message:
+            return False
+
+        return True
 
 
-def format_msg_entry(target: Nick, msg_entry: dict) -> str:
+@dataclass()
+class MsgStore:
+    messages: list[MsgEntry]
+
+
+def format_msg_entry(target: Nick, msg_entry: MsgEntry) -> str:
     """Converts an object stored by the message store to plaintext."""
-    dt = datetime.fromtimestamp(msg_entry['time'], timezone.utc)
+    dt = datetime.fromtimestamp(msg_entry.time, timezone.utc)
     return '%s: %s <%s> %s' % (target,
                                dt.strftime('%Y-%m-%d %H:%M:%SZ'),
-                               msg_entry['author'],
-                               msg_entry['message'])
+                               msg_entry.author,
+                               msg_entry.message)
 
 
 class MessageStore:
@@ -36,60 +62,67 @@ class MessageStore:
     path: function to call to get path to the data file.
     """
 
+    _msg_store: MsgStore
+
     def __init__(self, path: Callable[[], str]) -> None:
         self._lock = threading.Lock()
         self._path = path
-        self._msg_store: list[dict] = []
         self._load()
 
     def add_message(self, author: Nick, target: Target, message: str, channel: Channel | None, time: datetime) -> bool:
         """Leaves a `message` for `target` from `author`."""
         with self._lock:
             # abort if similar message already present
-            for m in self._msg_store:
-                if Nick(m['author']) == author \
-                   and Target.new_from_string(m['target']) == target \
-                   and Channel(m['channel']) == channel \
-                   and m['message'] == message:
+            for m in self._msg_store.messages:
+                if m.is_a_dupliate(author, target, message, channel):
                     return False
-            # add the new message
-            self._msg_store.append(make_msg_entry(author.s, target.nick_or_channel.s, message, channel.s if channel is not None else None, time))
+            msg_entry = MsgEntry(
+                author=author.s,
+                target=target.nick_or_channel.s,
+                message=message,
+                channel=channel.s if channel is not None else None,
+                time=time.timestamp(),
+            )
+            self._msg_store.messages.append(msg_entry)
             self._save()
         return True
 
-    def get_channel_messages(self, target: Nick, channel: Channel) -> list[dict]:
+    def get_channel_messages(self, target: Nick, channel: Channel) -> list[MsgEntry]:
         """Returns a list of messages for `target`."""
         # This could be a generator to ensure that not all messages are lost in
         # case of an error.
         rw = []
         with self._lock:
-            for i, m in reversed(list(enumerate(self._msg_store))):
-                if m['target'].lower() == target.s.lower() and m['channel'].lower() == channel.s.lower():
-                    rw.append(self._msg_store.pop(i))
+            for i, m in reversed(list(enumerate(self._msg_store.messages))):
+                if target != Nick(m.target):
+                    continue
+                if m.channel is None:
+                    continue
+                if channel != Channel(m.channel):
+                    continue
+                rw.append(self._msg_store.messages.pop(i))
             self._save()
         return list(reversed(rw))
 
-    def get_private_messages(self, target: Nick) -> list[dict]:
+    def get_private_messages(self, target: Nick) -> list[MsgEntry]:
         """Returns a list of messages for `target`."""
         # This could be a generator to ensure that not all messages are lost in
         # case of an error.
         rw = []
         with self._lock:
-            for i, m in reversed(list(enumerate(self._msg_store))):
-                if m['target'].lower() == target.s.lower() and m['channel'] is None:
-                    rw.append(self._msg_store.pop(i))
+            for i, m in reversed(list(enumerate(self._msg_store.messages))):
+                if m.target.lower() == target.s.lower() and m.channel is None:
+                    rw.append(self._msg_store.messages.pop(i))
             self._save()
         return list(reversed(rw))
 
     def _load(self) -> None:
         if os.path.isfile(self._path()):
-            try:
-                self._msg_store = load_json(self._path())
-            except:
-                self._msg_store = []
+            j = load_json(self._path())
+            self._msg_store = dacite.from_dict(data_class=MsgStore, data=j)
 
     def _save(self) -> None:
-        save_json(self._path(), self._msg_store)
+        save_json(self._path(), asdict(self._msg_store))
 
 
 @dataclass()

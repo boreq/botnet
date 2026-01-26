@@ -11,7 +11,7 @@ import requests
 _uagent = 'Mozilla/5.0 (X11; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0'
 
 
-def get_url(*args, **kwargs):
+def get_url(*args, **kwargs) -> requests.Response:  # type: ignore
     """Performs a request. Thin wrapper over requests.request.
 
     method: request method, defaults to 'GET'.

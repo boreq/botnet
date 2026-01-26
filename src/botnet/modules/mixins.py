@@ -97,7 +97,7 @@ class MessageDispatcherMixin(BaseModule):
           decorator.
     """
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         auth_message_in.connect(self._on_auth_message_in)
         message_in.connect(self._on_message_in)
@@ -154,13 +154,13 @@ class MessageDispatcherMixin(BaseModule):
             return None
         return cmd_name
 
-    def _on_auth_message_in(self, sender, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+    def _on_auth_message_in(self, sender: object, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         try:
             self._dispatch_auth_message(msg, auth)
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def _on_message_in(self, sender, msg: Message) -> None:
+    def _on_message_in(self, sender: object, msg: Message) -> None:
         try:
             self._dispatch_message(msg)
         except Exception as e:
@@ -184,7 +184,7 @@ class MessageDispatcherMixin(BaseModule):
 
     def _get_command_handlers(self, command_name: str) -> list[BoundCommandHandler]:
         """Gets a list of command handlers which match this command name."""
-        handlers: list[Callable] = []
+        handlers: list[Callable] = []  # type: ignore
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
             if getattr(method, _ATTR_COMMAND_NAME, None) == command_name:
                 handlers.append(method)
@@ -192,7 +192,7 @@ class MessageDispatcherMixin(BaseModule):
 
     def _get_all_command_handlers(self) -> list[BoundCommandHandler]:
         """Gets a list of all command handlers."""
-        handlers: list[Callable] = []
+        handlers: list[BoundCommandHandler] = []
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
             if getattr(method, _ATTR_COMMAND_NAME, None) is not None:
                 handlers.append(method)

@@ -1,6 +1,7 @@
 from .. import signals
 from ..logging import get_logger, Logger
 from ..message import IncomingPrivateMessage
+from ..config import Config
 from dataclasses import dataclass
 
 
@@ -13,7 +14,7 @@ class AuthContext:
 class BaseModule:
     """Base class for all modules."""
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: Config) -> None:
         self._logger: Logger | None = None
 
     def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:

@@ -1,12 +1,19 @@
+from dataclasses import dataclass
 from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
 from ...message import IncomingPrivateMessage, Target
 
 
-class Anonpost(BaseResponder):
+@dataclass()
+class AnonpostConfig:
+    pass
+
+
+class Anonpost(BaseResponder[AnonpostConfig]):
     """Allows users to post anonymously."""
 
     config_namespace = 'botnet'
     config_name = 'anonpost'
+    config_class = AnonpostConfig
 
     @command('anonpost')
     @parse_command([('target', 1), ('message', '+')])

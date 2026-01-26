@@ -103,33 +103,32 @@ class Message:
             tmp.append(param)
         return ' '.join(tmp)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.to_string()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Message: %s>' % self.__str__()
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Message):
             raise NotImplementedError
         return self.prefix == other.prefix and self.command == other.command and self.params == other.params
 
-    def _analyze_prefix(self, prefix) -> tuple[str | None, str | None]:
+    def _analyze_prefix(self, prefix: str | None) -> tuple[str | None, str | None]:
         """Analyze a message prefix which is a server name or data about the user
         (nickname, user, host). Returns a tuple containing a servername and
         a nickname (one of those will always be None).
 
         prefix: message prefix.
         """
-        servername = None
-        nickname = None
-        if prefix is not None:
-            parts = prefix.split('!')
-            if len(parts) > 1:
-                nickname = parts[0]
-            else:
-                servername = prefix
-        return servername, nickname
+        if prefix is None:
+            return None, None
+
+        parts = prefix.split('!')
+        if len(parts) > 1:
+            return None, parts[0]
+        else:
+            return prefix, None
 
 
 _NICK_REGEX = re.compile(r"^[a-zA-Z\[\]\\`_^{}][a-zA-Z0-9\[\]\\`_^{}|-]{0,31}$")
@@ -150,10 +149,10 @@ class Nick:
     def __str__(self) -> str:
         return self.s
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'\'{self.s}\''
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Nick):
             raise NotImplementedError
         return self.s.lower() == other.s.lower()
@@ -163,7 +162,7 @@ class Nick:
             raise NotImplementedError
         return self.s.lower() < other.s.lower()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.s.lower())
 
 
@@ -185,7 +184,7 @@ class Channel:
     def __str__(self) -> str:
         return self.s
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Channel):
             raise NotImplementedError
         return self.s.lower() == other.s.lower()
@@ -195,7 +194,7 @@ class Channel:
             raise NotImplementedError
         return self.s.lower() < other.s.lower()
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.s.lower())
 
 
@@ -244,7 +243,7 @@ class Target:
     def __str__(self) -> str:
         return self.nick_or_channel.s
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Target):
             raise NotImplementedError
         return self.nick_or_channel == other.nick_or_channel
@@ -294,7 +293,7 @@ class IncomingPrivateMessage:
         text = Text(msg.params[1])
         return cls(sender, target, text)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<IncomingPrivateMessage: sender={self.sender} target={self.target} text={self.text}>'
 
     def __eq__(self, other: object) -> bool:

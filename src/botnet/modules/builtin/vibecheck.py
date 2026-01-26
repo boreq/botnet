@@ -8,10 +8,9 @@ from .auth import AuthConfig, AuthConfigPerson
 from ...helpers import save_json, load_json, cleanup_nick
 from ...signals import message_out, on_exception
 from ...message import Message, IncomingPrivateMessage, Nick, Channel, Target
-from .. import BaseResponder, predicates, command, AuthContext, parse_command, Args
-from ..lib import MemoryCache, colored, Color
-from ..base import BaseModule
 from ...config import Config
+from .. import BaseModule, BaseResponder, predicates, command, AuthContext, parse_command, Args, CommandHandler
+from ..lib import MemoryCache, colored, Color
 
 
 @dataclass
@@ -95,7 +94,7 @@ class NamesMixin(BaseModule):
             func(msg)
 
 
-def _is_authorised_has_uuid_and_sent_a_privmsg():
+def _is_authorised_has_uuid_and_sent_a_privmsg() -> Callable[[CommandHandler], CommandHandler]:
     def predicate(module: 'Vibecheck', msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
         config = module.get_config()
 

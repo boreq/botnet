@@ -1,16 +1,12 @@
 import traceback
 from typing import Any
 from .. import BaseModule
-from ..mixins import ConfigMixin
 from ...signals import on_exception
 from ...config import Config
 
 
-class ExceptionMonitor(ConfigMixin, BaseModule):
+class ExceptionMonitor(BaseModule):
     """Gathers incoming reports about exceptions and logs them."""
-
-    config_namespace = 'botnet'
-    config_name = 'exception_monitor'
 
     error_text = '{text}, {error}\nTraceback:\n{tb}'
 
@@ -18,7 +14,7 @@ class ExceptionMonitor(ConfigMixin, BaseModule):
         super().__init__(config)
         on_exception.connect(self.on_exception)
 
-    def on_exception(self, sender: Any, **kwargs: Any) -> None:
+    def on_exception(self, sender: object, **kwargs: Any) -> None:
         e = kwargs['e']
         text = self._get_text(e)
         self.logger.error(text)

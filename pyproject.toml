@@ -22,7 +22,6 @@ dependencies = [
     "markov @ git+https://github.com/boreq/markov",
     "Mastodon.py==2.1.1",
     "dacite==1.9.2",
-    "irccodes==1.2.0",
     'requests==2.32.*',
 ]
 
@@ -30,6 +29,7 @@ dependencies = [
 dev = [
     "pytest",
     "flake8",
+    "ruff",
     "mypy",
     "types-requests",
 ]
@@ -42,8 +42,24 @@ where = ["src"]
 namespaces = false
 
 [tool.mypy]
-#strict = true
+strict = true
 ignore_missing_imports = true
-check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "tests.*"
 disallow_untyped_defs = false
-#strict_equality = true
+disallow_incomplete_defs = false
+check_untyped_defs = false
+disallow_any_generics = false
+disable_error_code = [
+    "misc",            # Silences "Class cannot subclass value of type 'Any'"
+    "type-arg",        # Silences "expects no type arguments"
+    "no-any-return",   # Silences "Returning Any from function declared to return..."
+]
+
+[tool.ruff]
+lint.select = ["I"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+combine-as-imports = true

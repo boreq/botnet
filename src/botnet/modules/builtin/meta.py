@@ -1,16 +1,23 @@
+from dataclasses import dataclass
 from ...signals import _request_list_commands, _list_commands
 from ...message import IncomingPrivateMessage, Text
 from .. import BaseResponder, AuthContext, command, parse_command, Args
 from ...config import Config
 
 
-class Meta(BaseResponder):
+@dataclass()
+class MetaConfig:
+    pass
+
+
+class Meta(BaseResponder[MetaConfig]):
     """Displays basic info about this bot."""
 
     ignore_help = False
 
     config_namespace = 'botnet'
     config_name = 'meta'
+    config_class = MetaConfig
 
     ibip_repo = 'https://github.com/boreq/botnet'
     ibip_website = 'https://ibip.0x46.net/'
@@ -40,7 +47,7 @@ class Meta(BaseResponder):
         else:
             super().command_help(msg, auth)
 
-    def on_list_commands(self, sender, msg: IncomingPrivateMessage, auth: AuthContext, commands: list[str]) -> None:
+    def on_list_commands(self, sender: object, msg: IncomingPrivateMessage, auth: AuthContext, commands: list[str]) -> None:
         """Sends a list of commands received from the Manager."""
         text = 'Supported commands: %s' % ', '.join(commands)
         self.respond(msg, text)

@@ -8,6 +8,7 @@ import click
 import logging
 import signal
 from .manager import Manager
+from types import FrameType
 
 
 logger_levels = ['warning', 'info', 'debug']
@@ -15,8 +16,7 @@ logger_levels = ['warning', 'info', 'debug']
 
 @click.group()
 @click.option('--verbosity', type=click.Choice(logger_levels), default='warning')
-@click.pass_context
-def cli(ctx, verbosity):
+def cli(verbosity: str) -> None:
     """IRC bot written in Python."""
     log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
     log_level = getattr(logging, verbosity.upper(), None)
@@ -25,12 +25,12 @@ def cli(ctx, verbosity):
 
 @cli.command()
 @click.argument('config', type=click.Path(exists=True))
-def run(config):
+def run(config: str) -> None:
     """Runs the bot."""
-    def signal_handler(signum, frame):
+    def signal_handler(signum: int, frame: FrameType | None) -> None:
         manager.stop()
 
-    def attach_signals():
+    def attach_signals() -> None:
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
             signal.signal(sig, signal_handler)
 

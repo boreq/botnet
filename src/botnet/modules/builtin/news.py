@@ -3,7 +3,7 @@ import os
 import threading
 from typing import Callable
 from ...helpers import save_json, load_json
-from .. import BaseResponder, AuthContext, command, parse_command, Args
+from .. import BaseResponder, AuthContext, command, parse_command, Args, CommandHandler
 from ...message import IncomingPrivateMessage, Channel
 from ..decorators import predicates
 from ...config import Config
@@ -57,7 +57,7 @@ class NewsStore:
             return self._news.get(ch, []).copy()
 
 
-def _is_enabled_for_this_channel():
+def _is_enabled_for_this_channel() -> Callable[[CommandHandler], CommandHandler]:
     def predicate(module: 'News', msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
         channel = msg.target.channel
         if channel is None:

@@ -3,12 +3,10 @@
     implementation but rather form a library which can be used by modules.
 """
 
-# flake8: noqa: F401
-
 from enum import Enum, unique
 from .cache import BaseCache, MemoryCache
-from .decorators import catch_other
 from .network import get_url
+
 
 def divide_text(text: str, max_len: int) -> list[str]:
     lines: list[str] = []
@@ -39,4 +37,14 @@ def colored(text: str, color: Color) -> str:
     # do what we do here
     parts = text.split(' ')
     parts = [_COLOR + color.value + part + _COLOR for part in parts]
-    return  ' '.join(parts)
+    return ' '.join(parts)
+
+
+__all__ = [
+    'BaseCache',
+    'MemoryCache',
+    'get_url',
+    'divide_text',
+    'Color',
+    'colored',
+]

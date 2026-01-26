@@ -118,7 +118,7 @@ class RemindersConfig:
     reminder_data: str
 
 
-class Reminders(BaseResponder):
+class Reminders(BaseResponder[RemindersConfig]):
     """Allows users to leave reminders.
 
     Example module config:

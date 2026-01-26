@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import random
 from .. import BaseResponder, command, AuthContext, parse_command, Args
 from ...message import IncomingPrivateMessage
@@ -67,11 +68,17 @@ magiclist = [
 ]
 
 
-class Reactions(BaseResponder):
+@dataclass()
+class ReactionsConfig:
+    pass
+
+
+class Reactions(BaseResponder[ReactionsConfig]):
     """Defines several commands related to emotional reactions."""
 
     config_namespace = 'botnet'
     config_name = 'reactions'
+    config_class = ReactionsConfig
 
     @command('cute')
     @parse_command([('nicks', '*')])
