@@ -33,7 +33,7 @@ def test_pester(make_privmsg, make_incoming_privmsg, unauthorised_context, teste
                 'msg': Message.new_from_string('PRIVMSG person :Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG person :' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)'),
+                'msg': Message.new_from_string('PRIVMSG person :' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + '), ' + colored('nick1', Color.RED) + ' (?' + colored('0', Color.RED) + ')'),
             },
             {
                 'msg': Message.new_from_string('PRIVMSG person :If you would like to endorse any of them then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'. If you want to see the full report use the \'.vibecheck\' command.')
@@ -60,7 +60,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
                 'msg': Message.new_from_string('PRIVMSG person :Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG person :' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG person :' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + '), ' + colored('nick1', Color.RED) + ' (?' + colored('0', Color.RED) + ')')
             },
             {
                 'msg': Message.new_from_string('PRIVMSG person :If you would like to endorse any of them then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'. If you want to see the full report use the \'.vibecheck\' command.')
@@ -75,7 +75,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     tested_vibecheck.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + '), ' + colored('nick1', Color.RED) + ' (?' + colored('0', Color.RED) + ')')
             },
             {
                 'msg': Message.new_from_string('PRIVMSG nick :If you would like to endorse anyone then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'.')
@@ -105,7 +105,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     tested_vibecheck.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick1', Color.GREEN) + ' (^), ' + colored('nick2', Color.RED) + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick1', Color.GREEN) + ' (^), ' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + ')')
             },
             {
                 'msg': Message.new_from_string('PRIVMSG nick :If you would like to endorse anyone then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'.')
@@ -165,7 +165,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     tested_vibecheck.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick1', Color.GREEN) + ' (^), ' + colored('nick2', Color.RED) + ' (?)'),
+                'msg': Message.new_from_string('PRIVMSG nick :Everyone currently in the channel: ' + colored('nick1', Color.GREEN) + ' (^), ' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + ')'),
             },
             {
                 'msg': Message.new_from_string('PRIVMSG nick :If you would like to endorse anyone then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'.')
@@ -230,7 +230,7 @@ def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, 
                     'PRIVMSG person1 :Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG person1 :' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)'),
+                'msg': Message.new_from_string('PRIVMSG person1 :' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + '), ' + colored('nick1', Color.RED) + ' (?' + colored('0', Color.RED) + ')'),
             },
             {
                 'msg': Message.new_from_string('PRIVMSG person1 :If you would like to endorse any of them then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'. If you want to see the full report use the \'.vibecheck\' command.')
@@ -239,7 +239,7 @@ def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, 
                 'msg': Message.new_from_string('PRIVMSG person2 :Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG person2 :' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)'),
+                'msg': Message.new_from_string('PRIVMSG person2 :' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + '), ' + colored('nick1', Color.RED) + ' (?' + colored('0', Color.RED) + ')'),
             },
             {
                 'msg': Message.new_from_string('PRIVMSG person2 :If you would like to endorse any of them then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'. If you want to see the full report use the \'.vibecheck\' command.')
@@ -248,7 +248,7 @@ def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, 
                 'msg': Message.new_from_string('PRIVMSG person3 :Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
             },
             {
-                'msg': Message.new_from_string('PRIVMSG person3 :' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)'),
+                'msg': Message.new_from_string('PRIVMSG person3 :' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + '), ' + colored('nick1', Color.RED) + ' (?' + colored('0', Color.RED) + ')'),
             },
             {
                 'msg': Message.new_from_string('PRIVMSG person3 :If you would like to endorse any of them then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'. If you want to see the full report use the \'.vibecheck\' command.')
@@ -265,7 +265,7 @@ def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, 
     tested_vibecheck.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG person1nick :Everyone currently in the channel: ' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG person1nick :Everyone currently in the channel: ' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + '), ' + colored('nick1', Color.RED) + ' (?' + colored('0', Color.RED) + ')')
             },
             {
                 'msg': Message.new_from_string('PRIVMSG person1nick :If you would like to endorse anyone then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'.')
@@ -285,7 +285,7 @@ def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, 
     tested_vibecheck.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG person2nick :Everyone currently in the channel: ' + colored('nick2', Color.RED) + ' (?), ' + colored('nick1', Color.RED) + ' (?)')
+                'msg': Message.new_from_string('PRIVMSG person2nick :Everyone currently in the channel: ' + colored('nick2', Color.RED) + ' (?' + colored('0', Color.RED) + '), ' + colored('nick1', Color.RED) + ' (?' + colored('0', Color.RED) + ')')
             },
             {
                 'msg': Message.new_from_string('PRIVMSG person2nick :If you would like to endorse anyone then you can privately use the \'.endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'.unendorse NICK\'.')

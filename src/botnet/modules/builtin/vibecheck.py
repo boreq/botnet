@@ -560,7 +560,11 @@ class PersonaReport:
             nicks = colored(nicks, Color.GREEN)
         else:
             nicks = colored(nicks, Color.RED)
-        return '{} ({})'.format(nicks, '^' if endorsed else '?')
+        if len(self.endorsements) == 0:
+            warning_no_endorsements = colored('0', Color.RED)
+        else:
+            warning_no_endorsements = ''
+        return '{} ({}{})'.format(nicks, '^' if endorsed else '?', warning_no_endorsements)
 
 
 @dataclass
