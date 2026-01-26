@@ -66,12 +66,14 @@ def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context,
 
 @pytest.fixture()
 def test_sed(module_harness_factory, tmp_file):
-    class TestSed(Sed):
-
-        def __init__(self, *args, **kwargs):
-            self.default_config = {
-                'message_data': tmp_file,
+    config = {
+        'module_config': {
+            'botnet': {
+                'sed': {
+                    'message_data': tmp_file,
+                }
             }
-            super().__init__(*args, **kwargs)
+        }
+    }
 
-    return module_harness_factory.make(TestSed, Config())
+    return module_harness_factory.make(Sed, Config(config))

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import os
 import threading
 from typing import Callable
@@ -91,7 +92,13 @@ class MessageStore:
         return []
 
 
-class Sed(BaseResponder):
+@dataclass()
+class SedConfig:
+    message_data: str
+    message_limit: int = 100
+
+
+class Sed(BaseResponder[SedConfig]):
     """Allows users to use sed.
 
     Example module config:
@@ -107,10 +114,14 @@ class Sed(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'sed'
+    config_class = SedConfig
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.store = MessageStore(lambda: self.config_get('message_data'), lambda c: self.config_get('message_limit', 100))
+        self.store = MessageStore(
+            lambda: self.get_config().message_data,
+            lambda c: self.get_config().message_limit,
+        )
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         channel = msg.target.channel
