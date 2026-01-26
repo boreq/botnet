@@ -97,7 +97,57 @@ class RestTraccarAPI(TraccarAPI):
         }
 
 
-class Traccar(BaseResponder):
+@dataclass()
+class TraccarConfig:
+    instances: list[TraccarConfigInstance]
+
+    def __post_init__(self):
+        if len(self.instances) == 0:
+            raise ValueError('Loading this module is pointless without at least one instance configured.')
+
+
+@dataclass()
+class TraccarConfigInstance:
+    url: str
+    token: str
+    location_commands: list[TraccarConfigLocationCommand]
+    battery_commands: list[TraccarConfigBatteryCommand]
+
+
+@dataclass()
+class TraccarConfigLocationCommand:
+    command_names: list[str]
+    channels: list[str]
+    device_name: str
+    geofences: dict[str, str]
+
+    def __post_init__(self):
+        if len(self.command_names) == 0:
+            raise ValueError('At least one command name must be specified for a location command.')
+        if len(self.channels) == 0:
+            raise ValueError('At least one channel must be specified for a location command.')
+        if not self.device_name:
+            raise ValueError('A device name must be specified for a location command.')
+        if len(self.geofences) == 0:
+            raise ValueError('At least one geofence mapping must be specified for a location command.')
+
+
+@dataclass()
+class TraccarConfigBatteryCommand:
+    command_names: list[str]
+    channels: list[str]
+    device_name: str
+
+    def __post_init__(self):
+        if len(self.command_names) == 0:
+            raise ValueError('At least one command name must be specified for a battery command.')
+        if len(self.channels) == 0:
+            raise ValueError('At least one channel must be specified for a battery command.')
+        if not self.device_name:
+            raise ValueError('A device name must be specified for a battery command.')
+
+
+class Traccar(BaseResponder[TraccarConfig]):
     """Reports positions using traccar.
 
     Example module config:
@@ -134,19 +184,21 @@ class Traccar(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'traccar'
+    config_class = TraccarConfig
 
     def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
         channel = msg.target.channel
         if channel is not None:
-            for instance in self.config_get('instances', []):
-                for command_definition in instance['location_commands']:
-                    if msg.target.channel in [Channel(v) for v in command_definition['channels']]:
-                        for command in command_definition['command_names']:
+            config = self.get_config()
+            for instance in config.instances:
+                for location_command in instance.location_commands:
+                    if msg.target.channel in [Channel(v) for v in location_command.channels]:
+                        for command in location_command.command_names:
                             rw.add(command)
-                for command_definition in instance['battery_commands']:
-                    if msg.target.channel in [Channel(v) for v in command_definition['channels']]:
-                        for command in command_definition['command_names']:
+                for battery_command in instance.battery_commands:
+                    if msg.target.channel in [Channel(v) for v in battery_command.channels]:
+                        for command in battery_command.command_names:
                             rw.add(command)
         return rw
 
@@ -157,38 +209,39 @@ class Traccar(BaseResponder):
 
         channel = msg.target.channel
         if channel is not None:
-            for instance_definition in self.config_get('instances', []):
-                for location_command in instance_definition['location_commands']:
-                    if command_name not in location_command['command_names']:
+            config = self.get_config()
+            for instance_definition in config.instances:
+                for location_command in instance_definition.location_commands:
+                    if command_name not in location_command.command_names:
                         continue
 
-                    if channel not in [Channel(v) for v in location_command['channels']]:
+                    if channel not in [Channel(v) for v in location_command.channels]:
                         continue
 
                     try:
                         self._respond_with_location(
                             msg,
-                            instance_definition['url'],
-                            instance_definition['token'],
-                            location_command['device_name'],
-                            location_command['geofences'],
+                            instance_definition.url,
+                            instance_definition.token,
+                            location_command.device_name,
+                            location_command.geofences,
                         )
                     except requests.ConnectionError:
                         self.respond(msg, 'Connection error.')
 
-                for battery_command in instance_definition['battery_commands']:
-                    if command_name not in battery_command['command_names']:
+                for battery_command in instance_definition.battery_commands:
+                    if command_name not in battery_command.command_names:
                         continue
 
-                    if channel not in [Channel(v) for v in battery_command['channels']]:
+                    if channel not in [Channel(v) for v in battery_command.channels]:
                         continue
 
                     try:
                         self._respond_with_battery(
                             msg,
-                            instance_definition['url'],
-                            instance_definition['token'],
-                            battery_command['device_name'],
+                            instance_definition.url,
+                            instance_definition.token,
+                            battery_command.device_name,
                         )
                     except requests.ConnectionError:
                         self.respond(msg, 'Connection error.')
