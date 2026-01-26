@@ -7,40 +7,25 @@ from ...config import Config
 
 
 class ExceptionMonitor(ConfigMixin, BaseModule):
-    """Gathers incoming reports about exceptions and logs them.
+    """Gathers incoming reports about exceptions and logs them."""
 
-    Example module config:
-
-        "botnet": {
-            "exception_monitor": {
-                "log": true
-            }
-        }
-
-    """
-
-    default_config = Config({
-        'log': True
-    })
+    config_namespace = 'botnet'
+    config_name = 'exception_monitor'
 
     error_text = '{text}, {error}\nTraceback:\n{tb}'
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.register_default_config(self.default_config)
-        self.register_config('botnet', 'exception_monitor')
         on_exception.connect(self.on_exception)
-
-    def get_text(self, e: Exception) -> str:
-        tb = ''.join(traceback.format_tb(e.__traceback__))
-        return self.error_text.format(text=str(e), error=repr(e), tb=tb)
 
     def on_exception(self, sender: Any, **kwargs: Any) -> None:
         e = kwargs['e']
-        text = self.get_text(e)
+        text = self._get_text(e)
+        self.logger.error(text)
 
-        if self.config_get('log'):
-            self.logger.error(text)
+    def _get_text(self, e: Exception) -> str:
+        tb = ''.join(traceback.format_tb(e.__traceback__))
+        return self.error_text.format(text=str(e), error=repr(e), tb=tb)
 
 
 mod = ExceptionMonitor
