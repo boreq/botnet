@@ -55,7 +55,7 @@ class Meta(BaseResponder):
         """
         text = 'Reporting in! [Python] {ibip_repo} try {prefix}help ({ibip_website})'.format(
             ibip_repo=self.ibip_repo,
-            prefix=self.config_get('command_prefix'),
+            prefix=self.get_command_prefix(),
             ibip_website=self.ibip_website,
         )
         self.respond(msg, text)
