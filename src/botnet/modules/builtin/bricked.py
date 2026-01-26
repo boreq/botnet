@@ -35,7 +35,20 @@ class RestBrickedAPI(BrickedAPI):
         return urljoin(self._instance_url, path)
 
 
-class Bricked(BaseResponder):
+@dataclass()
+class BrickedConfig:
+    statuses: list[BrickedConfigStatus]
+
+
+@dataclass()
+class BrickedConfigStatus:
+    commands: list[str]
+    channels: list[str]
+    instance: str
+    id: str
+
+
+class Bricked(BaseResponder[BrickedConfig]):
     """Reports statuses.
 
     Example module config:
@@ -57,14 +70,16 @@ class Bricked(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'bricked'
+    config_class = BrickedConfig
 
     def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
         channel = msg.target.channel
         if channel is not None:
-            for entry in self.config_get('statuses', []):
-                if channel in [Channel(str) for str in entry['channels']]:
-                    for command in entry['commands']:
+            config = self.get_config()
+            for entry in config.statuses:
+                if channel in [Channel(str) for str in entry.channels]:
+                    for command in entry.commands:
                         rw.add(command)
         return rw
 
@@ -75,15 +90,16 @@ class Bricked(BaseResponder):
 
         channel = msg.target.channel
         if channel is not None:
-            for entry in self.config_get('statuses', []):
-                if command_name not in entry['commands']:
+            config = self.get_config()
+            for entry in config.statuses:
+                if command_name not in entry.commands:
                     continue
 
-                if channel.s.lower() not in entry['channels']:
+                if channel.s.lower() not in entry.channels:
                     continue
 
-                api = self._create_api(entry['instance'])
-                status = api.get_status(entry['id'])
+                api = self._create_api(entry.instance)
+                status = api.get_status(entry.id)
                 self.respond(msg, '{:.0f}%'.format(status.status * 100))
 
     def _create_api(self, instance: str) -> BrickedAPI:
