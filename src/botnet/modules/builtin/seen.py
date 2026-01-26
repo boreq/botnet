@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import datetime
 import os
 import threading
@@ -62,7 +63,12 @@ class MessageStore:
         }
 
 
-class Seen(BaseResponder):
+@dataclass
+class SeenConfig:
+    message_data: str
+
+
+class Seen(BaseResponder[SeenConfig]):
     """Allows users to see when was the last time someone said something.
 
     Example module config:
@@ -77,10 +83,11 @@ class Seen(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'seen'
+    config_class = SeenConfig
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.ms = MessageStore(lambda: self.config_get('message_data'), now_func=self.now)
+        self.ms = MessageStore(lambda: self.get_config().message_data, now_func=self.now)
 
     @command('seen')
     @parse_command([('nick', 1)])

@@ -28,11 +28,17 @@ def test_seen_sequence(make_privmsg, make_incoming_privmsg, unauthorised_context
 @pytest.fixture()
 def test_seen(module_harness_factory, tmp_file):
     class TestSeen(Seen):
-        def __init__(self, *args, **kwargs):
-            self.default_config = {'message_data': tmp_file}
-            super().__init__(*args, **kwargs)
-
         def now(self) -> datetime:
             return datetime(2026, 1, 2, 11, 12, 13, tzinfo=timezone.utc)
 
-    return module_harness_factory.make(TestSeen, Config())
+    config = {
+        'module_config': {
+            'botnet': {
+                'seen': {
+                    'message_data': tmp_file
+                }
+            }
+        }
+    }
+
+    return module_harness_factory.make(TestSeen, Config(config))
