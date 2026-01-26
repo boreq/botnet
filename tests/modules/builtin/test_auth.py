@@ -1,12 +1,11 @@
 import pytest
 from botnet.config import Config
 from botnet.modules import AuthContext
-from botnet.modules.builtin.auth import Auth
+from botnet.modules.builtin.auth import Auth, WhoisResponse
 from botnet.message import Message, IncomingPrivateMessage, Nick, Target, Channel, Text
-from botnet.signals import message_out, auth_message_in
 
 
-def test_whois_parsing(subtests, rec_msg) -> None:
+def test_whois_parsing(subtests, make_tested_auth) -> None:
     test_cases = [
         # hackint irc
         {
@@ -19,15 +18,16 @@ def test_whois_parsing(subtests, rec_msg) -> None:
                 ':vindobona.hackint.org 330 target_nick nick1 logged_in_as :is logged in as',
                 ':vindobona.hackint.org 318 target_nick nick1 :End of /WHOIS list.',
             ],
-            'result': {
-                'nick': 'nick1',
-                'user': '~user',
-                'host': 'hackint/user/username',
-                'real_name': 'real name',
-                'server': 'palermo.hackint.org',
-                'server_info': 'The HackINT irc network',
-                'nick_identified': 'logged_in_as',
-            },
+            'result': WhoisResponse(
+                nick='nick1',
+                user='~user',
+                host='hackint/user/username',
+                real_name='real name',
+                server='palermo.hackint.org',
+                server_info='The HackINT irc network',
+                away=None,
+                nick_identified='logged_in_as',
+            ),
         },
 
         # hackint matrix
@@ -40,14 +40,16 @@ def test_whois_parsing(subtests, rec_msg) -> None:
                 ':vindobona.hackint.org 671 robotnet_test nick2|m :is using a secure connection',
                 ':vindobona.hackint.org 318 robotnet_test nick2|m :End of /WHOIS list.',
             ],
-            'result': {
-                'nick': 'nick2|m',
-                'user': '~someonemill',
-                'host': 'fd1d:6215:5333::24e',
-                'real_name': '@someone:milliways.info',
-                'server': 'matrix.hackint.org',
-                'server_info': 'local ircd to the matrix bridge',
-            },
+            'result': WhoisResponse(
+                nick='nick2|m',
+                user='~someonemill',
+                host='fd1d:6215:5333::24e',
+                real_name='@someone:milliways.info',
+                server='matrix.hackint.org',
+                server_info='local ircd to the matrix bridge',
+                away=None,
+                nick_identified=None,
+            ),
         },
 
         # rizon
@@ -60,15 +62,16 @@ def test_whois_parsing(subtests, rec_msg) -> None:
                 ':server.example.com 307 target_nick nick3 :has identified for this nick',
                 ':server.example.com 318 target_nick nick3 :End of /WHOIS list.',
             ],
-            'result': {
-                'nick': 'nick3',
-                'user': '~user',
-                'host': 'freebsd/user/username',
-                'real_name': 'real name',
-                'server': 'serv.example.com',
-                'server_info': 'Server info',
-                'nick_identified': 'nick3',
-            },
+            'result': WhoisResponse(
+                nick='nick3',
+                user='~user',
+                host='freebsd/user/username',
+                real_name='real name',
+                server='serv.example.com',
+                server_info='Server info',
+                away=None,
+                nick_identified='nick3',
+            ),
         },
 
         # freenode
@@ -81,65 +84,34 @@ def test_whois_parsing(subtests, rec_msg) -> None:
                 ':server.example.com 330 target_nick nick4 logged_in_as :is logged in as',
                 ':server.example.com 318 target_nick nick4 :End of /WHOIS list.',
             ],
-            'result': {
-                'nick': 'nick4',
-                'user': '~user',
-                'host': 'freebsd/user/username',
-                'real_name': 'real name',
-                'server': 'serv.example.com',
-                'server_info': 'Server info',
-                'nick_identified': 'logged_in_as',
-            },
+            'result': WhoisResponse(
+                nick='nick4',
+                user='~user',
+                host='freebsd/user/username',
+                real_name='real name',
+                server='serv.example.com',
+                server_info='Server info',
+                away=None,
+                nick_identified='logged_in_as',
+            ),
         },
     ]
 
     for test_case in test_cases:
         with subtests.test(test_case=test_case):
-            config: dict = {
-                'module_config': {
-                    'botnet': {
-                        'auth': {}
-                    }
-                }
-            }
-
-            a = Auth(Config(config))
+            tested_auth = make_tested_auth()
 
             for message_string in test_case['messages']:
-                rec_msg(Message.new_from_string(message_string))
+                tested_auth.receive_message_in(Message.new_from_string(message_string))
 
-            assert not a._whois_current
-            data = a._whois_cache.get(Nick(test_case['nick']))
-            del data['time']
+            assert not tested_auth.module._whois_current
+            data = tested_auth.module._whois_cache.get(Nick(test_case['nick']))
             assert data == test_case['result']
 
+            tested_auth.stop()
 
-def test_identify_user(subtests, make_signal_trap, rec_msg) -> None:
-    config = {
-        'module_config': {
-            'botnet': {
-                'auth': {
-                    'people': [
-                        {
-                            'uuid': 'someones_uuid',
-                            'authorisations': [
-                                {
-                                    'kind': 'irc',
-                                    'nick': 'ircnick',
-                                },
-                                {
-                                    'kind': 'matrix',
-                                    'nick': '@matrixnick:example.com',
-                                },
-                            ],
-                            'groups': ['group1', 'group2'],
-                        },
-                    ],
-                },
-            },
-        },
-    }
 
+def test_identify_user(subtests, make_tested_auth, make_signal_trap, rec_msg) -> None:
     test_cases = [
         # logged in via hackint irc
         {
@@ -191,31 +163,32 @@ def test_identify_user(subtests, make_signal_trap, rec_msg) -> None:
 
     for test_case in test_cases:
         with subtests.test(test_case=test_case):
-            a = Auth(Config(config))
-
-            message_out_trap = make_signal_trap(message_out)
-            auth_message_in_trap = make_signal_trap(auth_message_in)
+            tested_auth = make_tested_auth()
 
             received_msg = Message.new_from_string(':someone!example.com PRIVMSG #channel :Hello!')
             rec_msg(received_msg)
 
-            def wait_condition(trapped) -> None:
-                assert trapped == [{
-                    'msg': Message.new_from_string('WHOIS someone'),
-                }]
-            message_out_trap.wait(wait_condition)
+            tested_auth.expect_message_out_signals(
+                [
+                    {
+                        'msg': Message.new_from_string('WHOIS someone'),
+                    },
+                ],
+            )
 
             for message_string in test_case['messages']:
-                rec_msg(Message.new_from_string(message_string))
+                tested_auth.receive_message_in(Message.new_from_string(message_string))
 
-            def wait_condition(trapped) -> None:
-                assert trapped == [{
-                    'msg': IncomingPrivateMessage(sender=Nick('someone'), target=Target(Channel('#channel')), text=Text('Hello!')),
-                    'auth': test_case['context'],
-                }]
-            auth_message_in_trap.wait(wait_condition)
+            tested_auth.expect_auth_message_in_signals(
+                [
+                    {
+                        'msg': IncomingPrivateMessage(sender=Nick('someone'), target=Target(Channel('#channel')), text=Text('Hello!')),
+                        'auth': test_case['context'],
+                    }
+                ]
+            )
 
-            a.stop()
+            tested_auth.stop()
 
 
 def test_cache_invalidation(subtests, make_tested_auth) -> None:
@@ -323,6 +296,7 @@ def make_tested_auth(module_harness_factory):
                                     },
                                 ],
                                 'groups': ['group1', 'group2'],
+                                'contact': ['ircnick']
                             },
                         ],
                     },

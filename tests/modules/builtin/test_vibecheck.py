@@ -176,7 +176,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
 
 
 def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, tested_vibecheck) -> None:
-    tested_vibecheck.module.config['module_config']['botnet']['auth']['people'] = [
+    tested_vibecheck.module._config['module_config']['botnet']['auth']['people'] = [
         {
             'uuid': 'person1-uuid',
             'groups': ['group'],

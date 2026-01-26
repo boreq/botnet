@@ -1,6 +1,5 @@
-import datetime
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Callable
 from ...message import Message, IncomingPrivateMessage, Nick
 from ...signals import message_out, auth_message_in
 from .. import AuthContext, BaseResponder
@@ -9,75 +8,76 @@ from ..base import BaseModule
 from ...config import Config
 
 
-@dataclass
+@dataclass()
+class WhoisResponse:
+    nick: str | None              # nick
+    user: str | None              # username
+    host: str | None              # host
+    real_name: str | None         # real name
+    server: str | None            # url of a server to which the user is connected
+    server_info: str | None       # string with additional information about the server
+    away: str | None              # away message set by the user, present if the user is /away
+    nick_identified: str | None   # nick the user has identified for
+
+
+@dataclass()
 class DeferredWhois:
     nick: Nick
-    on_complete: Callable[[dict[str, Any]], None]
+    on_complete: Callable[[WhoisResponse], None]
 
 
 class WhoisMixin(BaseModule):
     """Provides a way of requesting and handling WHOIS data received from the
     IRC server. WHOIS data should be requested using the function
     WhoisMixin.whois_schedule.
-
-    Keys which *may* be present in the whois_data dictionary:
-
-        {
-            'nick',            # nick
-            'user',            # username
-            'host',            # host
-            'real_name',       # real name
-            'server',          # url of a server to which the user is connected
-            'server_info,      # string with additional information about the server
-            'away',            # away message set by the user, present if the user is /away
-            'nick_identified', # nick the user has identified for
-        }
-
     """
 
     whois_cache_timeout = 60 * 15
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self._whois_cache: MemoryCache[Nick, dict] = MemoryCache(self.whois_cache_timeout)
+        self._whois_cache: MemoryCache[Nick, WhoisResponse] = MemoryCache(self.whois_cache_timeout)
         self._whois_deferred: list[DeferredWhois] = []
-        self._whois_current: dict[Nick, dict[str, Any]] = {}
+        self._whois_current: dict[Nick, WhoisResponse] = {}
 
     def handler_rpl_whoisuser(self, msg: Message) -> None:
         """Start of WHOIS."""
         nick = Nick(msg.params[1])
-        self._whois_current[nick] = {
-            'time': datetime.datetime.now(),
-            'nick': msg.params[1],
-            'user': msg.params[2],
-            'host': msg.params[3],
-            'real_name': msg.params[5],
-        }
+        self._whois_current[nick] = WhoisResponse(
+            nick=msg.params[1],
+            user=msg.params[2],
+            host=msg.params[3],
+            real_name=msg.params[5],
+            server=None,
+            server_info=None,
+            away=None,
+            nick_identified=None,
+        )
 
     def handler_rpl_whoisserver(self, msg: Message) -> None:
         """WHOIS server."""
         nick = Nick(msg.params[1])
         if nick in self._whois_current:
-            self._whois_current[nick]['server'] = msg.params[2]
-            self._whois_current[nick]['server_info'] = msg.params[3]
+            self._whois_current[nick].server = msg.params[2]
+            self._whois_current[nick].server_info = msg.params[3]
 
     def handler_rizon_rpl_whoisidentified(self, msg: Message) -> None:
         """WHOIS identification on Rizon."""
         nick = Nick(msg.params[1])
         if nick in self._whois_current:
-            self._whois_current[nick]['nick_identified'] = msg.params[2]
+            self._whois_current[nick].nick_identified = msg.params[2]
 
     def handler_freenode_rpl_whoisidentified(self, msg: Message) -> None:
         """WHOIS identification on Freenode."""
         nick = Nick(msg.params[1])
         if nick in self._whois_current:
-            self._whois_current[nick]['nick_identified'] = msg.params[1]
+            self._whois_current[nick].nick_identified = msg.params[1]
 
     def handler_rpl_away(self, msg: Message) -> None:
         """WHOIS away message."""
         nick = Nick(msg.params[1])
         if nick in self._whois_current:
-            self._whois_current[nick]['away'] = msg.params[2]
+            self._whois_current[nick].away = msg.params[2]
 
     def handler_rpl_endofwhois(self, msg: Message) -> None:
         """End of WHOIS."""
@@ -99,7 +99,7 @@ class WhoisMixin(BaseModule):
         nick = Nick(msg.nickname)
         self._whois_cache.delete(nick)
 
-    def whois_schedule(self, nick: Nick, on_complete: Callable[[dict[str, Any]], None]) -> None:
+    def whois_schedule(self, nick: Nick, on_complete: Callable[[WhoisResponse], None]) -> None:
         """Schedules an action to be completed when the whois for the nick is
         available.
 
@@ -145,7 +145,49 @@ class WhoisMixin(BaseModule):
             func(msg)
 
 
-class Auth(WhoisMixin, BaseResponder):
+@dataclass()
+class AuthConfig:
+    people: list[AuthConfigPerson]
+
+    def __post_init__(self):
+        uuids = set([person.uuid for person in self.people])
+        if len(uuids) != len(self.people):
+            raise ValueError('duplicate person uuid in auth config')
+
+
+@dataclass()
+class AuthConfigPerson:
+    uuid: str
+    authorisations: list[AuthConfigAuthorisation]
+    contact: list[str]
+    groups: list[str]
+
+    def __post_init__(self):
+        if self.uuid == '':
+            raise ValueError('person uuid cannot be empty')
+
+        if len(self.authorisations) == 0:
+            raise ValueError('person must have at least one authorisation otherwise they will never be identified')
+
+
+@dataclass()
+class AuthConfigAuthorisation:
+    kind: str
+    nick: str
+
+    def __post_init__(self):
+        if self.kind not in ['irc', 'matrix']:
+            raise ValueError('unknown authorisation kind: {}'.format(self.kind))
+        match self.kind:
+            case 'irc':
+                if not Nick(self.nick):
+                    raise ValueError('invalid irc nick in authorisation: {}'.format(self.nick))
+            case 'matrix':
+                if not self.nick.startswith('@') or ':' not in self.nick:
+                    raise ValueError('invalid matrix nick in authorisation: {}'.format(self.nick))
+
+
+class Auth(WhoisMixin, BaseResponder[AuthConfig]):
     """Resends messages coming in on `message_in` on `auth_message_in` after
     attaching authorisation-related context to them.
 
@@ -169,9 +211,7 @@ class Auth(WhoisMixin, BaseResponder):
                                     "nick": "@nick:example.com"
                                 }
                             ],
-                            "contact": [
-                                "nick"
-                            ],
+                            "contact": ["nick"],
                             groups: ["admin"]
                         }
                     ]
@@ -183,6 +223,7 @@ class Auth(WhoisMixin, BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'auth'
+    config_class = AuthConfig
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
@@ -190,26 +231,25 @@ class Auth(WhoisMixin, BaseResponder):
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         super().handle_privmsg(msg)
 
-        def on_complete(whois_data: dict[str, Any]) -> None:
-            for person in self.config_get('people', []):
-                uuid = person.get('uuid')
-                groups = person.get('groups')
-                for authorisation in person.get('authorisations', []):
-                    match authorisation['kind']:
+        def on_complete(whois_data: WhoisResponse) -> None:
+            config = self.get_config()
+            for person in config.people:
+                for authorisation in person.authorisations:
+                    match authorisation.kind:
                         case 'irc':
-                            if whois_data.get('nick_identified', None) != authorisation['nick']:
+                            if whois_data.nick_identified != authorisation.nick:
                                 continue
-                            self._emit_auth_message_in(msg, uuid, groups)
+                            self._emit_auth_message_in(msg, person.uuid, person.groups)
                             return
                         case 'matrix':
-                            if whois_data.get('server', None) != 'matrix.hackint.org':
+                            if whois_data.server != 'matrix.hackint.org':
                                 continue
-                            if whois_data.get('real_name', None) != authorisation['nick']:
+                            if whois_data.real_name != authorisation.nick:
                                 continue
-                            self._emit_auth_message_in(msg, uuid, groups)
+                            self._emit_auth_message_in(msg, person.uuid, person.groups)
                             return
                         case _:
-                            raise Exception('unknown authorisation kind: {}'.format(authorisation['kind']))
+                            raise Exception('unknown authorisation kind: {}'.format(authorisation.kind))
             self._emit_auth_message_in(msg, None, [])
 
         self.whois_schedule(msg.sender, on_complete)

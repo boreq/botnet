@@ -8,7 +8,7 @@ import os
 import pytest
 import tempfile
 import time
-from typing import Callable, Any
+from typing import Callable
 
 
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
@@ -112,21 +112,6 @@ def make_signal_trap():
     return Trap
 
 
-class ModuleHarnessFactory:
-
-    def __init__(self) -> None:
-        self._harnesses: list[ModuleHarness] = []
-
-    def make(self, module_class: Callable, config: Config) -> Any:
-        harness = ModuleHarness(module_class, config)
-        self._harnesses.append(harness)
-        return harness
-
-    def _stop_all(self) -> None:
-        for harness in self._harnesses:
-            harness.stop()
-
-
 class ModuleHarness:
 
     def __init__(self, module_class, config: Config) -> None:
@@ -192,6 +177,21 @@ class ModuleHarness:
         self.module.stop()
         for e in self.on_exception_trap.trapped:
             raise e['e']
+
+
+class ModuleHarnessFactory:
+
+    def __init__(self) -> None:
+        self._harnesses: list[ModuleHarness] = []
+
+    def make(self, module_class: Callable, config: Config) -> ModuleHarness:
+        harness = ModuleHarness(module_class, config)
+        self._harnesses.append(harness)
+        return harness
+
+    def _stop_all(self) -> None:
+        for harness in self._harnesses:
+            harness.stop()
 
 
 @pytest.fixture()

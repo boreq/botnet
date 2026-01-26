@@ -1,8 +1,10 @@
+from typing import TypeVar
 from ..message import Message, IncomingPrivateMessage, Target
 from ..signals import message_out
+from ..config import Config
 from .base import BaseModule, AuthContext
 from .decorators import command
-from .mixins import ConfigMixin, MessageDispatcherMixin
+from .mixins import MessageDispatcherMixin, SafeConfigMixin, DataclassInstance
 from .lib import divide_text
 from .decorators import parse_command, Args
 
@@ -10,7 +12,10 @@ from .decorators import parse_command, Args
 _BREAK_PRIVMSG_EVERY = 400
 
 
-class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
+T = TypeVar('T', bound=DataclassInstance)
+
+
+class BaseResponder(SafeConfigMixin[T], MessageDispatcherMixin, BaseModule):
     """Inherit from this class to quickly create a module which reacts to users'
     messages.
 
@@ -34,11 +39,6 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
     # had to be defined in all modules.
     ignore_help = True
 
-    # A module is expected to store the config in
-    # config['module_config'][config_namespace][config_name]
-    config_namespace: str | None = None
-    config_name: str | None = None
-
     # This is the default config for this class
     base_default_config = {
         "command_prefix": "."
@@ -47,7 +47,7 @@ class BaseResponder(ConfigMixin, MessageDispatcherMixin, BaseModule):
     # Default config for the class which inherits from BaseResponder
     default_config: dict = {}
 
-    def __init__(self, config):
+    def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.register_default_config(self.base_default_config)
         self.register_default_config(self.default_config)

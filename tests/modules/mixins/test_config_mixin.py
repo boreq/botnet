@@ -121,9 +121,9 @@ def test_complex_config():
 
     t.config_set('new_key.b', [1, 2])
     assert t.config_get('new_key.b') == [1, 2]
-    assert t.config_set('new_key.b', [1])
+    t.config_set('new_key.b', [1])
     assert t.config_get('new_key.b') == [1]
-    assert t.config_append('new_key.b', 3)
+    t.config_append('new_key.b', 3)
     assert t.config_get('new_key.b') == [1, 3]
 
     t.config_set('new_key.c', 1)
@@ -144,7 +144,7 @@ def test_config_gone():
     t = TestResponder(Config())
     with pytest.raises(KeyError):
         assert t.config_get('k') == 'v'
-    assert t.config_set('k', 'v')
+    t.config_set('k', 'v')
     assert t.config_get('k') == 'v'
 
     t.config_append('gone', 1)
