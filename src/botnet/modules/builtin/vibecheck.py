@@ -4,6 +4,7 @@ import dacite
 from datetime import datetime
 from typing import Any, Callable
 from dataclasses import dataclass, asdict
+from .auth import AuthConfig, AuthConfigPerson
 from ...helpers import save_json, load_json, cleanup_nick
 from ...signals import message_out, on_exception
 from ...message import Message, IncomingPrivateMessage, Nick, Channel, Target
@@ -95,9 +96,10 @@ class NamesMixin(BaseModule):
 
 
 def _is_authorised_has_uuid_and_sent_a_privmsg():
-    def predicate(module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
-        authorised_group = module.config_get('authorised_group')
-        if authorised_group not in auth.groups:
+    def predicate(module: 'Vibecheck', msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
+        config = module.get_config()
+
+        if config.authorised_group not in auth.groups:
             return False
 
         if not auth.uuid:
@@ -111,7 +113,24 @@ def _is_authorised_has_uuid_and_sent_a_privmsg():
     return predicates([predicate])
 
 
-class Vibecheck(NamesMixin, BaseResponder):
+@dataclass()
+class VibecheckConfig:
+    data: str
+    channel: str
+    authorised_group: str
+
+    def __post_init__(self):
+        if self.data == '':
+            raise ValueError('data cannot be empty')
+
+        if self.channel == '':
+            raise ValueError('channel cannot be empty')
+
+        if self.authorised_group == '':
+            raise ValueError('authorised_group cannot be empty')
+
+
+class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
     """Vibecheck enables people to better keep track of who's in a channel and if they are someone who people know or
     not.
 
@@ -129,6 +148,8 @@ class Vibecheck(NamesMixin, BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'vibecheck'
+    config_class = VibecheckConfig
+
     store: Store
     maybe_pester_people_every = 60 * 15  # [s]
 
@@ -152,8 +173,10 @@ class Vibecheck(NamesMixin, BaseResponder):
         def on_names_available(names: list[Nick]) -> None:
             assert auth.uuid is not None
 
-            auth_module_people = self._peek_auth_module_people()
-            auth_module_people_uuids = set([person['uuid'] for person in auth_module_people])
+            config = self.get_config()
+
+            auth_module_people = self._peek_auth_module_people(config)
+            auth_module_people_uuids = set([person.uuid for person in auth_module_people])
 
             with self._store as state:
                 report = state.generate_report(self._now(), auth.uuid, names, auth_module_people_uuids)
@@ -168,7 +191,7 @@ class Vibecheck(NamesMixin, BaseResponder):
             self.respond(msg, f'If you would like to endorse anyone then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'.')
             self.respond(msg, f'Transparency: {report.authorised_people_report.for_display()}')
 
-        channel = Channel(self.config_get('channel'))
+        channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
 
     @command('endorse')
@@ -191,7 +214,7 @@ class Vibecheck(NamesMixin, BaseResponder):
                 else:
                     self.respond(msg, 'There is no {} in the channel.'.format(nick))
 
-        channel = Channel(self.config_get('channel'))
+        channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
 
     @command('unendorse')
@@ -235,13 +258,13 @@ class Vibecheck(NamesMixin, BaseResponder):
             else:
                 self.respond(msg, 'At least one of those nicks isn\'t in the channel!')
 
-        channel = Channel(self.config_get('channel'))
+        channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         channel = msg.target.channel
         if channel is not None:
-            if channel == Channel(self.config_get('channel')):
+            if channel == Channel(self.get_config().channel):
                 with self._store as state:
                     state.on_privmsg(msg.sender)
 
@@ -265,25 +288,27 @@ class Vibecheck(NamesMixin, BaseResponder):
         command_prefix = self.get_command_prefix()
 
         def on_names_available(names: list[Nick]) -> None:
-            auth_module_people = self._peek_auth_module_people()
-            auth_module_people_uuids = set([person['uuid'] for person in auth_module_people])
+            config = self.get_config()
+            auth_module_people = self._peek_auth_module_people(config)
+            auth_module_people_uuids = set([person.uuid for person in auth_module_people])
 
             for person in auth_module_people:
                 with self._store as state:
-                    report = state.generate_pestering_report(self._now(), person['uuid'], names, auth_module_people_uuids)
+                    report = state.generate_pestering_report(self._now(), person.uuid, names, auth_module_people_uuids)
                 if report is not None:
-                    for nick in [Target(Nick(nick_string)) for nick_string in person['contact']]:
+                    for nick in [Target(Nick(nick_string)) for nick_string in person.contact]:
                         self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
-                        self.message(nick, ', '.join([v.for_display(person['uuid']) for v in reversed(report.persona_reports)]))
+                        self.message(nick, ', '.join([v.for_display(person.uuid) for v in reversed(report.persona_reports)]))
                         self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}vibecheck\' command.')
 
-        channel = Channel(self.config_get('channel'))
+        channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
 
-    def _peek_auth_module_people(self):
+    def _peek_auth_module_people(self, config: VibecheckConfig) -> list[AuthConfigPerson]:
+        auth_config = self.peek_loaded_config_for_module('botnet', 'auth', AuthConfig)
         return [
-            person for person in self.peek_loaded_config_for_module('botnet', 'auth', 'people', default=[])
-            if self.config_get('authorised_group') in person['groups']
+            person for person in auth_config.people
+            if config.authorised_group in person.groups
         ]
 
 

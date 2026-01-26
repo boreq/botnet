@@ -104,18 +104,6 @@ class ConfigMixin(BaseModule):
 
         raise KeyError
 
-    def peek_loaded_config_for_module(self, namespace: str, module: str, key: str, default=_SENTI) -> Any:
-        """Peeks a config key for a different modules. In principle this is considered harmful and yet here we are."""
-        with self._config.lock:
-            actual_key = self._get_config_key((namespace, module), key)
-            try:
-                return next(reversed(list(_iterate_dict(self._config, actual_key))))
-            except KeyError:
-                if default is not _SENTI:
-                    return default
-
-        raise KeyError
-
     def config_set(self, key: str, value: Any) -> None:
         """Sets a value in the last registered location in the config."""
         print(self._config)
@@ -284,10 +272,11 @@ class DataclassInstance(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
 
 
-T = TypeVar('T', bound=DataclassInstance)
+MODULE_CONFIG_DATACLASS = TypeVar('MODULE_CONFIG_DATACLASS', bound=DataclassInstance)
+ANOTHER_MODULE_CONFIG_DATACLASS = TypeVar('ANOTHER_MODULE_CONFIG_DATACLASS', bound=DataclassInstance)
 
 
-class SafeConfigMixin(Generic[T], ConfigMixin):
+class SafeConfigMixin(Generic[MODULE_CONFIG_DATACLASS], ConfigMixin):
     # A module is expected to store the config in
     # config['module_config'][config_namespace][config_name]
     config_namespace: str | None = None
@@ -295,9 +284,9 @@ class SafeConfigMixin(Generic[T], ConfigMixin):
 
     # Even though we accept parameter T we still need to have this information
     # at runtime to be able to construct the object.
-    config_class: type[T] | None = None
+    config_class: type[MODULE_CONFIG_DATACLASS] | None = None
 
-    def get_config(self) -> T:
+    def get_config(self) -> MODULE_CONFIG_DATACLASS:
         """Returns the config for this module. Thie does not exibit any of the
         previous weird magic behaviour with looking for the config in different
         places.
@@ -310,3 +299,9 @@ class SafeConfigMixin(Generic[T], ConfigMixin):
         with self._config.lock:
             data = self._config['module_config'][self.config_namespace][self.config_name]
             return dacite.from_dict(data_class=self.config_class, data=data)
+
+    def peek_loaded_config_for_module(self, namespace: str, module: str, config_dataclass: type[ANOTHER_MODULE_CONFIG_DATACLASS]) -> ANOTHER_MODULE_CONFIG_DATACLASS:
+        """Peeks a config key for a different modules. In principle this is considered harmful and yet here we are."""
+        with self._config.lock:
+            data = self._config['module_config'][namespace][module]
+            return dacite.from_dict(data_class=config_dataclass, data=data)

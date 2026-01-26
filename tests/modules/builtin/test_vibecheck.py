@@ -176,19 +176,29 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
 
 
 def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, tested_vibecheck) -> None:
+    some_authorisations = [
+        {
+            'kind': 'irc',
+            'nick': 'ircnick',
+        }
+    ]
+
     tested_vibecheck.module._config['module_config']['botnet']['auth']['people'] = [
         {
             'uuid': 'person1-uuid',
+            'authorisations': some_authorisations,
             'groups': ['group'],
             'contact': ['person1'],
         },
         {
             'uuid': 'person2-uuid',
+            'authorisations': some_authorisations,
             'groups': ['group'],
             'contact': ['person2'],
         },
         {
             'uuid': 'person3-uuid',
+            'authorisations': some_authorisations,
             'groups': ['group'],
             'contact': ['person3'],
         },
@@ -301,6 +311,12 @@ def tested_vibecheck(module_harness_factory, tmp_file):
                         'people': [
                             {
                                 'uuid': 'person-uuid',
+                                'authorisations': [
+                                    {
+                                        'kind': 'irc',
+                                        'nick': 'ircnick',
+                                    }
+                                ],
                                 'groups': ['group'],
                                 'contact': ['person'],
                             }
