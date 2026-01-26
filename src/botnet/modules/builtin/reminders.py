@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import datetime
 import os
 import threading
@@ -112,6 +113,11 @@ class RemindersStore:
         return list(reversed(entries))
 
 
+@dataclass()
+class RemindersConfig:
+    reminder_data: str
+
+
 class Reminders(BaseResponder):
     """Allows users to leave reminders.
 
@@ -127,7 +133,9 @@ class Reminders(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'reminders'
-    deltatime = 1  # [s]
+    config_class = RemindersConfig
+
+    update_every_seconds = 1
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
@@ -166,7 +174,7 @@ class Reminders(BaseResponder):
         while not self.stop_event.is_set():
             try:
                 self.update()
-                self.stop_event.wait(self.deltatime)
+                self.stop_event.wait(self.update_every_seconds)
             except Exception as e:
                 on_exception.send(self, e=e)
 
