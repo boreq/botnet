@@ -43,19 +43,26 @@ namespaces = false
 
 [tool.mypy]
 strict = true
-ignore_missing_imports = true
+mypy_path = "src:stubs"
+explicit_package_bases = true
 
 [[tool.mypy.overrides]]
+strict = false
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 check_untyped_defs = false
 disallow_any_generics = false
 disable_error_code = [
-    "misc",            # Silences "Class cannot subclass value of type 'Any'"
-    "type-arg",        # Silences "expects no type arguments"
-    "no-any-return",   # Silences "Returning Any from function declared to return..."
+    "misc",
+    "type-arg",
+    "no-any-return",
+    "import-untyped",
+    "var-annotated",
+    "attr-defined",
+    "arg-type",
 ]
+
 
 [tool.ruff]
 lint.select = ["I"]

@@ -256,7 +256,7 @@ def test_cache_invalidation(subtests, make_tested_auth) -> None:
                 ]
             )
 
-            for message_string in test_case['messages']:  # type: ignore
+            for message_string in test_case['messages']:
                 received_msg = Message.new_from_string(message_string)
                 tested_auth.receive_message_in(received_msg)
 

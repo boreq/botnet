@@ -1,0 +1,6 @@
+class Chain:
+    def grow(self, words: list[str]) -> None:
+        ...
+
+    def generate(self) -> list[str]:
+        ...

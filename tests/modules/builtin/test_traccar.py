@@ -50,7 +50,7 @@ def test_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_context, 
     mock_api: FakeTraccarAPI = test_traccar.module.mock_api
 
     mock_api.mocked_devices = [
-        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+        Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
     ]
 
     mock_api.mocked_positions = [
@@ -94,7 +94,7 @@ def test_not_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_conte
     mock_api: FakeTraccarAPI = test_traccar.module.mock_api
 
     mock_api.mocked_devices = [
-        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+        Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
     ]
 
     mock_api.mocked_positions = [
@@ -138,7 +138,7 @@ def test_battery_not_available(make_privmsg, make_incoming_privmsg, unauthorised
     mock_api: FakeTraccarAPI = test_traccar.module.mock_api
 
     mock_api.mocked_devices = [
-        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+        Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
     ]
 
     mock_api.mocked_positions = [
@@ -175,7 +175,7 @@ def test_battery_charging(make_privmsg, make_incoming_privmsg, unauthorised_cont
     mock_api: FakeTraccarAPI = test_traccar.module.mock_api
 
     mock_api.mocked_devices = [
-        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+        Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
     ]
 
     mock_api.mocked_positions = [
@@ -215,7 +215,7 @@ def test_battery_not_charging(make_privmsg, make_incoming_privmsg, unauthorised_
     mock_api: FakeTraccarAPI = test_traccar.module.mock_api
 
     mock_api.mocked_devices = [
-        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+        Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
     ]
 
     mock_api.mocked_positions = [
@@ -254,7 +254,7 @@ def test_location_connection_error(make_privmsg, make_incoming_privmsg, unauthor
     mock_api: FakeTraccarAPI = test_traccar.module.mock_api
 
     mock_api.mocked_devices = [
-        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+        Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
     ]
 
     mock_api.throw_on_positions = requests.ConnectionError('connection error')
@@ -275,7 +275,7 @@ def test_battery_connection_error(make_privmsg, make_incoming_privmsg, unauthori
     mock_api: FakeTraccarAPI = test_traccar.module.mock_api
 
     mock_api.mocked_devices = [
-        Device(id=1, name='device-name', uniqueId=123, lastUpdate=datetime.now())
+        Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
     ]
 
     mock_api.throw_on_positions = requests.ConnectionError('connection error')
