@@ -10,6 +10,9 @@ class C3(BaseResponder):
     CONGRESS_MONTH = 12
     CONGRESS_DAY = 27
 
+    config_namespace = 'botnet'
+    config_name = 'c3'
+
     @command('c3')
     def command_c3(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         """Displays the number of days remaining to the next congress.
