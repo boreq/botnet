@@ -1,7 +1,7 @@
 import dacite
 import re
 import inspect
-from dataclasses import Field
+from dataclasses import Field, asdict
 from ..signals import message_in, auth_message_in, on_exception, config_changed
 from ..config import Config
 from .base import BaseModule, AuthContext
@@ -53,6 +53,7 @@ class ConfigMixin(BaseModule):
         # list of tuples (namespace, name)
         self._config_locations = []
 
+    @deprecated('Extremely harmful')
     def register_default_config(self, config: dict) -> None:
         """Adds a default config. Default configs are queried for requested
         values in a reverse order in which they were registered in case a value
@@ -60,6 +61,7 @@ class ConfigMixin(BaseModule):
         """
         self._config_defaults.append(config)
 
+    @deprecated('Extremely harmful')
     def register_config(self, namespace: str, name: str) -> None:
         """Adds a location of the configuration values used by this module
         in the config.
@@ -104,6 +106,7 @@ class ConfigMixin(BaseModule):
 
         raise KeyError
 
+    @deprecated('Extremely harmful, use change_config instead')
     def config_set(self, key: str, value: Any) -> None:
         """Sets a value in the last registered location in the config."""
         print(self._config)
@@ -129,6 +132,7 @@ class ConfigMixin(BaseModule):
         # indicate that the config was modified
         config_changed.send(self)
 
+    @deprecated('Extremely harmful, use change_config instead')
     def config_append(self, key: str, value: Any) -> None:
         """Alias for self.config_get(key, auto=[]).append(value)."""
         try:
@@ -287,7 +291,7 @@ class SafeConfigMixin(Generic[MODULE_CONFIG_DATACLASS], ConfigMixin):
     config_class: type[MODULE_CONFIG_DATACLASS] | None = None
 
     def get_config(self) -> MODULE_CONFIG_DATACLASS:
-        """Returns the config for this module. Thie does not exibit any of the
+        """Returns the config for this module. This does not exhibit any of the
         previous weird magic behaviour with looking for the config in different
         places.
 
@@ -300,8 +304,20 @@ class SafeConfigMixin(Generic[MODULE_CONFIG_DATACLASS], ConfigMixin):
             data = self._config['module_config'][self.config_namespace][self.config_name]
             return dacite.from_dict(data_class=self.config_class, data=data)
 
+    def change_config(self, f: Callable[[MODULE_CONFIG_DATACLASS], None]) -> None:
+        """Allows changing the config which will then be automagically saved."""
+        if self.config_class is None:
+            raise ValueError('inheriting classes must set config_class')
+
+        with self._config.lock:
+            data = self._config['module_config'][self.config_namespace][self.config_name]
+            module_config = dacite.from_dict(data_class=self.config_class, data=data)
+            f(module_config)
+            self._config['module_config'][self.config_namespace][self.config_name] = asdict(module_config)
+            config_changed.send(self)
+
     def peek_loaded_config_for_module(self, namespace: str, module: str, config_dataclass: type[ANOTHER_MODULE_CONFIG_DATACLASS]) -> ANOTHER_MODULE_CONFIG_DATACLASS:
-        """Peeks a config key for a different modules. In principle this is considered harmful and yet here we are."""
+        """Peeks config for a different module. In principle this is considered harmful and yet here we are."""
         with self._config.lock:
             data = self._config['module_config'][namespace][module]
             return dacite.from_dict(data_class=config_dataclass, data=data)

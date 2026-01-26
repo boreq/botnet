@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 import select
 import datetime
 import socket
 import ssl
 import threading
 import fnmatch
+from encodings import search_function
 from typing import Any, Generator, Protocol
 from ...logging import get_logger
 from ...message import Message, IncomingPrivateMessage
@@ -127,7 +129,31 @@ class Buffer:
             yield line
 
 
-class IRC(BaseResponder):
+@dataclass()
+class IRCConfig:
+    server: str
+    port: int
+    ssl: bool
+    nick: str
+    channels: list[IRCConfigChannel]
+    cert: IRCConfigCert | None
+    ignore: list[str]
+    inactivity_monitor: bool
+
+
+@dataclass()
+class IRCConfigChannel:
+    name: str
+    password: str | None = None
+
+
+@dataclass()
+class IRCConfigCert:
+    certfile: str
+    keyfile: str
+
+
+class IRC(BaseResponder[IRCConfig]):
     """Connects to an IRC server, sends and receives commands.
 
     Example module config:
@@ -153,14 +179,16 @@ class IRC(BaseResponder):
 
     """
 
+    config_namespace = 'botnet'
+    config_name = 'irc'
+    config_class = IRCConfig
+
     socket_timeout_seconds = 5
     select_timeout_seconds = 1
     wait_before_reconnecting_seconds = 5
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.register_config('botnet', 'base_responder')
-        self.register_config('botnet', 'irc')
 
         self.soc: socket.socket | None = None
         self.sock_lock = threading.Lock()
@@ -200,8 +228,12 @@ class IRC(BaseResponder):
 
         Syntax: ignore PATTERN
         """
-        self.config_append('ignore', args['pattern'][0])
-        config_changed.send(self)
+        def add_ignore_pattern(config: IRCConfig) -> None:
+            pattern = args['pattern'][0]
+            if pattern not in config.ignore:
+                config.ignore.append(pattern)
+
+        self.change_config(add_ignore_pattern)
         self.respond(msg, 'Done!')
 
     @command('unignore')
@@ -212,12 +244,13 @@ class IRC(BaseResponder):
 
         Syntax: unignore PATTERN
         """
-        try:
-            self.config_get('ignore', auto=[]).remove(args['pattern'][0])
-            config_changed.send(self)
-            self.respond(msg, 'Done!')
-        except ValueError:
-            pass
+        def remove_ignore_pattern(config: IRCConfig) -> None:
+            pattern = args['pattern'][0]
+            if pattern in config.ignore:
+                config.ignore.remove(pattern)
+
+        self.change_config(remove_ignore_pattern)
+        self.respond(msg, 'Done!')
 
     @command('ignored')
     @only_admins()
@@ -226,8 +259,8 @@ class IRC(BaseResponder):
 
         Syntax: ignored
         """
-        patterns = self.config_get('ignore', [])
-        patterns_text = ', '.join(patterns) if len(patterns) > 0 else 'none'
+        config = self.get_config()
+        patterns_text = ', '.join(config.ignore) if len(config.ignore) > 0 else 'none'
         text = 'Ignored patterns: %s' % patterns_text
         self.respond(msg, text)
 
@@ -251,7 +284,7 @@ class IRC(BaseResponder):
     def on_message_out(self, sender: Any, msg: Message) -> None:
         """Handler for the message_out signal.
 
-        sender: object sending the signal, most likely an other module.
+        sender: object sending the signal, most likely another module.
         msg: Message object.
         """
         self.send(msg.to_string())
@@ -347,13 +380,13 @@ class IRC(BaseResponder):
     def connect(self) -> None:
         """Initiates the connection."""
         with self.sock_lock:
+            config = self.get_config()
             self.soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            if self.config_get('ssl'):
+            if config.ssl:
                 context = ssl.create_default_context()
-                certconf = self.config_get('cert', None)
-                if certconf is not None:
-                    context.load_cert_chain(certfile=certconf['certfile'], keyfile=certconf['keyfile'])
-                self.soc = context.wrap_socket(self.soc, server_hostname=self.config_get('server'))
+                if config.cert is not None:
+                    context.load_cert_chain(certfile=config.cert.certfile, keyfile=config.cert.keyfile)
+                self.soc = context.wrap_socket(self.soc, server_hostname=config.server)
             else:
                 self.logger.warning('SSL disabled')
             self.soc.connect((self.config_get('server'), self.config_get('port')))
@@ -364,13 +397,15 @@ class IRC(BaseResponder):
 
     def identify(self) -> None:
         """Identifies with a server."""
-        self.send('NICK ' + self.config_get('nick'))
+        config = self.get_config()
+        self.send('NICK ' + config.nick)
         self.send('USER botnet botnet botnet :Python bot')
 
     def join_from_config(self) -> None:
         """Joins all channels defined in the config."""
-        for channel in self.config_get('channels'):
-            self.join(channel['name'], channel['password'])
+        config = self.get_config()
+        for channel in config.channels:
+            self.join(channel.name, channel.password)
 
     def join(self, channel_name: str, channel_password: str | None) -> None:
         msg = 'JOIN ' + channel_name
@@ -383,7 +418,8 @@ class IRC(BaseResponder):
         self.send(msg)
 
     def get_inactivity_monitor(self) -> InactivityMonitor | NoopWith:
-        if self.config_get('inactivity_monitor', True):
+        config = self.get_config()
+        if config.inactivity_monitor:
             self.logger.debug('InactivityMonitor is being used')
             return InactivityMonitor(self)
         else:
