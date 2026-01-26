@@ -50,7 +50,7 @@ def test_vatsim(module_harness_factory):
     class TestVatsim(Vatsim):
         mock_api = FakeVatsimAPI()
 
-        def _create_api(self, api_url_template: str) -> VatsimAPI:
+        def _create_api(self) -> VatsimAPI:
             return self.mock_api
 
     config = Config(

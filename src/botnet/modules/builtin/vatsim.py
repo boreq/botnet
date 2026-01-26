@@ -28,7 +28,16 @@ class RestVatsimAPI:
         return Metar(text=r.text)
 
 
-class Vatsim(BaseResponder):
+@dataclass()
+class VatsimConfig:
+    metar_api_url: str | None
+
+    def __post_init__(self):
+        if self.metar_api_url is not None and self.metar_api_url == '':
+            raise ValueError('metar_api_url cannot be an empty string')
+
+
+class Vatsim(BaseResponder[VatsimConfig]):
     """Various VATSIM related features.
 
     Example module config:
@@ -43,22 +52,21 @@ class Vatsim(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'vatsim'
+    config_class = VatsimConfig
 
-    default_config = {
-        'metar_api_url': 'https://metar.vatsim.net/metar.php?id=%s',
-    }
+    default_metar_api_url = 'https://metar.vatsim.net/metar.php?id=%s'
 
     @command('metar')
     @parse_command([('icao', 1)])
     def command_metar(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
-        """Returns a METAR for the given aiport.
+        """Returns a METAR for the given airport.
 
         Syntax: metar ICAO
         """
         icao = args['icao'][0]
 
         def f() -> None:
-            api = self._create_api(self.config_get('metar_api_url'))
+            api = self._create_api()
             metar = api.get_metar(icao)
             if not metar.text:
                 self.respond(msg, 'Server didn\'t return an error but the response is empty.')
@@ -68,8 +76,9 @@ class Vatsim(BaseResponder):
         t = threading.Thread(target=f)
         t.start()
 
-    def _create_api(self, api_url_template: str) -> VatsimAPI:
-        return RestVatsimAPI(api_url_template)
+    def _create_api(self) -> VatsimAPI:
+        config = self.get_config()
+        return RestVatsimAPI(config.metar_api_url if config.metar_api_url is not None else self.default_metar_api_url)
 
 
 mod = Vatsim
