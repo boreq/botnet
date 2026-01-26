@@ -1,11 +1,29 @@
+from dataclasses import dataclass
 from ...message import IncomingPrivateMessage
 from .. import BaseResponder, AuthContext
 from ...config import Config
 from datetime import date
-from typing import Any
 
 
-class Countdown(BaseResponder):
+@dataclass()
+class CountdownConfig:
+    summary_command: str
+    commands: list[CountdownConfigCommand]
+
+
+@dataclass()
+class CountdownConfigCommand:
+    names: list[str]
+    year: int
+    month: int
+    day: int
+
+    def __post_init__(self):
+        if len(self.names) == 0:
+            raise ValueError('At least one command name must be specified')
+
+
+class Countdown(BaseResponder[CountdownConfig]):
     """Allows you to define countdowns.
 
     Example module config:
@@ -28,15 +46,17 @@ class Countdown(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'countdown'
+    config_class = CountdownConfig
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
 
     def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
-        rw.add(self.config_get('summary_command'))
-        for command in self.config_get('commands', []):
-            rw.add(command['names'][0])
+        config = self.get_config()
+        rw.add(config.summary_command)
+        for command in config.commands:
+            rw.add(command.names[0])
         return rw
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
@@ -45,24 +65,26 @@ class Countdown(BaseResponder):
         if command_name is None:
             return
 
-        if command_name == self.config_get('summary_command'):
+        config = self.get_config()
+
+        if command_name == config.summary_command:
             responses = []
-            for entry in self.config_get('commands', []):
+            for entry in config.commands:
                 time_left = self._generate_response(entry)
-                responses.append('{}: {}'.format(entry['names'][0], time_left))
+                responses.append('{}: {}'.format(entry.names[0], time_left))
             if len(responses) > 0:
                 self.respond(msg, ', '.join(responses))
         else:
-            for entry in self.config_get('commands', []):
-                if command_name.lower() in [name.lower() for name in entry['names']]:
+            for entry in config.commands:
+                if command_name.lower() in [name.lower() for name in entry.names]:
                     response = self._generate_response(entry) + '!'
                     self.respond(msg, response)
                     break
 
-    def _generate_response(self, target_date: dict[str, Any]) -> str:
-        year = int(target_date['year'])
-        month = int(target_date['month'])
-        day = int(target_date['day'])
+    def _generate_response(self, command: CountdownConfigCommand) -> str:
+        year = int(command.year)
+        month = int(command.month)
+        day = int(command.day)
 
         d0 = date(year, month, day)
         d1 = self.now()
