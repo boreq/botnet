@@ -17,8 +17,8 @@ def test_module_load(make_incoming_privmsg, admin_context, test_admin):
     test_admin.receive_auth_message_in(msg, admin_context)
 
     test_admin.expect_module_load_signals([
-        {'name': 'module1'},
-        {'name': 'module2'}
+        {'module_name': 'module1'},
+        {'module_name': 'module2'}
     ])
 
     test_admin.send_module_loaded(type('Module1', (), {}))
@@ -39,7 +39,7 @@ def test_module_unload(make_incoming_privmsg, admin_context, test_admin):
     test_admin.receive_auth_message_in(msg, admin_context)
 
     test_admin.expect_module_unload_signals([
-        {'name': 'module1'}
+        {'module_name': 'module1'}
     ])
 
     test_admin.send_module_unloaded(type('Module1', (), {}))
@@ -56,10 +56,10 @@ def test_module_reload(make_incoming_privmsg, admin_context, test_admin):
     test_admin.receive_auth_message_in(msg, admin_context)
 
     test_admin.expect_module_unload_signals([
-        {'name': 'module1'}
+        {'module_name': 'module1'}
     ])
     test_admin.expect_module_load_signals([
-        {'name': 'module1'}
+        {'module_name': 'module1'}
     ])
 
     test_admin.send_module_unloaded(type('Module1', (), {}))

@@ -87,11 +87,11 @@ class Admin(BaseResponder[AdminConfig]):
 
     def _load_module(self, msg: IncomingPrivateMessage, name: str) -> None:
         self._load_commands.append(msg)
-        module_load.send(self, name=name)
+        module_load.send(self, module_name=name)
 
     def _unload_module(self, msg: IncomingPrivateMessage, name: str) -> None:
         self._unload_commands.append(msg)
-        module_unload.send(self, name=name)
+        module_unload.send(self, module_name=name)
 
     def _reload_module(self, msg: IncomingPrivateMessage, name: str) -> None:
         def f() -> None:
