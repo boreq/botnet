@@ -119,7 +119,7 @@ class VibecheckConfig:
     channel: str
     authorised_group: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.data == '':
             raise ValueError('data cannot be empty')
 
@@ -155,7 +155,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self._store = Store(lambda: self.config_get('data'))
+        self._store = Store(lambda: self.get_config().data)
         self._stop_event = threading.Event()
         self._t = threading.Thread(target=self.run)
         self._t.start()

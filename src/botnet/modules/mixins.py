@@ -3,146 +3,80 @@ import re
 import inspect
 from dataclasses import Field, asdict
 from ..signals import message_in, auth_message_in, on_exception, config_changed
-from ..config import Config
 from .base import BaseModule, AuthContext
 from .decorators import _ATTR_COMMAND_NAME, _ATTR_PREDICATES
 from ..message import Message, IncomingPrivateMessage
+from ..config import Config
 from typing import Generic, TypeVar, Any, Protocol, ClassVar
-from typing_extensions import deprecated
 from collections.abc import Callable
 
 
-_SENTI = object()
+class DataclassInstance(Protocol):
+    __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
 
 
-def _iterate_dict(d, key):
-    """Allows to search a dict using a key.which.looks.like.this instead
-    of passing complex lambda expressions to functions.
-    """
-    location = d
-    for i, part in enumerate(key.split('.')):
-        if isinstance(location, dict):
-            location = location[part]
-            yield location
-        else:
-            raise ValueError('''Tried to access a value which is not a dict. '''
-                             '''Failed for key "{}"'''.format(key))
+_MODULE_CONFIG_KEY = 'module_config'
 
 
-class ConfigMixin(BaseModule):
-    """Adds various config related methods to a module. Allows the user to
-    access config keys by passing a string delimited by dots.
+MODULE_CONFIG_DATACLASS = TypeVar('MODULE_CONFIG_DATACLASS', bound=DataclassInstance)
+ANOTHER_MODULE_CONFIG_DATACLASS = TypeVar('ANOTHER_MODULE_CONFIG_DATACLASS', bound=DataclassInstance)
+SOME_MODULE_CONFIG_DATACLASS = TypeVar('SOME_MODULE_CONFIG_DATACLASS', bound=DataclassInstance)
 
-        self.register_config('my_namespace', 'common')
-        self.register_config('my_namespace', 'my_module')
-        self.config_set('one.two.three', 'value')
-        self.config_get('one.two.three')
-    """
 
-    _config: Config
-    _config_defaults: list[dict]
-    _config_locations: list[tuple[str, str]]
+class ConfigMixin(Generic[MODULE_CONFIG_DATACLASS], BaseModule):
+    # A module is expected to store the config in
+    # config['module_config'][config_namespace][config_name]
+    config_namespace: str | None = None
+    config_name: str | None = None
+
+    # Even though we accept parameter MODULE_CONFIG_DATACLASS for typechecking
+    # we still need to have this information at runtime to be able to construct
+    # the object.
+    config_class: type[MODULE_CONFIG_DATACLASS] | None = None
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-
-        # actual Config object
         self._config = config
-        # list of dicts with default configuration values
-        self._config_defaults = []
-        # list of tuples (namespace, name)
-        self._config_locations = []
 
-    @deprecated('Extremely harmful')
-    def register_default_config(self, config: dict) -> None:
-        """Adds a default config. Default configs are queried for requested
-        values in a reverse order in which they were registered in case a value
-        is missing from the actual config.
+    def get_config(self) -> MODULE_CONFIG_DATACLASS:
+        """Returns the config for this module. This does not exhibit any of the
+        previous weird magic behaviour with looking for the config in different
+        places.
         """
-        self._config_defaults.append(config)
+        if self.config_namespace is None or self.config_name is None or self.config_class is None:
+            raise ValueError('inheriting classes must set config_namespace, config_name and config_class')
 
-    @deprecated('Extremely harmful')
-    def register_config(self, namespace: str, name: str) -> None:
-        """Adds a location of the configuration values used by this module
-        in the config.
-        """
-        self._config_locations.append((namespace, name))
-
-    @deprecated('Extremely harmful, use get_config instead')
-    def config_get(self, key: str, default=_SENTI, auto=_SENTI) -> Any:
-        """Tries to get the value assigned to `key` from the registered configs.
-        Raises KeyError if a key does not exist in the dictionary,
-        Raises ValueError if a value which a key tries to subscript is not a dict.
-
-        key: key in the following format: 'one.two.three'
-        default: returns this value instead of rising a KeyError if a key is not
-                 in the config.
-        auto: key will be set in to that value if it is not present in the
-              config. And the new value will be returned. Takes precedence over
-              default so using those two options together is pointless.
-        """
-        # configs
         with self._config.lock:
-            for config_location in reversed(self._config_locations):
-                actual_key = self._get_config_key(config_location, key)
-                try:
-                    return next(reversed(list(_iterate_dict(self._config, actual_key))))
-                except KeyError:
-                    continue
+            return self._load_config(self.config_namespace, self.config_name, self.config_class)
 
-        # defaults
-        for config in reversed(self._config_defaults):
-            try:
-                return next(reversed(list(_iterate_dict(config, key))))
-            except KeyError:
-                continue
+    def change_config(self, f: Callable[[MODULE_CONFIG_DATACLASS], None]) -> None:
+        """Allows changing the config for this module which will then be automagically saved."""
+        if self.config_namespace is None or self.config_name is None or self.config_class is None:
+            raise ValueError('inheriting classes must set config_namespace, config_name and config_class')
 
-        if auto is not _SENTI:
-            self.config_set(key, auto)
-            return self.config_get(key)
-
-        if default is not _SENTI:
-            return default
-
-        raise KeyError
-
-    @deprecated('Extremely harmful, use change_config instead')
-    def config_set(self, key: str, value: Any) -> None:
-        """Sets a value in the last registered location in the config."""
-        print(self._config)
-        if not self._config_locations:
-            raise ValueError('No config locations. Call register_config first.')
-
-        actual_key = self._get_config_key(self._config_locations[-1], key)
-
-        # walk
         with self._config.lock:
-            location = self._config
-            parts = actual_key.split('.')
-            for i, part in enumerate(parts[:-1]):
-                if isinstance(location, dict):
-                    if part not in location:
-                        location[part] = {}
-                    location = location[part]
-                else:
-                    raise ValueError("""Tried to change a value which is not a dict. """
-                                     """Failed for key '{}'""".format(key))
-            location[parts[-1]] = value
-        print(self._config)
-        # indicate that the config was modified
-        config_changed.send(self)
-
-    @deprecated('Extremely harmful, use change_config instead')
-    def config_append(self, key: str, value: Any) -> None:
-        """Alias for self.config_get(key, auto=[]).append(value)."""
-        try:
-            self.config_get(key, auto=[]).append(value)
+            module_config = self._load_config(self.config_namespace, self.config_name, self.config_class)
+            f(module_config)
+            if _MODULE_CONFIG_KEY not in self._config:
+                self._config[_MODULE_CONFIG_KEY] = {}
+            if self.config_namespace not in self._config[_MODULE_CONFIG_KEY]:
+                self._config[_MODULE_CONFIG_KEY][self.config_namespace] = {}
+            self._config['module_config'][self.config_namespace][self.config_name] = asdict(module_config)
             config_changed.send(self)
-        except AttributeError as e:
-            raise AttributeError('Value for a key "{}" is not a list'.format(key)) from e
 
-    def _get_config_key(self, config_location: tuple[str, str], key: str) -> str:
-        return 'module_config.{}.{}.{}'.format(config_location[0], config_location[1], key)
+    def peek_loaded_config_for_module(self, namespace: str, module: str, config_dataclass: type[ANOTHER_MODULE_CONFIG_DATACLASS]) -> ANOTHER_MODULE_CONFIG_DATACLASS:
+        """Peeks config for a different module. In principle this is considered harmful and yet here we are."""
+        with self._config.lock:
+            return self._load_config(namespace, module, config_dataclass)
+
+    def _load_config(self, namespace: str, module_name: str, config_dataclass: type[SOME_MODULE_CONFIG_DATACLASS]) -> SOME_MODULE_CONFIG_DATACLASS:
+        if _MODULE_CONFIG_KEY in self._config \
+                and namespace in self._config[_MODULE_CONFIG_KEY] \
+                and module_name in self._config[_MODULE_CONFIG_KEY][namespace]:
+            data = self._config[_MODULE_CONFIG_KEY][namespace][module_name]
+        else:
+            data = {}
+        return dacite.from_dict(data_class=config_dataclass, data=data)
 
 
 BoundCommandHandler = Callable[[IncomingPrivateMessage, AuthContext], None]
@@ -270,54 +204,3 @@ class MessageDispatcherMixin(BaseModule):
             if not predicate(self, msg, auth):
                 return False
         return True
-
-
-class DataclassInstance(Protocol):
-    __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
-
-
-MODULE_CONFIG_DATACLASS = TypeVar('MODULE_CONFIG_DATACLASS', bound=DataclassInstance)
-ANOTHER_MODULE_CONFIG_DATACLASS = TypeVar('ANOTHER_MODULE_CONFIG_DATACLASS', bound=DataclassInstance)
-
-
-class SafeConfigMixin(Generic[MODULE_CONFIG_DATACLASS], ConfigMixin):
-    # A module is expected to store the config in
-    # config['module_config'][config_namespace][config_name]
-    config_namespace: str | None = None
-    config_name: str | None = None
-
-    # Even though we accept parameter T we still need to have this information
-    # at runtime to be able to construct the object.
-    config_class: type[MODULE_CONFIG_DATACLASS] | None = None
-
-    def get_config(self) -> MODULE_CONFIG_DATACLASS:
-        """Returns the config for this module. This does not exhibit any of the
-        previous weird magic behaviour with looking for the config in different
-        places.
-
-        The config therefore must be under ['module_config'][config_namespace][config_name].
-        """
-        if self.config_class is None:
-            raise ValueError('inheriting classes must set config_class')
-
-        with self._config.lock:
-            data = self._config['module_config'][self.config_namespace][self.config_name]
-            return dacite.from_dict(data_class=self.config_class, data=data)
-
-    def change_config(self, f: Callable[[MODULE_CONFIG_DATACLASS], None]) -> None:
-        """Allows changing the config which will then be automagically saved."""
-        if self.config_class is None:
-            raise ValueError('inheriting classes must set config_class')
-
-        with self._config.lock:
-            data = self._config['module_config'][self.config_namespace][self.config_name]
-            module_config = dacite.from_dict(data_class=self.config_class, data=data)
-            f(module_config)
-            self._config['module_config'][self.config_namespace][self.config_name] = asdict(module_config)
-            config_changed.send(self)
-
-    def peek_loaded_config_for_module(self, namespace: str, module: str, config_dataclass: type[ANOTHER_MODULE_CONFIG_DATACLASS]) -> ANOTHER_MODULE_CONFIG_DATACLASS:
-        """Peeks config for a different module. In principle this is considered harmful and yet here we are."""
-        with self._config.lock:
-            data = self._config['module_config'][namespace][module]
-            return dacite.from_dict(data_class=config_dataclass, data=data)

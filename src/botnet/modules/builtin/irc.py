@@ -5,11 +5,10 @@ import socket
 import ssl
 import threading
 import fnmatch
-from encodings import search_function
 from typing import Any, Generator, Protocol
 from ...logging import get_logger
 from ...message import Message, IncomingPrivateMessage
-from ...signals import message_in, message_out, on_exception, config_changed
+from ...signals import message_in, message_out, on_exception
 from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
 from ...config import Config
 
@@ -347,7 +346,8 @@ class IRC(BaseResponder[IRCConfig]):
 
     def should_ignore(self, msg: Message) -> bool:
         if msg.prefix:
-            for ignore_pattern in self.config_get('ignore', []):
+            config = self.get_config()
+            for ignore_pattern in config.ignore:
                 if fnmatch.fnmatch(msg.prefix, ignore_pattern):
                     return True
         return False
@@ -389,7 +389,7 @@ class IRC(BaseResponder[IRCConfig]):
                 self.soc = context.wrap_socket(self.soc, server_hostname=config.server)
             else:
                 self.logger.warning('SSL disabled')
-            self.soc.connect((self.config_get('server'), self.config_get('port')))
+            self.soc.connect((config.server, config.port))
             self.soc.settimeout(self.socket_timeout_seconds)
 
     def disconnect(self) -> None:

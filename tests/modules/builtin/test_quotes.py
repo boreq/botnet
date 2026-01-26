@@ -1,7 +1,7 @@
 import os
 from botnet.message import Message
 from botnet.config import Config
-from botnet.modules.builtin.quotes import Quotes
+from botnet.modules.builtin.quotes import Quotes, QuotesConfig
 
 
 def test_quotes(module_harness_factory, make_privmsg):
@@ -25,7 +25,10 @@ def test_quotes(module_harness_factory, make_privmsg):
     m.receive_message_in(msg)
     m.expect_message_out_signals([])
 
-    m.module.config_set('files.lotr', filename)
+    def add_file_to_config(config: QuotesConfig) -> None:
+        config.files['lotr'] = filename
+    m.module.change_config(add_file_to_config)
+
     m.receive_message_in(msg)
     m.expect_message_out_signals(
         [

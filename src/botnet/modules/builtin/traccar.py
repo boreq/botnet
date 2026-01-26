@@ -101,7 +101,7 @@ class RestTraccarAPI(TraccarAPI):
 class TraccarConfig:
     instances: list[TraccarConfigInstance]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if len(self.instances) == 0:
             raise ValueError('Loading this module is pointless without at least one instance configured.')
 
@@ -121,7 +121,7 @@ class TraccarConfigLocationCommand:
     device_name: str
     geofences: dict[str, str]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if len(self.command_names) == 0:
             raise ValueError('At least one command name must be specified for a location command.')
         if len(self.channels) == 0:
@@ -138,7 +138,7 @@ class TraccarConfigBatteryCommand:
     channels: list[str]
     device_name: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if len(self.command_names) == 0:
             raise ValueError('At least one command name must be specified for a battery command.')
         if len(self.channels) == 0:

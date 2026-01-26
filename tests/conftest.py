@@ -1,8 +1,10 @@
 from botnet.config import Config
 from botnet.message import Message, IncomingPrivateMessage, Nick, Target, Text
 from botnet.modules import AuthContext
-from botnet.signals import message_out, message_in, auth_message_in, clear_state, on_exception, \
-    _request_list_commands, module_load, module_unload, config_reload, module_loaded, module_unloaded, config_reloaded
+from botnet.signals import message_out, message_in, auth_message_in, \
+    clear_state, on_exception, _request_list_commands, module_load, \
+    module_unload, config_reload, module_loaded, module_unloaded, config_reloaded, \
+    config_changed
 import logging
 import os
 import pytest
@@ -122,6 +124,7 @@ class ModuleHarness:
         self.module_load_trap = Trap(module_load)
         self.module_unload_trap = Trap(module_unload)
         self.config_reload_trap = Trap(config_reload)
+        self.config_changed_trap = Trap(config_changed)
 
         self.module = module_class(config)
 
@@ -169,6 +172,11 @@ class ModuleHarness:
         def wait_condition(trapped):
             assert trapped == expected_signals
         self.message_out_trap.wait(wait_condition)
+
+    def expect_config_changed_signals(self, expected_signals: list[dict]) -> None:
+        def wait_condition(trapped):
+            assert trapped == expected_signals
+        self.config_changed_trap.wait(wait_condition)
 
     def reset_message_out_signals(self) -> None:
         self.message_out_trap.reset()

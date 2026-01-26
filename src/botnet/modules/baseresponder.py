@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from typing import TypeVar
 from ..message import Message, IncomingPrivateMessage, Target
 from ..signals import message_out
-from ..config import Config
 from .base import BaseModule, AuthContext
 from .decorators import command
-from .mixins import MessageDispatcherMixin, SafeConfigMixin, DataclassInstance
+from .mixins import MessageDispatcherMixin, ConfigMixin, DataclassInstance
 from .lib import divide_text
 from .decorators import parse_command, Args
 
@@ -15,7 +15,16 @@ _BREAK_PRIVMSG_EVERY = 400
 T = TypeVar('T', bound=DataclassInstance)
 
 
-class BaseResponder(SafeConfigMixin[T], MessageDispatcherMixin, BaseModule):
+@dataclass
+class BaseResponderConfig:
+    command_prefix: str | None
+
+    def __post_init__(self) -> None:
+        if self.command_prefix is not None and len(self.command_prefix) == 0:
+            raise ValueError('You may think that an empty command prefix is a good idea and will work, but it is in fact not and will not.')
+
+
+class BaseResponder(ConfigMixin[T], MessageDispatcherMixin, BaseModule):
     """Inherit from this class to quickly create a module which reacts to users'
     messages.
 
@@ -39,24 +48,9 @@ class BaseResponder(SafeConfigMixin[T], MessageDispatcherMixin, BaseModule):
     # had to be defined in all modules.
     ignore_help = True
 
-    # This is the default config for this class
-    base_default_config = {
-        "command_prefix": "."
-    }
-
-    # Default config for the class which inherits from BaseResponder
-    default_config: dict = {}
-
-    def __init__(self, config: Config) -> None:
-        super().__init__(config)
-        self.register_default_config(self.base_default_config)
-        self.register_default_config(self.default_config)
-        self.register_config('botnet', 'base_responder')
-        if self.config_namespace and self.config_name:
-            self.register_config(self.config_namespace, self.config_name)
-
     def get_command_prefix(self) -> str:
-        return self.config_get('command_prefix')
+        config = self.peek_loaded_config_for_module('botnet', 'base_responder', BaseResponderConfig)
+        return config.command_prefix if config.command_prefix else '.'
 
     def respond(self, msg: IncomingPrivateMessage, text: str, pm: bool = False) -> None:
         """Send a text in response to a message. Text will be automatically

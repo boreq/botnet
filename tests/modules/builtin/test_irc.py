@@ -134,7 +134,20 @@ def irc_config():
     config = {
         'module_config': {
             'botnet': {
-                'irc': {}
+                'irc': {
+                    'server': 'irc.example.com',
+                    'port': 6667,
+                    'ssl': True,
+                    'nick': 'testbot',
+                    'channels': [
+                        {
+                            'name': '#example',
+
+                        }
+                    ],
+                    'ignore': [],
+                    'inactivity_monitor': False
+                }
             }
         }
     }

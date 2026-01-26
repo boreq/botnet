@@ -18,7 +18,7 @@ class CountdownConfigCommand:
     month: int
     day: int
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if len(self.names) == 0:
             raise ValueError('At least one command name must be specified')
 

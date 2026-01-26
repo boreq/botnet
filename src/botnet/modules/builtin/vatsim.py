@@ -32,7 +32,7 @@ class RestVatsimAPI:
 class VatsimConfig:
     metar_api_url: str | None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.metar_api_url is not None and self.metar_api_url == '':
             raise ValueError('metar_api_url cannot be an empty string')
 

@@ -149,7 +149,7 @@ class WhoisMixin(BaseModule):
 class AuthConfig:
     people: list[AuthConfigPerson]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         uuids = set([person.uuid for person in self.people])
         if len(uuids) != len(self.people):
             raise ValueError('duplicate person uuid in auth config')
@@ -162,7 +162,7 @@ class AuthConfigPerson:
     contact: list[str]
     groups: list[str]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.uuid == '':
             raise ValueError('person uuid cannot be empty')
 
@@ -175,7 +175,7 @@ class AuthConfigAuthorisation:
     kind: str
     nick: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.kind not in ['irc', 'matrix']:
             raise ValueError('unknown authorisation kind: {}'.format(self.kind))
         match self.kind:

@@ -139,7 +139,7 @@ class Reminders(BaseResponder):
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.store = RemindersStore(lambda: self.config_get('reminder_data'))
+        self.store = RemindersStore(lambda: self.get_config().reminder_data)
         self.stop_event = threading.Event()
         self.t = threading.Thread(target=self.run)
         self.t.start()

@@ -73,7 +73,7 @@ class NewsConfig:
     channels: list[str]
     news_data: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if len(self.channels) == 0:
             raise ValueError('Loading news module with no channels configured makes no sense')
 
