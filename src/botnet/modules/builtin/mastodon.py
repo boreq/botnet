@@ -26,8 +26,21 @@ class RestMastodonAPI:
         return Toot(url=getattr(status, 'url', str(status)))
 
 
-class Mastodon(BaseResponder):
-    """Let's you toot.
+@dataclass()
+class MastodonConfig:
+    tooting: list[MastodonConfigTooting]
+
+
+@dataclass()
+class MastodonConfigTooting:
+    command: str
+    channels: list[str]
+    instance: str
+    access_token: str
+
+
+class Mastodon(BaseResponder[MastodonConfig]):
+    """Lets you toot.
 
     Example module config:
 
@@ -48,6 +61,7 @@ class Mastodon(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'mastodon'
+    config_class = MastodonConfig
 
     max_toot_len = 250
 
@@ -55,9 +69,10 @@ class Mastodon(BaseResponder):
         rw = super().get_all_commands(msg, auth)
         channel = msg.target.channel
         if channel is not None:
-            for entry in self.config_get('tooting', []):
-                if channel in [Channel(string_channel) for string_channel in entry['channels']]:
-                    rw.add(entry['command'])
+            config = self.get_config()
+            for entry in config.tooting:
+                if channel in [Channel(s) for s in entry.channels]:
+                    rw.add(entry.command)
         return rw
 
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
@@ -69,11 +84,13 @@ class Mastodon(BaseResponder):
         if channel is None:
             return
 
-        for entry in self.config_get('tooting', []):
-            if entry['command'] != command_name:
+        config = self.get_config()
+
+        for entry in config.tooting:
+            if entry.command != command_name:
                 continue
 
-            if channel not in [Channel(c) for c in entry['channels']]:
+            if channel not in [Channel(s) for s in entry.channels]:
                 continue
 
             parts = msg.text.s.split(" ", 1)
@@ -81,7 +98,7 @@ class Mastodon(BaseResponder):
             if len(text) > self.max_toot_len:
                 return
 
-            api = self._create_api(entry['instance'], entry['access_token'])
+            api = self._create_api(entry.instance, entry.access_token)
             toot = api.toot(text)
             self.respond(msg, toot.url)
 

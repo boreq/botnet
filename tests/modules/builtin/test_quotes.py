@@ -8,7 +8,18 @@ def test_quotes(module_harness_factory, make_privmsg):
     dirname = os.path.dirname(os.path.realpath(__file__))
     filename = os.path.join(dirname, '..', '..', 'resources', 'quotes')
 
-    m = module_harness_factory.make(Quotes, Config())
+    config = Config({
+        'module_config': {
+            'botnet': {
+                'quotes': {
+                    'directories': [],
+                    'files': {}
+                }
+            }
+        }
+    })
+
+    m = module_harness_factory.make(Quotes, Config(config))
 
     msg = make_privmsg('.lotr')
     m.receive_message_in(msg)

@@ -106,13 +106,15 @@ def test_news_sequence(test_news, make_incoming_privmsg, unauthorised_context):
 
 @pytest.fixture()
 def test_news(module_harness_factory, tmp_file):
-    class TestNews(News):
-
-        def __init__(self, *args, **kwargs):
-            self.default_config = {
-                'news_data': tmp_file,
-                'channels': ['#channel']
+    config = {
+        'module_config': {
+            'botnet': {
+                'news': {
+                    'news_data': tmp_file,
+                    'channels': ['#channel']
+                }
             }
-            super().__init__(*args, **kwargs)
+        }
+    }
 
-    return module_harness_factory.make(TestNews, Config())
+    return module_harness_factory.make(News, Config(config))

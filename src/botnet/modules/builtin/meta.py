@@ -8,6 +8,10 @@ class Meta(BaseResponder):
     """Displays basic info about this bot."""
 
     ignore_help = False
+
+    config_namespace = 'botnet'
+    config_name = 'meta'
+
     ibip_repo = 'https://github.com/boreq/botnet'
     ibip_website = 'https://ibip.0x46.net/'
 

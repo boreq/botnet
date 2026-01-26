@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import os
 import random
 from typing import Iterator
@@ -6,7 +7,13 @@ from ...message import IncomingPrivateMessage
 from .. import BaseResponder, AuthContext
 
 
-class Quotes(BaseResponder):
+@dataclass()
+class QuotesConfig:
+    directories: list[str]
+    files: dict[str, str]
+
+
+class Quotes(BaseResponder[QuotesConfig]):
     """Sends random lines from the files defined in config. This module will
     discover the files automatically by name if a directory containing them
     is included in the config.
@@ -30,12 +37,14 @@ class Quotes(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'quotes'
+    config_class = QuotesConfig
 
     def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
-        for command in self.config_get('files', {}).keys():
+        config = self.get_config()
+        for command in config.files.keys():
             rw.add(command)
-        for root, filename in self.get_command_files():
+        for root, filename in self._get_command_files(config):
             rw.add(filename)
         return rw
 
@@ -45,20 +54,22 @@ class Quotes(BaseResponder):
         if command_name is None:
             return
 
+        config = self.get_config()
+
         # Directories
-        for root, filename in self.get_command_files():
+        for root, filename in self._get_command_files(config):
             if filename == command_name:
                 path = os.path.join(root, filename)
                 self._send_random_line(msg, path)
                 return
 
         # Files
-        filename = self.config_get('files.%s' % command_name, None)
-        if filename is not None:
-            self._send_random_line(msg, filename)
+        foundfilename = config.files.get(command_name, None)
+        if foundfilename is not None:
+            self._send_random_line(msg, foundfilename)
 
-    def get_command_files(self) -> Iterator[tuple[str, str]]:
-        for directory in self.config_get('directories', []):
+    def _get_command_files(self, config: QuotesConfig) -> Iterator[tuple[str, str]]:
+        for directory in config.directories:
             for root, dirs, files in os.walk(directory, followlinks=True):
                 for filename in files:
                     yield (root, filename)

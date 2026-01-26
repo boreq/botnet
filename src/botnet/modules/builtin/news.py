@@ -1,6 +1,7 @@
+from dataclasses import dataclass
 import os
 import threading
-from typing import Any, Callable
+from typing import Callable
 from ...helpers import save_json, load_json
 from .. import BaseResponder, AuthContext, command, parse_command, Args
 from ...message import IncomingPrivateMessage, Channel
@@ -57,17 +58,27 @@ class NewsStore:
 
 
 def _is_enabled_for_this_channel():
-    def predicate(module: Any, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
+    def predicate(module: 'News', msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
         channel = msg.target.channel
         if channel is None:
             return False
-        channels = module.config_get('channels', [])
-        return channel.s in channels
+        config = module.get_config()
+        return channel in [Channel(s) for s in config.channels]
 
     return predicates([predicate])
 
 
-class News(BaseResponder):
+@dataclass()
+class NewsConfig:
+    channels: list[str]
+    news_data: str
+
+    def __post_init__(self):
+        if len(self.channels) == 0:
+            raise ValueError('Loading news module with no channels configured makes no sense')
+
+
+class News(BaseResponder[NewsConfig]):
     """Allows users to publish and read news.
 
     Example module config:
@@ -83,10 +94,11 @@ class News(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'news'
+    config_class = NewsConfig
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.store = NewsStore(lambda: self.config_get('news_data'))
+        self.store = NewsStore(lambda: self.get_config().news_data)
 
     @command('news')
     @_is_enabled_for_this_channel()

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import threading
 import os
 from typing import Iterator
@@ -8,7 +9,13 @@ from ...message import IncomingPrivateMessage
 from markov import Chain
 
 
-class Markov(BaseResponder):
+@dataclass()
+class MarkovConfig:
+    directories: list[str]
+    files: dict[str, str]
+
+
+class Markov(BaseResponder[MarkovConfig]):
     """Generates random responses using Markov chains from the files defined in
     config. This module will discover the files automatically by name if a
     directory containing them is included in the config.
@@ -34,6 +41,7 @@ class Markov(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'markov'
+    config_class = MarkovConfig
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
@@ -43,9 +51,10 @@ class Markov(BaseResponder):
 
     def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
         rw = super().get_all_commands(msg, auth)
-        for command in self.config_get('files', {}).keys():
+        config = self.get_config()
+        for command in config.files.keys():
             rw.add(command)
-        for root, filename in self.get_command_files():
+        for root, filename in self._get_command_files(config):
             rw.add(filename)
         return rw
 
@@ -57,20 +66,16 @@ class Markov(BaseResponder):
 
         self.send_random_line(msg, command_name)
 
-    def get_command_files(self) -> Iterator[tuple[str, str]]:
-        for directory in self.config_get('directories', []):
-            for root, dirs, files in os.walk(directory, followlinks=True):
-                for filename in files:
-                    yield (root, filename)
-
     def cache_chains(self) -> None:
+        config = self.get_config()
+
         # Directories
-        for root, filename in self.get_command_files():
+        for root, filename in self._get_command_files(config):
             path = os.path.join(root, filename)
             self.load_chain(path, filename)
 
         # Files
-        for filename, path in self.config_get('files', {}).items():
+        for filename, path in config.files.items():
             self.load_chain(path, filename)
 
     def load_chain(self, filepath: str, key: str) -> None:
@@ -89,6 +94,12 @@ class Markov(BaseResponder):
                 self.respond(msg, line)
         except FileNotFoundError as e:
             on_exception.send(self, e=e)
+
+    def _get_command_files(self, config: MarkovConfig) -> Iterator[tuple[str, str]]:
+        for directory in config.directories:
+            for root, dirs, files in os.walk(directory, followlinks=True):
+                for filename in files:
+                    yield (root, filename)
 
 
 mod = Markov
