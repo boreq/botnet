@@ -30,11 +30,11 @@ class MsgEntry:
     channel: str | None
     time: float
 
-    def is_a_dupliate(self, author: Nick, target: Target, message: str, channel: Channel | None) -> bool:
+    def is_a_duplicate(self, author: Nick, target: Target, message: str, channel: Channel | None) -> bool:
         if Nick(self.author) != author:
             return False
 
-        if Target.new_from_string(self.target) == target:
+        if Target.new_from_string(self.target) != target:
             return False
 
         if self.channel is not None and channel is None:
@@ -86,7 +86,7 @@ class MessageStore:
         with self._lock:
             # abort if similar message already present
             for m in self._msg_store.messages:
-                if m.is_a_dupliate(author, target, message, channel):
+                if m.is_a_duplicate(author, target, message, channel):
                     return False
             msg_entry = MsgEntry(
                 author=author.s,

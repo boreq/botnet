@@ -285,6 +285,9 @@ def test_priv(make_privmsg, make_incoming_privmsg, unauthorised_context, test_te
 
 @pytest.fixture()
 def test_tell(module_harness_factory, tmp_file):
+    with open(tmp_file, 'w') as f:
+        f.write('{"messages": []}')
+
     class TestTell(Tell):
 
         def now(self) -> datetime:
