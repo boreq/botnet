@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import os
 import threading
@@ -91,7 +92,12 @@ class MessageStore:
         save_json(self._path(), self._msg_store)
 
 
-class Tell(BaseResponder):
+@dataclass()
+class TellConfig:
+    message_data: str
+
+
+class Tell(BaseResponder[TellConfig]):
     """Allows users to leave messages for each other. If this command is
     executed in a channel then the bot will pass on the message in the same
     channel. If this command is sent in a privmsg then a bot will pass on the
@@ -110,10 +116,11 @@ class Tell(BaseResponder):
 
     config_namespace = 'botnet'
     config_name = 'tell'
+    config_class = TellConfig
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.ms = MessageStore(lambda: self.config_get('message_data'))
+        self.ms = MessageStore(lambda: self.get_config().message_data)
 
     @command('tell')
     @parse_command([('target', 1), ('message', '+')])

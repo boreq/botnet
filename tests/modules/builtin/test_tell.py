@@ -284,13 +284,17 @@ def test_priv(make_privmsg, make_incoming_privmsg, unauthorised_context, test_te
 def test_tell(module_harness_factory, tmp_file):
     class TestTell(Tell):
 
-        def __init__(self, *args, **kwargs):
-            self.default_config = {
-                'message_data': tmp_file
-            }
-            super().__init__(*args, **kwargs)
-
         def now(self) -> datetime:
             return datetime(2026, 1, 2, 11, 12, 13, tzinfo=timezone.utc)
 
-    return module_harness_factory.make(TestTell, Config())
+    config = {
+        'module_config': {
+            'botnet': {
+                'tell': {
+                    'message_data': tmp_file
+                }
+            }
+        }
+    }
+
+    return module_harness_factory.make(TestTell, Config(config))
