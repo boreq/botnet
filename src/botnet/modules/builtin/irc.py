@@ -171,8 +171,8 @@ class IRC(BaseResponder[IRCConfig]):
         "botnet": {
             "irc": {
                 "server": "irc.example.com",
-                "port": 6667,
-                "ssl": false,
+                "port": 6697,
+                "ssl": true,
                 "nick": "my_bot",
                 "channels": [
                     {
@@ -181,9 +181,13 @@ class IRC(BaseResponder[IRCConfig]):
                     }
                 ],
                 "cert": {
-                    "certfile": "bot.crt",
-                    "keyfile": "bot.key"
+                    "certfile": "/path/to/bot.crt",
+                    "keyfile": "/path/to/bot.key"
                 },
+                "ignore": [
+                    "some-other-bot!*@*",
+                ],
+                "inactivity_monitor": true
             }
         }
 

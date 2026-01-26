@@ -49,24 +49,28 @@ example config for details.
 ## Example config
 
     {
-        "modules": ["irc", "meta"],
+        "modules": ["irc", "auth", meta"],
         "module_config": {
             "botnet": {
                 "irc": {
                     "server": "irc.example.com",
                     "port": 6697,
                     "ssl": true,
-                    "cert": {
-                        "certfile": "my_bot.crt",
-                        "keyfile": "my_bot.key"
-                    },
                     "nick": "my_bot",
                     "channels": [
                         {
                             "name": "#my-channel",
                             "password": null
                         }
-                    ]
+                    ],
+                    "cert": {
+                        "certfile": "/path/to/bot.crt",
+                        "keyfile": "/path/to/bot.key"
+                    },
+                    "ignore": [
+                        "some-other-bot!*@*",
+                    ],
+                    "inactivity_monitor": true
                 },
                 "base_responder": {
                     "command_prefix": "."
