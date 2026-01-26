@@ -59,7 +59,7 @@ class Links(BaseResponder[LinksConfig]):
         config = self.get_config()
 
         channel = msg.target.channel
-        if channel not in [Channel(s) for s in config.channels]:
+        if channel is None or channel not in [Channel(s) for s in config.channels]:
             return
 
         urls = set()
