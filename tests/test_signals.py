@@ -1,6 +1,6 @@
+from botnet import signals
 from botnet.config import Config
 from botnet.modules import BaseResponder
-from botnet import signals
 
 
 def test_unsubscribe_from_all(clear_signal_state) -> None:

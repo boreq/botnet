@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from botnet.config import Config
 from botnet.modules.mixins import ConfigMixin
 

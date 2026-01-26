@@ -5,9 +5,9 @@
 """
 
 
-from blinker import Namespace
 import inspect
 
+from blinker import Namespace
 
 _signals = Namespace()
 

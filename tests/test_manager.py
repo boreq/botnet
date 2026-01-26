@@ -1,5 +1,7 @@
-import pytest
 import threading
+
+import pytest
+
 from botnet import modules
 from botnet.manager import Manager
 

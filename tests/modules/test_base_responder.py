@@ -1,5 +1,10 @@
 from botnet.config import Config
-from botnet.message import Message, IncomingPrivateMessage, Nick, Target, Channel, Text
+from botnet.message import Channel
+from botnet.message import IncomingPrivateMessage
+from botnet.message import Message
+from botnet.message import Nick
+from botnet.message import Target
+from botnet.message import Text
 from botnet.modules import BaseResponder
 
 

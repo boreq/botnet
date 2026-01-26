@@ -1,11 +1,21 @@
-from dataclasses import dataclass
 import threading
+from dataclasses import dataclass
 from typing import Any
-from ...message import IncomingPrivateMessage
-from ...signals import module_load, module_unload, module_loaded, \
-    module_unloaded, config_reload, config_reloaded
-from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
+
 from ...config import Config
+from ...message import IncomingPrivateMessage
+from ...signals import config_reload
+from ...signals import config_reloaded
+from ...signals import module_load
+from ...signals import module_loaded
+from ...signals import module_unload
+from ...signals import module_unloaded
+from .. import Args
+from .. import AuthContext
+from .. import BaseResponder
+from .. import command
+from .. import only_admins
+from .. import parse_command
 from ..utils import get_ident_string
 
 

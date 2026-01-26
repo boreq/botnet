@@ -1,7 +1,10 @@
-from botnet.modules.builtin.mastodon import Mastodon, MastodonAPI, Toot
-from botnet.message import Message
-from botnet.config import Config
 import pytest
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.mastodon import Mastodon
+from botnet.modules.builtin.mastodon import MastodonAPI
+from botnet.modules.builtin.mastodon import Toot
 
 
 class FakeMastodonAPI(MastodonAPI):

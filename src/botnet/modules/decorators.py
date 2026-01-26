@@ -1,10 +1,13 @@
 import argparse
 import inspect
-from typing import Any, Callable, cast
-from botnet.message import IncomingPrivateMessage
-from .base import AuthContext
 from functools import wraps
+from typing import Any
+from typing import Callable
+from typing import cast
 
+from botnet.message import IncomingPrivateMessage
+
+from .base import AuthContext
 
 _ATTR_COMMAND_NAME = '_command_name'
 _ATTR_PREDICATES = '_predicates'

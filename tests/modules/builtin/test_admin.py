@@ -1,8 +1,9 @@
-from tests.conftest import ModuleHarnessFactory
-from botnet.message import Message
-from botnet.config import Config
-from botnet.modules.builtin.admin import Admin
 import pytest
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.admin import Admin
+from tests.conftest import ModuleHarnessFactory
 
 
 def test_help(make_incoming_privmsg, admin_context, test_admin) -> None:

@@ -1,13 +1,25 @@
-from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
-import dacite
 import os
 import threading
+from dataclasses import asdict
+from dataclasses import dataclass
+from datetime import datetime
+from datetime import timezone
 from typing import Callable
-from ...helpers import save_json, load_json
-from .. import BaseResponder, command, AuthContext, parse_command, Args
+
+import dacite
+
 from ...config import Config
-from ...message import IncomingPrivateMessage, Nick, Target, Channel
+from ...helpers import load_json
+from ...helpers import save_json
+from ...message import Channel
+from ...message import IncomingPrivateMessage
+from ...message import Nick
+from ...message import Target
+from .. import Args
+from .. import AuthContext
+from .. import BaseResponder
+from .. import command
+from .. import parse_command
 
 
 @dataclass()

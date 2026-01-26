@@ -1,6 +1,13 @@
 from dataclasses import dataclass
-from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
-from ...message import IncomingPrivateMessage, Target
+
+from ...message import IncomingPrivateMessage
+from ...message import Target
+from .. import Args
+from .. import AuthContext
+from .. import BaseResponder
+from .. import command
+from .. import only_admins
+from .. import parse_command
 
 
 @dataclass()

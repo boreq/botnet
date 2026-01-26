@@ -1,9 +1,15 @@
-import requests
 from datetime import datetime
-from botnet.modules.builtin.traccar import Traccar, TraccarAPI, Device, Position, Geofence
-from botnet.message import Message
-from botnet.config import Config
+
 import pytest
+import requests
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.traccar import Device
+from botnet.modules.builtin.traccar import Geofence
+from botnet.modules.builtin.traccar import Position
+from botnet.modules.builtin.traccar import Traccar
+from botnet.modules.builtin.traccar import TraccarAPI
 
 
 class FakeTraccarAPI(TraccarAPI):

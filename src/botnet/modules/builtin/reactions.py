@@ -1,8 +1,12 @@
-from dataclasses import dataclass
 import random
-from .. import BaseResponder, command, AuthContext, parse_command, Args
-from ...message import IncomingPrivateMessage
+from dataclasses import dataclass
 
+from ...message import IncomingPrivateMessage
+from .. import Args
+from .. import AuthContext
+from .. import BaseResponder
+from .. import command
+from .. import parse_command
 
 cutelist = [
     '✿◕ ‿ ◕✿',

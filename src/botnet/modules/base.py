@@ -1,8 +1,10 @@
-from .. import signals
-from ..logging import get_logger, Logger
-from ..message import IncomingPrivateMessage
-from ..config import Config
 from dataclasses import dataclass
+
+from .. import signals
+from ..config import Config
+from ..logging import Logger
+from ..logging import get_logger
+from ..message import IncomingPrivateMessage
 
 
 @dataclass

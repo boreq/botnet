@@ -1,16 +1,37 @@
 import os
 import threading
-import dacite
+from dataclasses import asdict
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Callable
-from dataclasses import dataclass, asdict
-from .auth import AuthConfig, AuthConfigPerson
-from ...helpers import save_json, load_json, cleanup_nick
-from ...signals import message_out, on_exception
-from ...message import Message, IncomingPrivateMessage, Nick, Channel, Target
+from typing import Any
+from typing import Callable
+
+import dacite
+
 from ...config import Config
-from .. import BaseModule, BaseResponder, predicates, command, AuthContext, parse_command, Args, CommandHandler
-from ..lib import MemoryCache, colored, Color
+from ...helpers import cleanup_nick
+from ...helpers import load_json
+from ...helpers import save_json
+from ...message import Channel
+from ...message import IncomingPrivateMessage
+from ...message import Message
+from ...message import Nick
+from ...message import Target
+from ...signals import message_out
+from ...signals import on_exception
+from .. import Args
+from .. import AuthContext
+from .. import BaseModule
+from .. import BaseResponder
+from .. import CommandHandler
+from .. import command
+from .. import parse_command
+from .. import predicates
+from ..lib import Color
+from ..lib import MemoryCache
+from ..lib import colored
+from .auth import AuthConfig
+from .auth import AuthConfigPerson
 
 
 @dataclass

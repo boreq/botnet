@@ -1,7 +1,8 @@
-from botnet.message import Message
-from botnet.config import Config
-from botnet.modules.builtin.anonpost import Anonpost
 import pytest
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.anonpost import Anonpost
 
 
 def test_person_anonpost_to_channel(make_incoming_privmsg, unauthorised_context, test_anonpost) -> None:

@@ -1,8 +1,12 @@
-from .. import BaseResponder, AuthContext
-from ...message import IncomingPrivateMessage, Channel
-from mastodon import Mastodon as MastodonLib
 from dataclasses import dataclass
 from typing import Protocol
+
+from mastodon import Mastodon as MastodonLib
+
+from ...message import Channel
+from ...message import IncomingPrivateMessage
+from .. import AuthContext
+from .. import BaseResponder
 
 
 @dataclass

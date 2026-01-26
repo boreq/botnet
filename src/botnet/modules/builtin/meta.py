@@ -1,8 +1,15 @@
 from dataclasses import dataclass
-from ...signals import _request_list_commands, _list_commands
-from ...message import IncomingPrivateMessage, Text
-from .. import BaseResponder, AuthContext, command, parse_command, Args
+
 from ...config import Config
+from ...message import IncomingPrivateMessage
+from ...message import Text
+from ...signals import _list_commands
+from ...signals import _request_list_commands
+from .. import Args
+from .. import AuthContext
+from .. import BaseResponder
+from .. import command
+from .. import parse_command
 
 
 @dataclass()

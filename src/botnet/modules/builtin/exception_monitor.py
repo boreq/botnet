@@ -1,8 +1,9 @@
 import traceback
 from typing import Any
-from .. import BaseModule
-from ...signals import on_exception
+
 from ...config import Config
+from ...signals import on_exception
+from .. import BaseModule
 
 
 class ExceptionMonitor(BaseModule):

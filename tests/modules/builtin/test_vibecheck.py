@@ -1,10 +1,12 @@
+import pytest
+
+from botnet.codes import Code
+from botnet.config import Config
+from botnet.message import Message
 from botnet.modules import AuthContext
 from botnet.modules.builtin.vibecheck import Vibecheck
-from botnet.modules.lib import colored, Color
-from botnet.message import Message
-from botnet.config import Config
-from botnet.codes import Code
-import pytest
+from botnet.modules.lib import Color
+from botnet.modules.lib import colored
 
 
 def test_pester(make_privmsg, make_incoming_privmsg, unauthorised_context, tested_vibecheck) -> None:

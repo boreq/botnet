@@ -1,4 +1,5 @@
-from .logging import get_logger, Logger
+from .logging import Logger
+from .logging import get_logger
 from .modules import BaseModule
 from .modules.utils import get_ident_string
 

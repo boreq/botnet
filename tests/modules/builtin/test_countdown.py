@@ -1,8 +1,10 @@
-import pytest
-from botnet.message import Message
-from botnet.config import Config
-from botnet.modules.builtin.countdown import Countdown
 from datetime import date
+
+import pytest
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.countdown import Countdown
 
 
 def make_config():

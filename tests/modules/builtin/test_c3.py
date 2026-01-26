@@ -1,8 +1,10 @@
-from botnet.modules.builtin.c3 import C3
+import datetime
+
+import pytest
+
 from botnet.config import Config
 from botnet.message import Message
-import datetime
-import pytest
+from botnet.modules.builtin.c3 import C3
 
 
 def test_help(make_privmsg, make_incoming_privmsg, unauthorised_context, test_c3):

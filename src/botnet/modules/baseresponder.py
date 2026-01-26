@@ -1,13 +1,19 @@
 from dataclasses import dataclass
 from typing import TypeVar
-from ..message import Message, IncomingPrivateMessage, Target
-from ..signals import message_out
-from .base import BaseModule, AuthContext
-from .decorators import command
-from .mixins import MessageDispatcherMixin, ConfigMixin, DataclassInstance
-from .lib import divide_text
-from .decorators import parse_command, Args
 
+from ..message import IncomingPrivateMessage
+from ..message import Message
+from ..message import Target
+from ..signals import message_out
+from .base import AuthContext
+from .base import BaseModule
+from .decorators import Args
+from .decorators import command
+from .decorators import parse_command
+from .lib import divide_text
+from .mixins import ConfigMixin
+from .mixins import DataclassInstance
+from .mixins import MessageDispatcherMixin
 
 _BREAK_PRIVMSG_EVERY = 400
 

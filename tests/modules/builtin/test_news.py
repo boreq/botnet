@@ -1,7 +1,8 @@
-from botnet.message import Message
-from botnet.config import Config
-from botnet.modules.builtin.news import News
 import pytest
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.news import News
 
 
 def test_help(make_privmsg, make_incoming_privmsg, unauthorised_context, test_news) -> None:

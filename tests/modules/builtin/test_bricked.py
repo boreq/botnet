@@ -1,7 +1,9 @@
-from botnet.modules.builtin.bricked import Bricked, Status
-from botnet.message import Message
-from botnet.config import Config
 import pytest
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.bricked import Bricked
+from botnet.modules.builtin.bricked import Status
 
 
 class FakeBrickedAPI:

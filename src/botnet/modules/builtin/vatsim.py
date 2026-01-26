@@ -1,10 +1,15 @@
 import threading
-import requests
-from ...message import IncomingPrivateMessage
-from .. import BaseResponder, command, parse_command, Args
-from ..base import AuthContext
 from dataclasses import dataclass
 from typing import Protocol
+
+import requests
+
+from ...message import IncomingPrivateMessage
+from .. import Args
+from .. import BaseResponder
+from .. import command
+from .. import parse_command
+from ..base import AuthContext
 
 
 @dataclass

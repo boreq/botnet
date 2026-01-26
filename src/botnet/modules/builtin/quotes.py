@@ -1,10 +1,12 @@
-from dataclasses import dataclass
 import os
 import random
+from dataclasses import dataclass
 from typing import Iterator
-from ...signals import on_exception
+
 from ...message import IncomingPrivateMessage
-from .. import BaseResponder, AuthContext
+from ...signals import on_exception
+from .. import AuthContext
+from .. import BaseResponder
 
 
 @dataclass()

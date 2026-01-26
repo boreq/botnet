@@ -1,6 +1,7 @@
 import pytest
-from botnet.modules.builtin.reactions import Reactions
+
 from botnet.config import Config
+from botnet.modules.builtin.reactions import Reactions
 
 
 def test_cute(make_privmsg, make_incoming_privmsg, unauthorised_context, test_sed):

@@ -1,10 +1,14 @@
-from .. import BaseResponder, AuthContext
-from ...message import IncomingPrivateMessage, Channel
-import requests
-import dacite
 from dataclasses import dataclass
-from urllib.parse import urljoin
 from typing import Protocol
+from urllib.parse import urljoin
+
+import dacite
+import requests
+
+from ...message import Channel
+from ...message import IncomingPrivateMessage
+from .. import AuthContext
+from .. import BaseResponder
 
 
 @dataclass

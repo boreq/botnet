@@ -1,12 +1,15 @@
-from dataclasses import dataclass
 import threading
-from ...signals import on_exception
-from .. import BaseResponder
-from ...config import Config
-from ...message import IncomingPrivateMessage, Channel
+from dataclasses import dataclass
 from urllib.parse import urlparse
+
 import requests
 from bs4 import BeautifulSoup
+
+from ...config import Config
+from ...message import Channel
+from ...message import IncomingPrivateMessage
+from ...signals import on_exception
+from .. import BaseResponder
 
 
 @dataclass()

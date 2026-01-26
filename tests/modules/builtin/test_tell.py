@@ -1,8 +1,11 @@
-from datetime import datetime, timezone
-from botnet.message import Message
-from botnet.config import Config
-from botnet.modules.builtin.tell import Tell
+from datetime import datetime
+from datetime import timezone
+
 import pytest
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.tell import Tell
 
 
 def test_multiple_messages_for_multiple_users(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):

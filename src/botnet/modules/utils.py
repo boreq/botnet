@@ -1,6 +1,7 @@
 import importlib
-from .base import BaseModule
 from types import ModuleType
+
+from .base import BaseModule
 
 
 def get_module(module_name: str) -> ModuleType:

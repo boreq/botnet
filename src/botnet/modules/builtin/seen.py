@@ -1,12 +1,22 @@
-from dataclasses import dataclass
 import datetime
 import os
 import threading
-from typing import Any, Callable
-from ...helpers import save_json, load_json
-from .. import BaseResponder, command, AuthContext, parse_command, Args
-from ...message import IncomingPrivateMessage, Nick, Channel, Text
+from dataclasses import dataclass
+from typing import Any
+from typing import Callable
+
 from ...config import Config
+from ...helpers import load_json
+from ...helpers import save_json
+from ...message import Channel
+from ...message import IncomingPrivateMessage
+from ...message import Nick
+from ...message import Text
+from .. import Args
+from .. import AuthContext
+from .. import BaseResponder
+from .. import command
+from .. import parse_command
 
 
 def format_msg_entry(nick: Nick, msg_entry: dict[str, Any]) -> str:

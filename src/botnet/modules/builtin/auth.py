@@ -1,11 +1,16 @@
 from dataclasses import dataclass
 from typing import Callable
-from ...message import Message, IncomingPrivateMessage, Nick
-from ...signals import message_out, auth_message_in
-from .. import AuthContext, BaseResponder
-from ..lib import MemoryCache
-from ..base import BaseModule
+
 from ...config import Config
+from ...message import IncomingPrivateMessage
+from ...message import Message
+from ...message import Nick
+from ...signals import auth_message_in
+from ...signals import message_out
+from .. import AuthContext
+from .. import BaseResponder
+from ..base import BaseModule
+from ..lib import MemoryCache
 
 
 @dataclass()

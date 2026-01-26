@@ -1,12 +1,20 @@
-from dataclasses import dataclass
 import os
 import threading
+from dataclasses import dataclass
 from typing import Callable
-from ...helpers import save_json, load_json
-from .. import BaseResponder, AuthContext, command, parse_command, Args, CommandHandler
-from ...message import IncomingPrivateMessage, Channel
-from ..decorators import predicates
+
 from ...config import Config
+from ...helpers import load_json
+from ...helpers import save_json
+from ...message import Channel
+from ...message import IncomingPrivateMessage
+from .. import Args
+from .. import AuthContext
+from .. import BaseResponder
+from .. import CommandHandler
+from .. import command
+from .. import parse_command
+from ..decorators import predicates
 
 
 class NewsStore:

@@ -1,12 +1,15 @@
-from dataclasses import dataclass
-import threading
 import os
+import threading
+from dataclasses import dataclass
 from typing import Iterator
-from ...signals import on_exception
-from .. import BaseResponder, AuthContext
+
+from markov import Chain
+
 from ...config import Config
 from ...message import IncomingPrivateMessage
-from markov import Chain
+from ...signals import on_exception
+from .. import AuthContext
+from .. import BaseResponder
 
 
 @dataclass()

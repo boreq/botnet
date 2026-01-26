@@ -3,8 +3,11 @@
     implementation but rather form a library which can be used by modules.
 """
 
-from enum import Enum, unique
-from .cache import BaseCache, MemoryCache
+from enum import Enum
+from enum import unique
+
+from .cache import BaseCache
+from .cache import MemoryCache
 from .network import get_url
 
 

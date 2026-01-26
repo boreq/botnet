@@ -1,7 +1,10 @@
-from botnet.modules.builtin.vatsim import Vatsim, VatsimAPI, Metar
-from botnet.message import Message
-from botnet.config import Config
 import pytest
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.vatsim import Metar
+from botnet.modules.builtin.vatsim import Vatsim
+from botnet.modules.builtin.vatsim import VatsimAPI
 
 
 class FakeVatsimAPI(VatsimAPI):

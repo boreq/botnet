@@ -1,17 +1,31 @@
-from botnet.config import Config
-from botnet.message import Message, IncomingPrivateMessage, Nick, Target, Text
-from botnet.modules import AuthContext
-from botnet.signals import message_out, message_in, auth_message_in, \
-    clear_state, on_exception, _request_list_commands, module_load, \
-    module_unload, config_reload, module_loaded, module_unloaded, config_reloaded, \
-    config_changed
 import logging
 import os
-import pytest
 import tempfile
 import time
 from typing import Callable
 
+import pytest
+
+from botnet.config import Config
+from botnet.message import IncomingPrivateMessage
+from botnet.message import Message
+from botnet.message import Nick
+from botnet.message import Target
+from botnet.message import Text
+from botnet.modules import AuthContext
+from botnet.signals import _request_list_commands
+from botnet.signals import auth_message_in
+from botnet.signals import clear_state
+from botnet.signals import config_changed
+from botnet.signals import config_reload
+from botnet.signals import config_reloaded
+from botnet.signals import message_in
+from botnet.signals import message_out
+from botnet.signals import module_load
+from botnet.signals import module_loaded
+from botnet.signals import module_unload
+from botnet.signals import module_unloaded
+from botnet.signals import on_exception
 
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 log_level = logging.DEBUG

@@ -1,5 +1,10 @@
-from botnet.message import Message, Channel, Nick, Target, Text, IncomingPrivateMessage
 from botnet.codes import Code
+from botnet.message import Channel
+from botnet.message import IncomingPrivateMessage
+from botnet.message import Message
+from botnet.message import Nick
+from botnet.message import Target
+from botnet.message import Text
 
 
 def test_message_from_string(subtests):

@@ -1,5 +1,5 @@
-from botnet.message import Message
 from botnet.config import Config
+from botnet.message import Message
 from botnet.modules.builtin.meta import Meta
 
 

@@ -1,14 +1,27 @@
-import dacite
-import re
 import inspect
-from dataclasses import Field, asdict
-from ..signals import message_in, auth_message_in, on_exception, config_changed
-from .base import BaseModule, AuthContext
-from .decorators import _ATTR_COMMAND_NAME, _ATTR_PREDICATES
-from ..message import Message, IncomingPrivateMessage
-from ..config import Config
-from typing import Generic, TypeVar, Any, Protocol, ClassVar
+import re
 from collections.abc import Callable
+from dataclasses import Field
+from dataclasses import asdict
+from typing import Any
+from typing import ClassVar
+from typing import Generic
+from typing import Protocol
+from typing import TypeVar
+
+import dacite
+
+from ..config import Config
+from ..message import IncomingPrivateMessage
+from ..message import Message
+from ..signals import auth_message_in
+from ..signals import config_changed
+from ..signals import message_in
+from ..signals import on_exception
+from .base import AuthContext
+from .base import BaseModule
+from .decorators import _ATTR_COMMAND_NAME
+from .decorators import _ATTR_PREDICATES
 
 
 class DataclassInstance(Protocol):

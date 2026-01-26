@@ -1,8 +1,11 @@
-from datetime import datetime, timezone
-from botnet.message import Message
-from botnet.config import Config
-from botnet.modules.builtin.seen import Seen
+from datetime import datetime
+from datetime import timezone
+
 import pytest
+
+from botnet.config import Config
+from botnet.message import Message
+from botnet.modules.builtin.seen import Seen
 
 
 def test_seen_sequence(make_privmsg, make_incoming_privmsg, unauthorised_context, test_seen):

@@ -1,4 +1,5 @@
-from botnet.helpers import load_json, save_json
+from botnet.helpers import load_json
+from botnet.helpers import save_json
 
 
 def test_load_save_json(tmp_file):

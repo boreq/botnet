@@ -1,7 +1,10 @@
-from dataclasses import dataclass
 import datetime
-from .. import BaseResponder, command, AuthContext
+from dataclasses import dataclass
+
 from ...message import IncomingPrivateMessage
+from .. import AuthContext
+from .. import BaseResponder
+from .. import command
 
 
 @dataclass()

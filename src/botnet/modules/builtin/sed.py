@@ -1,12 +1,16 @@
-from dataclasses import dataclass
 import os
-import threading
-from typing import Callable
-from ...helpers import save_json, load_json
-from .. import BaseResponder
-from ...config import Config
-from ...message import IncomingPrivateMessage, Channel, Nick
 import re
+import threading
+from dataclasses import dataclass
+from typing import Callable
+
+from ...config import Config
+from ...helpers import load_json
+from ...helpers import save_json
+from ...message import Channel
+from ...message import IncomingPrivateMessage
+from ...message import Nick
+from .. import BaseResponder
 
 
 def make_msg_entry(author: str, message: str) -> dict[str, str]:

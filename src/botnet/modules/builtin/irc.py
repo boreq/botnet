@@ -1,16 +1,27 @@
-from dataclasses import dataclass
-import select
 import datetime
+import fnmatch
+import select
 import socket
 import ssl
 import threading
-import fnmatch
-from typing import Any, Generator, Protocol
-from ...logging import get_logger
-from ...message import Message, IncomingPrivateMessage
-from ...signals import message_in, message_out, on_exception
-from .. import BaseResponder, command, only_admins, AuthContext, parse_command, Args
+from dataclasses import dataclass
+from typing import Any
+from typing import Generator
+from typing import Protocol
+
 from ...config import Config
+from ...logging import get_logger
+from ...message import IncomingPrivateMessage
+from ...message import Message
+from ...signals import message_in
+from ...signals import message_out
+from ...signals import on_exception
+from .. import Args
+from .. import AuthContext
+from .. import BaseResponder
+from .. import command
+from .. import only_admins
+from .. import parse_command
 
 
 class Restarter(Protocol):

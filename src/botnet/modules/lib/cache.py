@@ -3,9 +3,9 @@
     to cache results acquired from various online APIs.
 """
 
-from typing import TypeVar, Generic
 import datetime
-
+from typing import Generic
+from typing import TypeVar
 
 K = TypeVar('K')
 V = TypeVar('V')

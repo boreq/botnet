@@ -1,7 +1,11 @@
 import pytest
-from botnet.modules.builtin.sed import Sed, parse_message, make_msg_entry, replace
+
 from botnet.config import Config
 from botnet.message import Message
+from botnet.modules.builtin.sed import Sed
+from botnet.modules.builtin.sed import make_msg_entry
+from botnet.modules.builtin.sed import parse_message
+from botnet.modules.builtin.sed import replace
 
 
 def test_parse_message():

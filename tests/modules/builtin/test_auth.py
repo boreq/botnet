@@ -1,8 +1,15 @@
 import pytest
+
 from botnet.config import Config
+from botnet.message import Channel
+from botnet.message import IncomingPrivateMessage
+from botnet.message import Message
+from botnet.message import Nick
+from botnet.message import Target
+from botnet.message import Text
 from botnet.modules import AuthContext
-from botnet.modules.builtin.auth import Auth, WhoisResponse
-from botnet.message import Message, IncomingPrivateMessage, Nick, Target, Channel, Text
+from botnet.modules.builtin.auth import Auth
+from botnet.modules.builtin.auth import WhoisResponse
 
 
 def test_whois_parsing(subtests, make_tested_auth) -> None:

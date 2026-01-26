@@ -1,8 +1,10 @@
 from dataclasses import dataclass
-from ...message import IncomingPrivateMessage
-from .. import BaseResponder, AuthContext
-from ...config import Config
 from datetime import date
+
+from ...config import Config
+from ...message import IncomingPrivateMessage
+from .. import AuthContext
+from .. import BaseResponder
 
 
 @dataclass()

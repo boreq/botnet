@@ -1,5 +1,7 @@
 import threading
-from .helpers import load_json, save_json
+
+from .helpers import load_json
+from .helpers import save_json
 
 
 class Config(dict):  # type: ignore[type-arg]

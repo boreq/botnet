@@ -1,14 +1,24 @@
 import threading
+
 from .config import Config
 from .logging import get_logger
 from .message import IncomingPrivateMessage
-from .modules import BaseModule, AuthContext
-from .modules.utils import get_module, reload_module, get_ident_string
-from .signals import module_loaded, module_unloaded, module_load, module_unload, \
-    _request_list_commands, _list_commands, config_changed, on_exception, \
-    config_reload, config_reloaded
+from .modules import AuthContext
+from .modules import BaseModule
+from .modules.utils import get_ident_string
+from .modules.utils import get_module
+from .modules.utils import reload_module
+from .signals import _list_commands
+from .signals import _request_list_commands
+from .signals import config_changed
+from .signals import config_reload
+from .signals import config_reloaded
+from .signals import module_load
+from .signals import module_loaded
+from .signals import module_unload
+from .signals import module_unloaded
+from .signals import on_exception
 from .wrappers import ModuleWrapper
-
 
 type ModuleClass = type[BaseModule]
 

@@ -5,7 +5,6 @@
 
 import requests
 
-
 # User agent used while performing requests (429 status codes can be encountered
 # when using the default user agent)
 _uagent = 'Mozilla/5.0 (X11; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0'

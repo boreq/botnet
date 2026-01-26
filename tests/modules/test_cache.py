@@ -1,5 +1,7 @@
-import pytest
 import time
+
+import pytest
+
 from botnet.modules.lib import cache
 
 

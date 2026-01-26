@@ -1,7 +1,9 @@
 import os
-from botnet.message import Message
+
 from botnet.config import Config
-from botnet.modules.builtin.quotes import Quotes, QuotesConfig
+from botnet.message import Message
+from botnet.modules.builtin.quotes import Quotes
+from botnet.modules.builtin.quotes import QuotesConfig
 
 
 def test_quotes(module_harness_factory, make_privmsg):

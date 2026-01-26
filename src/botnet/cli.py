@@ -4,12 +4,13 @@
 """
 
 
-import click
 import logging
 import signal
-from .manager import Manager
 from types import FrameType
 
+import click
+
+from .manager import Manager
 
 logger_levels = ['warning', 'info', 'debug']
 

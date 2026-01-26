@@ -1,9 +1,13 @@
 from datetime import datetime
+
 import pytest
-from botnet.config import Config
-from botnet.modules.builtin.irc import IRC, InactivityMonitor, Buffer
-from botnet.modules import BaseResponder
+
 from botnet import Message
+from botnet.config import Config
+from botnet.modules import BaseResponder
+from botnet.modules.builtin.irc import IRC
+from botnet.modules.builtin.irc import Buffer
+from botnet.modules.builtin.irc import InactivityMonitor
 from botnet.signals import message_out
 
 

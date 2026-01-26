@@ -1,14 +1,23 @@
-from dataclasses import dataclass
 import datetime
 import os
-import threading
-from typing import Any, Callable
-from ...helpers import save_json, load_json
-from ...signals import on_exception
-from .. import BaseResponder, command, AuthContext, parse_command, Args
-from ...config import Config
-from ...message import IncomingPrivateMessage, Nick, Target
 import re
+import threading
+from dataclasses import dataclass
+from typing import Any
+from typing import Callable
+
+from ...config import Config
+from ...helpers import load_json
+from ...helpers import save_json
+from ...message import IncomingPrivateMessage
+from ...message import Nick
+from ...message import Target
+from ...signals import on_exception
+from .. import Args
+from .. import AuthContext
+from .. import BaseResponder
+from .. import command
+from .. import parse_command
 
 
 def make_msg_entry(author: str, target: str, message: str, time: float) -> dict[str, Any]:
