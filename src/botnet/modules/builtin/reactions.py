@@ -70,6 +70,9 @@ magiclist = [
 class Reactions(BaseResponder):
     """Defines several commands related to emotional reactions."""
 
+    config_namespace = 'botnet'
+    config_name = 'reactions'
+
     @command('cute')
     @parse_command([('nicks', '*')])
     def command_cute(self, msg: IncomingPrivateMessage, auth: AuthContext, args: Args) -> None:
