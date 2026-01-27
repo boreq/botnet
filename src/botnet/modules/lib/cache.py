@@ -40,6 +40,9 @@ class MemoryCache(BaseCache[K, V]):
         super().__init__(default_timeout_in_seconds)
         self._data: dict[K, tuple[datetime.datetime, V]] = {}
 
+    def __iter__(self) -> 'MemoryCacheIterator[K, V]':
+        return MemoryCacheIterator(self)
+
     def set(self, key: K, value: V, timeout_in_seconds: float | None = None) -> None:
         self._remove_expired_values()
         if timeout_in_seconds is None:
@@ -71,3 +74,19 @@ class MemoryCache(BaseCache[K, V]):
                     self._data.pop(key)
             except KeyError:
                 pass
+
+
+class MemoryCacheIterator(Generic[K, V]):
+    def __init__(self, cache: MemoryCache[K, V]) -> None:
+        self._cache = cache
+        self._keys = list(cache._data.keys())
+        self._next_key_index = 0
+
+    def __next__(self) -> tuple[K, V]:
+        if self._next_key_index < len(self._keys):
+            key = self._keys[self._next_key_index]
+            self._next_key_index += 1
+            value = self._cache.get(key)
+            if value is not None:
+                return key, value
+        raise StopIteration

@@ -70,6 +70,41 @@ class NamesMixin(BaseModule):
         self._cache.set(channel, self._current.pop(channel))
         self._run_deferred()
 
+    def handler_join(self, msg: Message) -> None:
+        """Handler for JOIN."""
+        assert msg.nickname is not None
+        nick = Nick(msg.nickname)
+        channel = Channel(msg.params[0])
+        nicks = self._cache.get(channel)
+        if nicks is not None and nick not in nicks:
+            nicks.append(nick)
+
+    def handler_part(self, msg: Message) -> None:
+        """Handler for PART."""
+        assert msg.nickname is not None
+        nick = Nick(msg.nickname)
+        channel = Channel(msg.params[0])
+        nicks = self._cache.get(channel)
+        if nicks is not None and nick in nicks:
+            nicks.remove(nick)
+
+    def handler_quit(self, msg: Message) -> None:
+        """Handler for QUIT."""
+        assert msg.nickname is not None
+        nick = Nick(msg.nickname)
+        for (_, names) in self._cache:
+            if nick in names:
+                names.remove(nick)
+
+    def handler_kick(self, msg: Message) -> None:
+        """Handler for KICK."""
+        assert msg.nickname is not None
+        channel = Channel(msg.params[0])
+        nick = Nick(msg.params[1])
+        nicks = self._cache.get(channel)
+        if nicks is not None and nick in nicks:
+            nicks.remove(nick)
+
     def request_names(self, channel: Channel, on_names_available: Callable[[list[Nick]], None]) -> None:
         """Schedules an action to be completed when the names for the channel
         are available.
