@@ -49,7 +49,7 @@ example config for details.
 ## Example config
 
     {
-        "modules": ["irc", "auth", meta"],
+        "modules": ["irc", "auth", "meta"],
         "module_config": {
             "botnet": {
                 "irc": {
