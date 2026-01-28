@@ -1,11 +1,18 @@
 from dataclasses import dataclass
 from typing import Callable
 
-from botnet.modules import message_handler
-
+from ...codes import Code
 from ...config import Config
+from ...message import IncomingKick
+from ...message import IncomingPart
+from ...message import IncomingQuit
 from ...message import Message
 from ...message import Nick
+from ...modules import kick_message_handler
+from ...modules import message_handler
+from ...modules import part_message_handler
+from ...modules import quit_message_handler
+from ...modules import reply_handler
 from ...signals import auth_message_in
 from ...signals import message_out
 from .. import AuthContext
@@ -46,8 +53,8 @@ class WhoisMixin(BaseModule):
         self._whois_deferred: list[DeferredWhois] = []
         self._whois_current: dict[Nick, WhoisResponse] = {}
 
+    @reply_handler(Code.RPL_WHOISUSER)
     def handler_rpl_whoisuser(self, msg: Message) -> None:
-        """Start of WHOIS."""
         nick = Nick(msg.params[1])
         self._whois_current[nick] = WhoisResponse(
             nick=msg.params[1],
@@ -60,50 +67,50 @@ class WhoisMixin(BaseModule):
             nick_identified=None,
         )
 
+    @reply_handler(Code.RPL_WHOISSERVER)
     def handler_rpl_whoisserver(self, msg: Message) -> None:
-        """WHOIS server."""
         nick = Nick(msg.params[1])
         if nick in self._whois_current:
             self._whois_current[nick].server = msg.params[2]
             self._whois_current[nick].server_info = msg.params[3]
 
+    @reply_handler(Code.RIZON_RPL_WHOISIDENTIFIED)
     def handler_rizon_rpl_whoisidentified(self, msg: Message) -> None:
-        """WHOIS identification on Rizon."""
         nick = Nick(msg.params[1])
         if nick in self._whois_current:
             self._whois_current[nick].nick_identified = msg.params[2]
 
+    @reply_handler(Code.FREENODE_RPL_WHOISIDENTIFIED)
     def handler_freenode_rpl_whoisidentified(self, msg: Message) -> None:
-        """WHOIS identification on Freenode."""
         nick = Nick(msg.params[1])
         if nick in self._whois_current:
             self._whois_current[nick].nick_identified = msg.params[1]
 
+    @reply_handler(Code.RPL_AWAY)
     def handler_rpl_away(self, msg: Message) -> None:
-        """WHOIS away message."""
         nick = Nick(msg.params[1])
         if nick in self._whois_current:
             self._whois_current[nick].away = msg.params[2]
 
+    @reply_handler(Code.RPL_ENDOFWHOIS)
     def handler_rpl_endofwhois(self, msg: Message) -> None:
-        """End of WHOIS."""
         nick = Nick(msg.params[1])
         if nick not in self._whois_current:
             return
         self._whois_cache.set(nick, self._whois_current.pop(nick))
         self._whois_run_deferred()
 
-    def handler_part(self, msg: Message) -> None:
-        """Handler for PART."""
-        assert msg.nickname is not None
-        nick = Nick(msg.nickname)
-        self._whois_cache.delete(nick)
+    @part_message_handler()
+    def handler_part(self, msg: IncomingPart) -> None:
+        self._whois_cache.delete(msg.nick)
 
-    def handler_quit(self, msg: Message) -> None:
-        """Handler for QUIT."""
-        assert msg.nickname is not None
-        nick = Nick(msg.nickname)
-        self._whois_cache.delete(nick)
+    @quit_message_handler()
+    def handler_quit(self, msg: IncomingQuit) -> None:
+        self._whois_cache.delete(msg.nick)
+
+    @kick_message_handler()
+    def handler_kick(self, msg: IncomingKick) -> None:
+        self._whois_cache.delete(msg.kickee)
 
     def whois_schedule(self, nick: Nick, on_complete: Callable[[WhoisResponse], None]) -> None:
         """Schedules an action to be completed when the whois for the nick is
@@ -138,17 +145,6 @@ class WhoisMixin(BaseModule):
         """Sends a message with the WHOIS command."""
         msg = Message(command='WHOIS', params=[nick.s])
         message_out.send(self, msg=msg)
-
-    def handle_msg(self, msg: Message) -> None:
-        # Dispatch to the handlers
-        code = msg.command_code
-        if code is not None:
-            handler_name = 'handler_%s' % code.name.lower()
-        else:
-            handler_name = 'handler_%s' % msg.command.lower()
-        func = getattr(self, handler_name, None)
-        if func is not None:
-            func(msg)
 
 
 @dataclass()
@@ -236,8 +232,6 @@ class Auth(WhoisMixin, BaseResponder[AuthConfig]):
 
     @message_handler()
     def handle_msg(self, msg: Message) -> None:
-        super().handle_msg(msg)
-
         def on_complete(whois_data: WhoisResponse) -> None:
             config = self.get_config()
             for person in config.people:

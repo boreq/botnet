@@ -210,6 +210,12 @@ def test_cache_invalidation(subtests, make_tested_auth) -> None:
         },
         {
             'messages': [
+                ':admin!example.com KICK #channel someone',
+            ],
+            'invalidates': True,
+        },
+        {
+            'messages': [
                 ':someone!example.com PRIVMSG #channel :Hello!',
             ],
             'invalidates': False,
