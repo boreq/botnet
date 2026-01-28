@@ -90,9 +90,10 @@ def reply_handler(code: Code) -> Callable[[MessageHandler], MessageHandler]:
 
         @wraps(f)
         def wrapped(self: Any, msg: Message) -> None:
-            if msg.command_code is not None:
-                if msg.command_code != code:
-                    return
+            if msg.command_code is None:
+                return
+            if msg.command_code != code:
+                return
             f(self, msg)
 
         return wrapped
