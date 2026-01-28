@@ -18,6 +18,7 @@ from .decorators import message_handler
 from .decorators import only_admins
 from .decorators import parse_command
 from .decorators import part_message_handler
+from .decorators import ping_message_handler
 from .decorators import predicates
 from .decorators import privmsg_message_handler
 from .decorators import quit_message_handler
@@ -52,4 +53,5 @@ __all__ = [
     'auth_quit_message_handler',
     'auth_privmsg_message_handler',
     'reply_handler',
+    'ping_message_handler',
 ]

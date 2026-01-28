@@ -9,10 +9,13 @@ from typing import Any
 from typing import Generator
 from typing import Protocol
 
+from ...codes import Code
 from ...config import Config
 from ...logging import get_logger
+from ...message import IncomingPing
 from ...message import IncomingPrivateMessage
 from ...message import Message
+from ...modules import reply_handler
 from ...signals import message_in
 from ...signals import message_out
 from ...signals import on_exception
@@ -22,6 +25,7 @@ from .. import BaseResponder
 from .. import command
 from .. import only_admins
 from .. import parse_command
+from .. import ping_message_handler
 
 
 class Restarter(Protocol):
@@ -278,6 +282,15 @@ class IRC(BaseResponder[IRCConfig]):
         text = 'Ignored patterns: %s' % patterns_text
         self.respond(msg, text)
 
+    @reply_handler(Code.RPL_ENDOFMOTD)
+    def handler_rpl_endofmotd(self, msg: Message) -> None:
+        self.join_from_config()
+
+    @ping_message_handler()
+    def handler_ping(self, ping: IncomingPing) -> None:
+        pong = Message(command='PONG', params=ping.params)
+        self.send(pong.to_string())
+
     def start(self) -> None:
         self.t.start()
 
@@ -341,18 +354,6 @@ class IRC(BaseResponder[IRCConfig]):
         if self.should_ignore(msg):
             return
 
-        # Dispatch the message to the right handler
-        # If command is a numeric code convert it to a string
-        code = msg.command_code
-        if code is not None:
-            handler_name = 'handler_%s' % code.name.lower()
-        else:
-            handler_name = 'handler_%s' % msg.command.lower()
-        func = getattr(self, handler_name, None)
-        if func is not None:
-            self.logger.debug('Dispatching to %s', handler_name)
-            func(msg)
-
         # Forward the message to other modules
         try:
             message_in.send(self, msg=msg)
@@ -366,13 +367,6 @@ class IRC(BaseResponder[IRCConfig]):
                 if fnmatch.fnmatch(msg.prefix, ignore_pattern):
                     return True
         return False
-
-    def handler_rpl_endofmotd(self, msg: Message) -> None:
-        self.join_from_config()
-
-    def handler_ping(self, ping: Message) -> None:
-        pong = Message(command='PONG', params=ping.params)
-        self.send(pong.to_string())
 
     def send(self, text: str) -> None:
         if len(text) == 0:

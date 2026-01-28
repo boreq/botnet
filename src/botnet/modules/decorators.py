@@ -9,6 +9,7 @@ from botnet.codes import Code
 from botnet.message import IncomingJoin
 from botnet.message import IncomingKick
 from botnet.message import IncomingPart
+from botnet.message import IncomingPing
 from botnet.message import IncomingPrivateMessage
 from botnet.message import IncomingQuit
 from botnet.message import Message
@@ -64,6 +65,7 @@ JoinMessageHandler = Callable[[Any, IncomingJoin], None]
 PartMessageHandler = Callable[[Any, IncomingPart], None]
 QuitMessageHandler = Callable[[Any, IncomingQuit], None]
 KickMessageHandler = Callable[[Any, IncomingKick], None]
+PingMessageHandler = Callable[[Any, IncomingPing], None]
 PrivateMessageMessageHandler = Callable[[Any, IncomingPrivateMessage], None]
 
 AuthMessageHandler = Callable[[Any, Message, AuthContext], None]
@@ -180,6 +182,23 @@ def privmsg_message_handler() -> Callable[[PrivateMessageMessageHandler], Messag
                 return
             privmsg = IncomingPrivateMessage.new_from_message(msg)
             f(self, privmsg)
+
+        return wrapped
+
+    return decorator
+
+
+def ping_message_handler() -> Callable[[PingMessageHandler], MessageHandler]:
+    """Decorator which marks methods as PING message handlers."""
+    def decorator(f: PingMessageHandler) -> MessageHandler:
+        setattr(f, _ATTR_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message) -> None:
+            if msg.command != MessageCommand.PING.value:
+                return
+            kick = IncomingPing.new_from_message(msg)
+            f(self, kick)
 
         return wrapped
 

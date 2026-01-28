@@ -275,6 +275,7 @@ class MessageCommand(Enum):
     PART = 'PART'
     KICK = 'KICK'
     QUIT = 'QUIT'
+    PING = 'PING'
 
 
 class IncomingPrivateMessage:
@@ -462,3 +463,30 @@ class IncomingQuit:
         if not isinstance(other, IncomingQuit):
             raise NotImplementedError
         return self.nick == other.nick and self.quit_message == other.quit_message
+
+
+class IncomingPing:
+    params: list[str]
+
+    def __init__(self, params: list[str]) -> None:
+        if len(params) == 0:
+            raise Exception('ping needs at least one parameter')
+        self.params = params
+
+    @classmethod
+    def new_from_message(cls, msg: Message) -> IncomingPing:
+        if msg.command != MessageCommand.PING.value:
+            raise Exception('passed a message that isn\'t a PING')
+
+        if len(msg.params) < 1:
+            raise Exception('a received PING should have at least 1 parameter')
+
+        return cls(msg.params)
+
+    def __repr__(self) -> str:
+        return f'<IncomingPing: params={self.params}>'
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, IncomingPing):
+            raise NotImplementedError
+        return self.params == other.params
