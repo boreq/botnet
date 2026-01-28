@@ -5,6 +5,7 @@ from typing import Any
 from typing import Callable
 from typing import cast
 
+from botnet.codes import Code
 from botnet.message import IncomingJoin
 from botnet.message import IncomingKick
 from botnet.message import IncomingPart
@@ -78,6 +79,23 @@ def message_handler() -> Callable[[MessageHandler], MessageHandler]:
     def decorator(f: MessageHandler) -> MessageHandler:
         setattr(f, _ATTR_MESSAGE_HANDLER, True)
         return f
+
+    return decorator
+
+
+def reply_handler(code: Code) -> Callable[[MessageHandler], MessageHandler]:
+    """Decorator which marks methods as server reply handlers."""
+    def decorator(f: MessageHandler) -> MessageHandler:
+        setattr(f, _ATTR_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message) -> None:
+            if msg.command_code is not None:
+                if msg.command_code != code:
+                    return
+            f(self, msg)
+
+        return wrapped
 
     return decorator
 

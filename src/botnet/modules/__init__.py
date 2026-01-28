@@ -21,6 +21,7 @@ from .decorators import part_message_handler
 from .decorators import predicates
 from .decorators import privmsg_message_handler
 from .decorators import quit_message_handler
+from .decorators import reply_handler
 from .mixins import ConfigMixin
 from .mixins import MessageDispatcherMixin
 
@@ -50,4 +51,5 @@ __all__ = [
     'auth_kick_message_handler',
     'auth_quit_message_handler',
     'auth_privmsg_message_handler',
+    'reply_handler',
 ]

@@ -8,12 +8,22 @@ from typing import Callable
 
 import dacite
 
+from botnet.modules import join_message_handler
+from botnet.modules import kick_message_handler
+from botnet.modules import part_message_handler
+from botnet.modules import quit_message_handler
+
+from ...codes import Code
 from ...config import Config
 from ...helpers import cleanup_nick
 from ...helpers import load_json
 from ...helpers import save_json
 from ...message import Channel
+from ...message import IncomingJoin
+from ...message import IncomingKick
+from ...message import IncomingPart
 from ...message import IncomingPrivateMessage
+from ...message import IncomingQuit
 from ...message import Message
 from ...message import Nick
 from ...message import Target
@@ -25,10 +35,10 @@ from .. import BaseModule
 from .. import BaseResponder
 from .. import CommandHandler
 from .. import command
-from .. import message_handler
 from .. import parse_command
 from .. import predicates
 from .. import privmsg_message_handler
+from .. import reply_handler
 from ..lib import Color
 from ..lib import MemoryCache
 from ..lib import colored
@@ -57,55 +67,44 @@ class NamesMixin(BaseModule):
         self._deferred: list[DeferredAction] = []
         self._current: dict[Channel, list[Nick]] = {}
 
+    @reply_handler(Code.RPL_NAMREPLY)
     def handler_rpl_namreply(self, msg: Message) -> None:
-        """Names reply."""
         channel = Channel(msg.params[2])
         if channel not in self._current:
             self._current[channel] = []
         self._current[channel].extend([Nick(cleanup_nick(v)) for v in msg.params[3].split(' ')])
 
+    @reply_handler(Code.RPL_ENDOFNAMES)
     def handler_rpl_endofnames(self, msg: Message) -> None:
-        """End of WHOIS."""
         channel = Channel(msg.params[1])
         if channel not in self._current:
             return
         self._cache.set(channel, self._current.pop(channel))
         self._run_deferred()
 
-    def handler_join(self, msg: Message) -> None:
-        """Handler for JOIN."""
-        assert msg.nickname is not None
-        nick = Nick(msg.nickname)
-        channel = Channel(msg.params[0])
-        nicks = self._cache.get(channel)
-        if nicks is not None and nick not in nicks:
-            nicks.append(nick)
+    @join_message_handler()
+    def handler_join(self, msg: IncomingJoin) -> None:
+        nicks = self._cache.get(msg.channel)
+        if nicks is not None and msg.nick not in nicks:
+            nicks.append(msg.nick)
 
-    def handler_part(self, msg: Message) -> None:
-        """Handler for PART."""
-        assert msg.nickname is not None
-        nick = Nick(msg.nickname)
-        channel = Channel(msg.params[0])
-        nicks = self._cache.get(channel)
-        if nicks is not None and nick in nicks:
-            nicks.remove(nick)
+    @part_message_handler()
+    def handler_part(self, msg: IncomingPart) -> None:
+        nicks = self._cache.get(msg.channel)
+        if nicks is not None and msg.nick in nicks:
+            nicks.remove(msg.nick)
 
-    def handler_quit(self, msg: Message) -> None:
-        """Handler for QUIT."""
-        assert msg.nickname is not None
-        nick = Nick(msg.nickname)
+    @quit_message_handler()
+    def handler_quit(self, msg: IncomingQuit) -> None:
         for (_, names) in self._cache:
-            if nick in names:
-                names.remove(nick)
+            if msg.nick in names:
+                names.remove(msg.nick)
 
-    def handler_kick(self, msg: Message) -> None:
-        """Handler for KICK."""
-        assert msg.nickname is not None
-        channel = Channel(msg.params[0])
-        nick = Nick(msg.params[1])
-        nicks = self._cache.get(channel)
-        if nicks is not None and nick in nicks:
-            nicks.remove(nick)
+    @kick_message_handler()
+    def handler_kick(self, msg: IncomingKick) -> None:
+        nicks = self._cache.get(msg.channel)
+        if nicks is not None and msg.kickee in nicks:
+            nicks.remove(msg.kickee)
 
     def request_names(self, channel: Channel, on_names_available: Callable[[list[Nick]], None]) -> None:
         """Schedules an action to be completed when the names for the channel
@@ -139,17 +138,6 @@ class NamesMixin(BaseModule):
         """Sends a message with the NAMES command."""
         msg = Message(command='NAMES', params=[channel.s])
         message_out.send(self, msg=msg)
-
-    def handle_msg(self, msg: Message) -> None:
-        # Dispatch to the handlers
-        code = msg.command_code
-        if code is not None:
-            handler_name = 'handler_%s' % code.name.lower()
-        else:
-            handler_name = 'handler_%s' % msg.command.lower()
-        func = getattr(self, handler_name, None)
-        if func is not None:
-            func(msg)
 
 
 def _is_authorised_has_uuid_and_sent_a_privmsg() -> Callable[[CommandHandler], CommandHandler]:
@@ -325,10 +313,6 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
             if channel == Channel(self.get_config().channel):
                 with self._store as state:
                     state.on_privmsg(msg.sender)
-
-    @message_handler()
-    def handle_msg(self, msg: Message) -> None:
-        super().handle_msg(msg)
 
     def stop(self) -> None:
         super().stop()
