@@ -5,12 +5,20 @@ from typing import Any
 from typing import Callable
 from typing import cast
 
+from botnet.message import IncomingJoin
+from botnet.message import IncomingKick
+from botnet.message import IncomingPart
 from botnet.message import IncomingPrivateMessage
+from botnet.message import IncomingQuit
+from botnet.message import Message
+from botnet.message import MessageCommand
 
 from .base import AuthContext
 
 _ATTR_COMMAND_NAME = '_command_name'
 _ATTR_PREDICATES = '_predicates'
+_ATTR_MESSAGE_HANDLER = '_message_handler'
+_ATTR_AUTH_MESSAGE_HANDLER = '_auth_message_handler'
 
 
 class Args(dict[str, list[str]]):
@@ -46,6 +54,209 @@ def command(name: str) -> Callable[[CommandHandler], CommandHandler]:
     def decorator(f: CommandHandler) -> CommandHandler:
         setattr(f, _ATTR_COMMAND_NAME, name)
         return f
+
+    return decorator
+
+
+MessageHandler = Callable[[Any, Message], None]
+JoinMessageHandler = Callable[[Any, IncomingJoin], None]
+PartMessageHandler = Callable[[Any, IncomingPart], None]
+QuitMessageHandler = Callable[[Any, IncomingQuit], None]
+KickMessageHandler = Callable[[Any, IncomingKick], None]
+PrivateMessageMessageHandler = Callable[[Any, IncomingPrivateMessage], None]
+
+AuthMessageHandler = Callable[[Any, Message, AuthContext], None]
+AuthJoinMessageHandler = Callable[[Any, IncomingJoin, AuthContext], None]
+AuthPartMessageHandler = Callable[[Any, IncomingPart, AuthContext], None]
+AuthQuitMessageHandler = Callable[[Any, IncomingQuit, AuthContext], None]
+AuthKickMessageHandler = Callable[[Any, IncomingKick, AuthContext], None]
+AuthPrivateMessageMessageHandler = Callable[[Any, IncomingPrivateMessage, AuthContext], None]
+
+
+def message_handler() -> Callable[[MessageHandler], MessageHandler]:
+    """Decorator which marks methods as JOIN message handlers."""
+    def decorator(f: MessageHandler) -> MessageHandler:
+        setattr(f, _ATTR_MESSAGE_HANDLER, True)
+        return f
+
+    return decorator
+
+
+def join_message_handler() -> Callable[[JoinMessageHandler], MessageHandler]:
+    """Decorator which marks methods as JOIN message handlers."""
+    def decorator(f: JoinMessageHandler) -> MessageHandler:
+        setattr(f, _ATTR_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message) -> None:
+            if msg.command != MessageCommand.JOIN.value:
+                return
+            join = IncomingJoin.new_from_message(msg)
+            f(self, join)
+
+        return wrapped
+
+    return decorator
+
+
+def part_message_handler() -> Callable[[PartMessageHandler], MessageHandler]:
+    """Decorator which marks methods as PART message handlers."""
+    def decorator(f: PartMessageHandler) -> MessageHandler:
+        setattr(f, _ATTR_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message) -> None:
+            if msg.command != MessageCommand.PART.value:
+                return
+            part = IncomingPart.new_from_message(msg)
+            f(self, part)
+
+        return wrapped
+
+    return decorator
+
+
+def quit_message_handler() -> Callable[[QuitMessageHandler], MessageHandler]:
+    """Decorator which marks methods as QUIT message handlers."""
+    def decorator(f: QuitMessageHandler) -> MessageHandler:
+        setattr(f, _ATTR_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message) -> None:
+            if msg.command != MessageCommand.QUIT.value:
+                return
+            quit = IncomingQuit.new_from_message(msg)
+            f(self, quit)
+
+        return wrapped
+
+    return decorator
+
+
+def kick_message_handler() -> Callable[[KickMessageHandler], MessageHandler]:
+    """Decorator which marks methods as KICK message handlers."""
+    def decorator(f: KickMessageHandler) -> MessageHandler:
+        setattr(f, _ATTR_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message) -> None:
+            if msg.command != MessageCommand.KICK.value:
+                return
+            kick = IncomingKick.new_from_message(msg)
+            f(self, kick)
+
+        return wrapped
+
+    return decorator
+
+
+def privmsg_message_handler() -> Callable[[PrivateMessageMessageHandler], MessageHandler]:
+    """Decorator which marks methods as PRIVMSG message handlers."""
+    def decorator(f: PrivateMessageMessageHandler) -> MessageHandler:
+        setattr(f, _ATTR_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message) -> None:
+            if msg.command != MessageCommand.PRIVMSG.value:
+                return
+            privmsg = IncomingPrivateMessage.new_from_message(msg)
+            f(self, privmsg)
+
+        return wrapped
+
+    return decorator
+
+
+def auth_message_handler() -> Callable[[AuthMessageHandler], AuthMessageHandler]:
+    """Decorator which marks methods as authenticated JOIN message handlers."""
+    def decorator(f: AuthMessageHandler) -> AuthMessageHandler:
+        setattr(f, _ATTR_AUTH_MESSAGE_HANDLER, True)
+        return f
+
+    return decorator
+
+
+def auth_join_message_handler() -> Callable[[AuthJoinMessageHandler], AuthMessageHandler]:
+    """Decorator which marks methods as authenticated JOIN message handlers."""
+    def decorator(f: AuthJoinMessageHandler) -> AuthMessageHandler:
+        setattr(f, _ATTR_AUTH_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message, auth: AuthContext) -> None:
+            if msg.command != MessageCommand.JOIN.value:
+                return
+            join = IncomingJoin.new_from_message(msg)
+            f(self, join, auth)
+
+        return wrapped
+
+    return decorator
+
+
+def auth_part_message_handler() -> Callable[[AuthPartMessageHandler], AuthMessageHandler]:
+    """Decorator which marks methods as authenticated PART message handlers."""
+    def decorator(f: AuthPartMessageHandler) -> AuthMessageHandler:
+        setattr(f, _ATTR_AUTH_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message, auth: AuthContext) -> None:
+            if msg.command != MessageCommand.PART.value:
+                return
+            part = IncomingPart.new_from_message(msg)
+            f(self, part, auth)
+
+        return wrapped
+
+    return decorator
+
+
+def auth_quit_message_handler() -> Callable[[AuthQuitMessageHandler], AuthMessageHandler]:
+    """Decorator which marks methods as authenticated QUIT message handlers."""
+    def decorator(f: AuthQuitMessageHandler) -> AuthMessageHandler:
+        setattr(f, _ATTR_AUTH_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message, auth: AuthContext) -> None:
+            if msg.command != MessageCommand.QUIT.value:
+                return
+            quit = IncomingQuit.new_from_message(msg)
+            f(self, quit, auth)
+
+        return wrapped
+
+    return decorator
+
+
+def auth_kick_message_handler() -> Callable[[AuthKickMessageHandler], AuthMessageHandler]:
+    """Decorator which marks methods as authenticated KICK message handlers."""
+    def decorator(f: AuthKickMessageHandler) -> AuthMessageHandler:
+        setattr(f, _ATTR_AUTH_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message, auth: AuthContext) -> None:
+            if msg.command != MessageCommand.KICK.value:
+                return
+            kick = IncomingKick.new_from_message(msg)
+            f(self, kick, auth)
+
+        return wrapped
+
+    return decorator
+
+
+def auth_privmsg_message_handler() -> Callable[[AuthPrivateMessageMessageHandler], AuthMessageHandler]:
+    """Decorator which marks methods as authenticated PRIVMSG message handlers."""
+    def decorator(f: AuthPrivateMessageMessageHandler) -> AuthMessageHandler:
+        setattr(f, _ATTR_AUTH_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message, auth: AuthContext) -> None:
+            if msg.command != MessageCommand.PRIVMSG.value:
+                return
+            privmsg = IncomingPrivateMessage.new_from_message(msg)
+            f(self, privmsg, auth)
+
+        return wrapped
 
     return decorator
 

@@ -7,6 +7,7 @@
 
 
 import re
+from enum import Enum
 
 from .codes import Code
 
@@ -268,6 +269,14 @@ class Text:
         return self.s == other.s
 
 
+class MessageCommand(Enum):
+    PRIVMSG = 'PRIVMSG'
+    JOIN = 'JOIN'
+    PART = 'PART'
+    KICK = 'KICK'
+    QUIT = 'QUIT'
+
+
 class IncomingPrivateMessage:
     sender: Nick
     target: Target
@@ -280,14 +289,14 @@ class IncomingPrivateMessage:
 
     @classmethod
     def new_from_message(cls, msg: Message) -> IncomingPrivateMessage:
-        if msg.command != 'PRIVMSG':
-            raise Exception('passed a message that isn\'t a private message')
+        if msg.command != MessageCommand.PRIVMSG.value:
+            raise Exception('passed a message that isn\'t a PRIVMSG')
 
         if msg.nickname is None:
-            raise Exception('something is wrong, a received PRIVMSG should always have a nickname available')
+            raise Exception('a received PRIVMSG should have a nickname available')
 
         if len(msg.params) != 2:
-            raise Exception('something is wrong, a received PRIVMSG should always have two parameters')
+            raise Exception('a received PRIVMSG should have two parameters')
 
         sender = Nick(msg.nickname)
         target = Target.new_from_string(msg.params[0])
@@ -301,3 +310,155 @@ class IncomingPrivateMessage:
         if not isinstance(other, IncomingPrivateMessage):
             raise NotImplementedError
         return self.sender == other.sender and self.target == other.target and self.text == other.text
+
+
+class IncomingJoin:
+    nick: Nick
+    channel: Channel
+
+    def __init__(self, nick: Nick, channel: Channel) -> None:
+        self.nick = nick
+        self.channel = channel
+
+    @classmethod
+    def new_from_message(cls, msg: Message) -> IncomingJoin:
+        if msg.command != MessageCommand.JOIN.value:
+            raise Exception('passed a message that isn\'t a JOIN')
+
+        if msg.nickname is None:
+            raise Exception('a received JOIN should have a nickname available')
+
+        if len(msg.params) != 1:
+            raise Exception('a received JOIN should have one parameter')
+
+        nick = Nick(msg.nickname)
+        channel = Channel(msg.params[0])
+        return cls(nick, channel)
+
+    def __repr__(self) -> str:
+        return f'<IncomingJoin: nick={self.nick} channel={self.channel}>'
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, IncomingJoin):
+            raise NotImplementedError
+        return self.nick == other.nick and self.channel == other.channel
+
+
+class IncomingPart:
+    nick: Nick
+    channel: Channel
+    part_message: str | None
+
+    def __init__(self, nick: Nick, channel: Channel, part_message: str | None) -> None:
+        self.nick = nick
+        self.channel = channel
+        self.part_message = part_message
+
+    @classmethod
+    def new_from_message(cls, msg: Message) -> IncomingPart:
+        if msg.command != MessageCommand.PART.value:
+            raise Exception('passed a message that isn\'t a PART')
+
+        if msg.nickname is None:
+            raise Exception('a received PART should have a nickname available')
+
+        if len(msg.params) < 1 or len(msg.params) > 2:
+            raise Exception('a received PART should have 1 or 2 parameters')
+
+        nick = Nick(msg.nickname)
+        channel = Channel(msg.params[0])
+
+        if len(msg.params) == 2:
+            part_message = msg.params[1]
+        else:
+            part_message = None
+
+        return cls(nick, channel, part_message)
+
+    def __repr__(self) -> str:
+        return f'<IncomingPart: nick={self.nick} channel={self.channel} part_message={self.part_message}>'
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, IncomingPart):
+            raise NotImplementedError
+        return self.nick == other.nick and self.channel == other.channel and self.part_message == other.part_message
+
+
+class IncomingKick:
+    kicker: Nick
+    channel: Channel
+    kickee: Nick
+    kick_message: str | None
+
+    def __init__(self, kicker: Nick, channel: Channel, kickee: Nick, kick_message: str | None) -> None:
+        self.kicker = kicker
+        self.channel = channel
+        self.kickee = kickee
+        self.kick_message = kick_message
+
+    @classmethod
+    def new_from_message(cls, msg: Message) -> IncomingKick:
+        if msg.command != MessageCommand.KICK.value:
+            raise Exception('passed a message that isn\'t a KICK')
+
+        if msg.nickname is None:
+            raise Exception('a received KICK should have a nickname available')
+
+        if len(msg.params) < 2 or len(msg.params) > 3:
+            raise Exception('a received KICK should have 2 or 3 parameters')
+
+        kicker = Nick(msg.nickname)
+        channel = Channel(msg.params[0])
+        kickee = Nick(msg.params[1])
+
+        if len(msg.params) == 3:
+            kick_message = msg.params[2]
+        else:
+            kick_message = None
+
+        return cls(kicker, channel, kickee, kick_message)
+
+    def __repr__(self) -> str:
+        return f'<IncomingKick: kicker={self.kicker} channel={self.channel} kickee={self.kickee} kick_message={self.kick_message}>'
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, IncomingKick):
+            raise NotImplementedError
+        return self.kicker == other.kicker and self.channel == other.channel and self.kickee == other.kickee and self.kick_message == other.kick_message
+
+
+class IncomingQuit:
+    nick: Nick
+    quit_message: str | None
+
+    def __init__(self, nick: Nick, quit_message: str | None) -> None:
+        self.nick = nick
+        self.quit_message = quit_message
+
+    @classmethod
+    def new_from_message(cls, msg: Message) -> IncomingQuit:
+        if msg.command != MessageCommand.QUIT.value:
+            raise Exception('passed a message that isn\'t a QUIT')
+
+        if msg.nickname is None:
+            raise Exception('a received QUIT should have a nickname available')
+
+        nick = Nick(msg.nickname)
+
+        if len(msg.params) > 1:
+            raise Exception('a received QUIT should have no parameters or 1 parameter')
+
+        if len(msg.params) == 1:
+            quit_message = msg.params[0]
+        else:
+            quit_message = None
+
+        return cls(nick, quit_message)
+
+    def __repr__(self) -> str:
+        return f'<IncomingQuit: nick={self.nick} quit_message={self.quit_message}>'
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, IncomingQuit):
+            raise NotImplementedError
+        return self.nick == other.nick and self.quit_message == other.quit_message

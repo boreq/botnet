@@ -18,7 +18,7 @@ message_in = _signals.signal('message-in')
 # Sent when a message is processed by the auth module.
 # (That means that each message will be picked up as a message_in signal first
 # and after that as an auth_message_in signal)
-# kwargs: IncomingPrivateMessage msg, AuthContext auth
+# kwargs: Message msg, AuthContext auth
 auth_message_in = _signals.signal('auth-message-in')
 
 # Send this signal to send a messages to the IRC server

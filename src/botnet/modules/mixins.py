@@ -14,13 +14,16 @@ import dacite
 from ..config import Config
 from ..message import IncomingPrivateMessage
 from ..message import Message
+from ..message import MessageCommand
 from ..signals import auth_message_in
 from ..signals import config_changed
 from ..signals import message_in
 from ..signals import on_exception
 from .base import AuthContext
 from .base import BaseModule
+from .decorators import _ATTR_AUTH_MESSAGE_HANDLER
 from .decorators import _ATTR_COMMAND_NAME
+from .decorators import _ATTR_MESSAGE_HANDLER
 from .decorators import _ATTR_PREDICATES
 
 
@@ -93,39 +96,35 @@ class ConfigMixin(Generic[MODULE_CONFIG_DATACLASS], BaseModule):
 
 
 BoundCommandHandler = Callable[[IncomingPrivateMessage, AuthContext], None]
+BoundMessageHandler = Callable[[Message], None]
+BoundAuthMessageHandler = Callable[[Message, AuthContext], None]
 
 
 class MessageDispatcherMixin(BaseModule):
     """Dispatches messages received via `message_in` and `auth_message_in`
     signals to appropriate methods.
 
-    When a message is received via the `message_in` signal:
-        - All messages are dispatched to `handle_msg`.
-        - All PRIVMSG messages are then dispatched to `handle_privmsg`.
+    When a message is received via the `message_in` signal it is dispatched to
+    handlers marked with the decorators such as:
+        - `@message_handler`
+        - `@privmsg_message_handler`
+        - etc
 
-    When a PRIVMSG message is received via the `auth_message_in` signal:
-        - All messages are dispatched to `handle_auth_privmsg`.
-        - If a message starts with a command prefix defined in the config it
-          will also be sent to all handlers marked with a matching command
-          decorator.
+    When a message is received via the `auth_message_in` signal it is
+    dispatched to handlers marked with the decorators such as:
+        - `@auth_message_handler`
+        - `@auth_privmsg_message_handler`
+        - etc
+
+    When a PRIVMSG message is received via the `auth_message_in` signal and it
+    contains a .command inside of it's text it is dispatched to handlers marked
+    with the appropriate 'command_handler' decorator.
     """
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
         auth_message_in.connect(self._on_auth_message_in)
         message_in.connect(self._on_message_in)
-
-    def handle_msg(self, msg: Message) -> None:
-        """Called when a message is received."""
-        pass
-
-    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
-        """Called when a message with a PRIVMSG command is received."""
-        pass
-
-    def handle_auth_privmsg(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
-        """Called when a message with a PRIVMSG command is received."""
-        pass
 
     def get_command_prefix(self) -> str:
         """This method should return the command prefix."""
@@ -167,11 +166,23 @@ class MessageDispatcherMixin(BaseModule):
             return None
         return cmd_name
 
-    def _on_auth_message_in(self, sender: object, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+    def _on_auth_message_in(self, sender: object, msg: Message, auth: AuthContext) -> None:
         try:
             self._dispatch_auth_message(msg, auth)
         except Exception as e:
             on_exception.send(self, e=e)
+
+    def _dispatch_auth_message(self, msg: Message, auth: AuthContext) -> None:
+        for handler in self._get_all_auth_message_handlers():
+            handler(msg, auth)
+
+        if msg.command == MessageCommand.PRIVMSG.value:
+            privmsg = IncomingPrivateMessage.new_from_message(msg)
+            command_name = self.get_command_name(privmsg)
+            if command_name is not None:
+                for command_handler in self._get_command_handlers(command_name):
+                    if self._command_predicates_pass(command_handler, privmsg, auth):
+                        command_handler(privmsg, auth)
 
     def _on_message_in(self, sender: object, msg: Message) -> None:
         try:
@@ -179,32 +190,18 @@ class MessageDispatcherMixin(BaseModule):
         except Exception as e:
             on_exception.send(self, e=e)
 
-    def _dispatch_auth_message(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
-        self.handle_auth_privmsg(msg, auth)
-
-        command_name = self.get_command_name(msg)
-        if command_name is not None:
-            for handler in self._get_command_handlers(command_name):
-                if self._command_predicates_pass(handler, msg, auth):
-                    handler(msg, auth)
-
     def _dispatch_message(self, msg: Message) -> None:
-        self.handle_msg(msg)
-
-        if msg.command == 'PRIVMSG':
-            privmsg = IncomingPrivateMessage.new_from_message(msg)
-            self.handle_privmsg(privmsg)
+        for handler in self._get_all_message_handlers():
+            handler(msg)
 
     def _get_command_handlers(self, command_name: str) -> list[BoundCommandHandler]:
-        """Gets a list of command handlers which match this command name."""
-        handlers: list[Callable] = []  # type: ignore
+        handlers: list[BoundCommandHandler] = []
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
             if getattr(method, _ATTR_COMMAND_NAME, None) == command_name:
                 handlers.append(method)
         return handlers
 
     def _get_all_command_handlers(self) -> list[BoundCommandHandler]:
-        """Gets a list of all command handlers."""
         handlers: list[BoundCommandHandler] = []
         for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
             if getattr(method, _ATTR_COMMAND_NAME, None) is not None:
@@ -212,8 +209,21 @@ class MessageDispatcherMixin(BaseModule):
         return handlers
 
     def _command_predicates_pass(self, handler: BoundCommandHandler, msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
-        """Returns a handler for a command."""
         for predicate in getattr(handler, _ATTR_PREDICATES, []):
             if not predicate(self, msg, auth):
                 return False
         return True
+
+    def _get_all_message_handlers(self) -> list[BoundMessageHandler]:
+        handlers: list[BoundMessageHandler] = []
+        for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
+            if getattr(method, _ATTR_MESSAGE_HANDLER, None) is not None:
+                handlers.append(method)
+        return handlers
+
+    def _get_all_auth_message_handlers(self) -> list[BoundAuthMessageHandler]:
+        handlers: list[BoundAuthMessageHandler] = []
+        for name, method in inspect.getmembers(self, predicate=inspect.ismethod):
+            if getattr(method, _ATTR_AUTH_MESSAGE_HANDLER, None) is not None:
+                handlers.append(method)
+        return handlers
