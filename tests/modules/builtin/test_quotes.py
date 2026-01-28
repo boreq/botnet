@@ -5,8 +5,10 @@ from botnet.message import Message
 from botnet.modules.builtin.quotes import Quotes
 from botnet.modules.builtin.quotes import QuotesConfig
 
+from ...conftest import MakePrivmsgFixture
 
-def test_quotes(module_harness_factory, make_privmsg):
+
+def test_quotes(module_harness_factory, make_privmsg: MakePrivmsgFixture):
     dirname = os.path.dirname(os.path.realpath(__file__))
     filename = os.path.join(dirname, '..', '..', 'resources', 'quotes')
 

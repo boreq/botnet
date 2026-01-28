@@ -8,6 +8,8 @@ from typing import Callable
 
 import dacite
 
+from botnet.modules import privmsg_message_handler
+
 from ...config import Config
 from ...helpers import load_json
 from ...helpers import save_json
@@ -179,10 +181,11 @@ class Tell(BaseResponder[TellConfig]):
         target = Target.new_from_string(args['target'][0])
         message = ' '.join(args['message'])
         channel = msg.target.channel
-        time = self.now()
+        time = self._now()
         if self.ms.add_message(author, target, message, channel, time):
             self.respond(msg, 'Will do!')
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         for stored_msg in self.ms.get_private_messages(msg.sender):
             self.respond(msg, format_msg_entry(msg.sender, stored_msg), pm=True)
@@ -192,7 +195,7 @@ class Tell(BaseResponder[TellConfig]):
             for stored_msg in self.ms.get_channel_messages(msg.sender, channel):
                 self.respond(msg, format_msg_entry(msg.sender, stored_msg))
 
-    def now(self) -> datetime:
+    def _now(self) -> datetime:
         return datetime.now()
 
 

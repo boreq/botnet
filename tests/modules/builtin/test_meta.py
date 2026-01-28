@@ -1,29 +1,32 @@
 from botnet.config import Config
+from botnet.message import IncomingPrivateMessage
 from botnet.message import Message
 from botnet.modules.builtin.meta import Meta
 
+from ...conftest import MakePrivmsgFixture
 
-def make_config():
+
+def make_config() -> Config:
     config = {'module_config': {'botnet': {'base_responder': {'command_prefix': ':'}}}}
     return Config(config)
 
 
-def test_help(module_harness_factory, unauthorised_context, make_privmsg, make_incoming_privmsg):
+def test_help(module_harness_factory, unauthorised_context, make_privmsg: MakePrivmsgFixture):
     m = module_harness_factory.make(Meta, make_config())
 
-    msg = make_incoming_privmsg(':help')
+    msg = make_privmsg(':help')
     m.receive_auth_message_in(msg, unauthorised_context)
     m.expect_request_list_commands_signals(
         [
             {
-                'msg': msg,
+                'msg': IncomingPrivateMessage.new_from_message(msg),
                 'auth': unauthorised_context,
             }
         ]
     )
 
 
-def test_bots(module_harness_factory, make_privmsg):
+def test_bots(module_harness_factory, make_privmsg: MakePrivmsgFixture):
     m = module_harness_factory.make(Meta, make_config())
 
     m.receive_message_in(make_privmsg('.bots'))
@@ -36,10 +39,10 @@ def test_bots(module_harness_factory, make_privmsg):
     )
 
 
-def test_git(module_harness_factory, unauthorised_context, make_privmsg, make_incoming_privmsg):
+def test_git(module_harness_factory, unauthorised_context, make_privmsg: MakePrivmsgFixture):
     m = module_harness_factory.make(Meta, make_config())
 
-    m.receive_auth_message_in(make_incoming_privmsg(':git'), unauthorised_context)
+    m.receive_auth_message_in(make_privmsg(':git'), unauthorised_context)
     m.expect_message_out_signals(
         [
             {

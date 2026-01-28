@@ -4,12 +4,19 @@ import pytest
 import requests
 
 from botnet.config import Config
+from botnet.message import Channel
+from botnet.message import IncomingPrivateMessage
 from botnet.message import Message
+from botnet.message import Nick
+from botnet.message import Target
+from botnet.message import Text
 from botnet.modules.builtin.traccar import Device
 from botnet.modules.builtin.traccar import Geofence
 from botnet.modules.builtin.traccar import Position
 from botnet.modules.builtin.traccar import Traccar
 from botnet.modules.builtin.traccar import TraccarAPI
+
+from ...conftest import MakePrivmsgFixture
 
 
 class FakeTraccarAPI(TraccarAPI):
@@ -36,18 +43,26 @@ class FakeTraccarAPI(TraccarAPI):
         return self.mocked_geofences
 
 
-def test_help_channel(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
-    msg = make_incoming_privmsg('.help', target='#channel')
-    assert test_traccar.module.get_all_commands(msg, unauthorised_context) == {'help', 'whatissomeonesbatterylevel', 'whereissomeone'}
+def test_help_channel(unauthorised_context, tested_traccar) -> None:
+    msg = IncomingPrivateMessage(
+        sender=Nick('nick'),
+        target=Target(Channel('#channel')),
+        text=Text('.help')
+    )
+    assert tested_traccar.module.get_all_commands(msg, unauthorised_context) == {'help', 'whatissomeonesbatterylevel', 'whereissomeone'}
 
 
-def test_help_direct(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
-    msg = make_incoming_privmsg('.help', target='bot_nick')
-    assert test_traccar.module.get_all_commands(msg, unauthorised_context) == {'help'}
+def test_help_direct(unauthorised_context, tested_traccar) -> None:
+    msg = IncomingPrivateMessage(
+        sender=Nick('nick'),
+        target=Target(Nick('bot_nick')),
+        text=Text('.help')
+    )
+    assert tested_traccar.module.get_all_commands(msg, unauthorised_context) == {'help'}
 
 
-def test_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
-    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+def test_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
+    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -78,10 +93,10 @@ def test_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_context, 
         )
     ]
 
-    msg = make_incoming_privmsg('.whereissomeone', target='#channel')
-    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.whereissomeone', target='#channel')
+    tested_traccar.receive_message_in(msg)
 
-    test_traccar.expect_message_out_signals(
+    tested_traccar.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Currently at: Nice Geofence Name (confidence is high, I repeat, confidence is high)')
@@ -90,8 +105,8 @@ def test_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_context, 
     )
 
 
-def test_not_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
-    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+def test_not_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
+    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -122,10 +137,10 @@ def test_not_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_conte
         )
     ]
 
-    msg = make_incoming_privmsg('.whereissomeone', target='#channel')
-    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.whereissomeone', target='#channel')
+    tested_traccar.receive_message_in(msg)
 
-    test_traccar.expect_message_out_signals(
+    tested_traccar.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :The eagle has left the nest, over.')
@@ -134,8 +149,8 @@ def test_not_in_geofence(make_privmsg, make_incoming_privmsg, unauthorised_conte
     )
 
 
-def test_battery_not_available(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
-    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+def test_battery_not_available(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
+    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -159,10 +174,10 @@ def test_battery_not_available(make_privmsg, make_incoming_privmsg, unauthorised
         )
     ]
 
-    msg = make_incoming_privmsg('.whatissomeonesbatterylevel', target='#channel')
-    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.whatissomeonesbatterylevel', target='#channel')
+    tested_traccar.receive_message_in(msg)
 
-    test_traccar.expect_message_out_signals(
+    tested_traccar.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :There is no battery level in the response from the server? Maybe this device sent no fixes yet?')
@@ -171,8 +186,8 @@ def test_battery_not_available(make_privmsg, make_incoming_privmsg, unauthorised
     )
 
 
-def test_battery_charging(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
-    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+def test_battery_charging(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
+    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -199,10 +214,10 @@ def test_battery_charging(make_privmsg, make_incoming_privmsg, unauthorised_cont
         )
     ]
 
-    msg = make_incoming_privmsg('.whatissomeonesbatterylevel', target='#channel')
-    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.whatissomeonesbatterylevel', target='#channel')
+    tested_traccar.receive_message_in(msg)
 
-    test_traccar.expect_message_out_signals(
+    tested_traccar.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :11% (charging)')
@@ -211,8 +226,8 @@ def test_battery_charging(make_privmsg, make_incoming_privmsg, unauthorised_cont
     )
 
 
-def test_battery_not_charging(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
-    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+def test_battery_not_charging(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
+    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -238,10 +253,10 @@ def test_battery_not_charging(make_privmsg, make_incoming_privmsg, unauthorised_
         )
     ]
 
-    msg = make_incoming_privmsg('.whatissomeonesbatterylevel', target='#channel')
-    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.whatissomeonesbatterylevel', target='#channel')
+    tested_traccar.receive_message_in(msg)
 
-    test_traccar.expect_message_out_signals(
+    tested_traccar.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :11%')
@@ -250,8 +265,8 @@ def test_battery_not_charging(make_privmsg, make_incoming_privmsg, unauthorised_
     )
 
 
-def test_location_connection_error(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
-    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+def test_location_connection_error(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
+    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -259,10 +274,10 @@ def test_location_connection_error(make_privmsg, make_incoming_privmsg, unauthor
 
     mock_api.throw_on_positions = requests.ConnectionError('connection error')
 
-    msg = make_incoming_privmsg('.whereissomeone', target='#channel')
-    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.whereissomeone', target='#channel')
+    tested_traccar.receive_message_in(msg)
 
-    test_traccar.expect_message_out_signals(
+    tested_traccar.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Connection error.')
@@ -271,8 +286,8 @@ def test_location_connection_error(make_privmsg, make_incoming_privmsg, unauthor
     )
 
 
-def test_battery_connection_error(make_privmsg, make_incoming_privmsg, unauthorised_context, test_traccar) -> None:
-    mock_api: FakeTraccarAPI = test_traccar.module.mock_api
+def test_battery_connection_error(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
+    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -280,10 +295,10 @@ def test_battery_connection_error(make_privmsg, make_incoming_privmsg, unauthori
 
     mock_api.throw_on_positions = requests.ConnectionError('connection error')
 
-    msg = make_incoming_privmsg('.whatissomeonesbatterylevel', target='#channel')
-    test_traccar.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.whatissomeonesbatterylevel', target='#channel')
+    tested_traccar.receive_message_in(msg)
 
-    test_traccar.expect_message_out_signals(
+    tested_traccar.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Connection error.')
@@ -293,8 +308,8 @@ def test_battery_connection_error(make_privmsg, make_incoming_privmsg, unauthori
 
 
 @pytest.fixture()
-def test_traccar(module_harness_factory):
-    class TestTraccar(Traccar):
+def tested_traccar(module_harness_factory):
+    class TestedTraccar(Traccar):
         mock_api = FakeTraccarAPI()
 
         def _create_api(self, url: str, token: str) -> TraccarAPI:
@@ -336,4 +351,4 @@ def test_traccar(module_harness_factory):
         }
     )
 
-    return module_harness_factory.make(TestTraccar, config)
+    return module_harness_factory.make(TestedTraccar, config)

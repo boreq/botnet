@@ -2,8 +2,9 @@ import datetime
 import os
 import threading
 from dataclasses import dataclass
-from typing import Any
 from typing import Callable
+
+import dacite
 
 from ...config import Config
 from ...helpers import load_json
@@ -17,11 +18,19 @@ from .. import AuthContext
 from .. import BaseResponder
 from .. import command
 from .. import parse_command
+from .. import privmsg_message_handler
 
 
-def format_msg_entry(nick: Nick, msg_entry: dict[str, Any]) -> str:
+@dataclass()
+class MsgEntry:
+    channel: str
+    message: str
+    time: float
+
+
+def format_msg_entry(nick: Nick, msg_entry: MsgEntry) -> str:
     """Converts an object stored by the message store to plaintext."""
-    time = datetime.datetime.fromtimestamp(msg_entry['time'], datetime.timezone.utc)
+    time = datetime.datetime.fromtimestamp(msg_entry.time, datetime.timezone.utc)
     time_str = time.strftime('%Y-%m-%d %H:%MZ')
     return '%s was last seen on %s' % (nick, time_str)
 
@@ -33,26 +42,12 @@ class MessageStore:
     now_func: function returning current datetime (used for testing).
     """
 
-    def __init__(self, path: Callable[[], str], now_func: Callable[[], datetime.datetime] | None = None) -> None:
+    def __init__(self, path_func: Callable[[], str], now_func: Callable[[], datetime.datetime] | None = None) -> None:
         self.lock = threading.Lock()
-        self.set_path(path)
+        self._path_func = path_func
         self._now_func = now_func or (lambda: datetime.datetime.now(datetime.timezone.utc))
-        self._msg_store: dict[str, dict[str, Any]] = {}
+        self._msg_store: dict[str, MsgEntry] = {}
         self._load()
-
-    def set_path(self, path: Callable[[], str]) -> None:
-        with self.lock:
-            self._path = path
-
-    def _load(self) -> None:
-        if os.path.isfile(self._path()):
-            try:
-                self._msg_store = load_json(self._path())
-            except:
-                self._msg_store = {}
-
-    def _save(self) -> None:
-        save_json(self._path(), self._msg_store)
 
     def register_message(self, author: Nick, channel: Channel, message: Text) -> bool:
         with self.lock:
@@ -60,17 +55,27 @@ class MessageStore:
             self._save()
         return True
 
-    def get_message(self, author: Nick) -> dict[str, Any] | None:
+    def get_message(self, author: Nick) -> MsgEntry | None:
         with self.lock:
             return self._msg_store.get(author.s.lower(), None)
 
-    def _make_msg_entry(self, channel: Channel, message: Text, now: datetime.datetime) -> dict[str, Any]:
-        """Creates an object stored by the message_store."""
-        return {
-            'channel': channel.s.lower(),
-            'message': message.s,
-            'time': now.timestamp(),
-        }
+    def _load(self) -> None:
+        if os.path.isfile(self._path_func()):
+            j = load_json(self._path_func())
+            self._msg_store = {
+                key: dacite.from_dict(data_class=MsgEntry, data=value)
+                for key, value in j.items()
+            }
+
+    def _save(self) -> None:
+        save_json(self._path_func(), self._msg_store)
+
+    def _make_msg_entry(self, channel: Channel, message: Text, now: datetime.datetime) -> MsgEntry:
+        return MsgEntry(
+            channel=channel.s.lower(),
+            message=message.s,
+            time=now.timestamp(),
+        )
 
 
 @dataclass
@@ -97,7 +102,7 @@ class Seen(BaseResponder[SeenConfig]):
 
     def __init__(self, config: Config) -> None:
         super().__init__(config)
-        self.ms = MessageStore(lambda: self.get_config().message_data, now_func=self.now)
+        self.ms = MessageStore(lambda: self.get_config().message_data, now_func=self._now)
 
     @command('seen')
     @parse_command([('nick', 1)])
@@ -113,12 +118,13 @@ class Seen(BaseResponder[SeenConfig]):
         else:
             self.respond(msg, 'I\'ve never seen %s' % nick)
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         channel = msg.target.channel
         if channel is not None:
             self.ms.register_message(msg.sender, channel, msg.text)
 
-    def now(self) -> datetime.datetime:
+    def _now(self) -> datetime.datetime:
         """Return current datetime in UTC. Tests may override this."""
         return datetime.datetime.now(datetime.timezone.utc)
 

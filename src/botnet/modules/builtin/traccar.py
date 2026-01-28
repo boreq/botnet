@@ -7,6 +7,8 @@ from urllib.parse import urljoin
 import dacite
 import requests
 
+from botnet.modules import privmsg_message_handler
+
 from ...message import Channel
 from ...message import IncomingPrivateMessage
 from .. import AuthContext
@@ -207,7 +209,8 @@ class Traccar(BaseResponder[TraccarConfig]):
                             rw.add(command)
         return rw
 
-    def handle_auth_privmsg(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+    @privmsg_message_handler()
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
         if command_name is None:
             return

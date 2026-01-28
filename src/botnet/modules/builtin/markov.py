@@ -5,6 +5,8 @@ from typing import Iterator
 
 from markov import Chain
 
+from botnet.modules import privmsg_message_handler
+
 from ...config import Config
 from ...message import IncomingPrivateMessage
 from ...signals import on_exception
@@ -49,7 +51,7 @@ class Markov(BaseResponder[MarkovConfig]):
     def __init__(self, config: Config) -> None:
         super().__init__(config)
         self.cache: dict[str, Chain] = {}
-        t = threading.Thread(target=self.cache_chains, daemon=True)
+        t = threading.Thread(target=self._cache_chains, daemon=True)
         t.start()
 
     def get_all_commands(self, msg: IncomingPrivateMessage, auth: AuthContext) -> set[str]:
@@ -61,34 +63,35 @@ class Markov(BaseResponder[MarkovConfig]):
             rw.add(filename)
         return rw
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
 
         if command_name is None:
             return
 
-        self.send_random_line(msg, command_name)
+        self._send_random_line(msg, command_name)
 
-    def cache_chains(self) -> None:
+    def _cache_chains(self) -> None:
         config = self.get_config()
 
         # Directories
         for root, filename in self._get_command_files(config):
             path = os.path.join(root, filename)
-            self.load_chain(path, filename)
+            self._load_chain(path, filename)
 
         # Files
         for filename, path in config.files.items():
-            self.load_chain(path, filename)
+            self._load_chain(path, filename)
 
-    def load_chain(self, filepath: str, key: str) -> None:
+    def _load_chain(self, filepath: str, key: str) -> None:
         c = Chain()
         with open(filepath) as f:
             for line in f:
                 c.grow(line.split())
         self.cache[key] = c
 
-    def send_random_line(self, msg: IncomingPrivateMessage, key: str) -> None:
+    def _send_random_line(self, msg: IncomingPrivateMessage, key: str) -> None:
         try:
             c = self.cache.get(key, None)
             if c is not None:

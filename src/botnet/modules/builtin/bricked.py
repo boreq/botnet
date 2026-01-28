@@ -9,6 +9,7 @@ from ...message import Channel
 from ...message import IncomingPrivateMessage
 from .. import AuthContext
 from .. import BaseResponder
+from .. import privmsg_message_handler
 
 
 @dataclass
@@ -87,6 +88,7 @@ class Bricked(BaseResponder[BrickedConfig]):
                         rw.add(command)
         return rw
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
         if command_name is None:

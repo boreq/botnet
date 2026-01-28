@@ -3,15 +3,13 @@ import os
 import tempfile
 import time
 from typing import Callable
+from typing import Optional
+from typing import Protocol
 
 import pytest
 
 from botnet.config import Config
-from botnet.message import IncomingPrivateMessage
 from botnet.message import Message
-from botnet.message import Nick
-from botnet.message import Target
-from botnet.message import Text
 from botnet.modules import AuthContext
 from botnet.signals import _request_list_commands
 from botnet.signals import auth_message_in
@@ -44,26 +42,19 @@ def tmp_file(request):
     return path
 
 
+class MakePrivmsgFixture(Protocol):
+    def __call__(self, text: str, nick: Optional[str] = None, target: Optional[str] = None):
+        ...
+
+
 @pytest.fixture()
-def make_privmsg():
+def make_privmsg() -> Callable[[str, str, str], Message]:
     """Provides a PRIVMSG message factory."""
-    def f(text, nick='nick', target='#channel'):
+    def f(text: str, nick: str = 'nick', target: str = '#channel') -> Message:
         return Message(
             prefix='%s!~user@1-2-3-4.example.com' % nick,
             command='PRIVMSG',
             params=[target, text]
-        )
-    return f
-
-
-@pytest.fixture()
-def make_incoming_privmsg():
-    """Provides a PRIVMSG message factory."""
-    def f(text, nick='nick', target='#channel'):
-        return IncomingPrivateMessage(
-            sender=Nick(nick),
-            target=Target.new_from_string(target),
-            text=Text(text),
         )
     return f
 
@@ -145,7 +136,7 @@ class ModuleHarness:
     def receive_message_in(self, msg: Message) -> None:
         message_in.send(None, msg=msg)
 
-    def receive_auth_message_in(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+    def receive_auth_message_in(self, msg: Message, auth: AuthContext) -> None:
         auth_message_in.send(None, msg=msg, auth=auth)
 
     def send_module_loaded(self, cls: type) -> None:
@@ -197,8 +188,6 @@ class ModuleHarness:
 
     def stop(self) -> None:
         self.module.stop()
-        for e in self.on_exception_trap.trapped:
-            raise e['e']
 
 
 class ModuleHarnessFactory:

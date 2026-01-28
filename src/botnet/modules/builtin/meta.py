@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from botnet.modules import privmsg_message_handler
+
 from ...config import Config
 from ...message import IncomingPrivateMessage
 from ...message import Text
@@ -54,14 +56,15 @@ class Meta(BaseResponder[MetaConfig]):
         else:
             super().command_help(msg, auth)
 
+    @privmsg_message_handler()
+    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
+        if msg.text == Text('.bots'):
+            self._respond_with_ibip(msg)
+
     def on_list_commands(self, sender: object, msg: IncomingPrivateMessage, auth: AuthContext, commands: list[str]) -> None:
         """Sends a list of commands received from the Manager."""
         text = 'Supported commands: %s' % ', '.join(commands)
         self.respond(msg, text)
-
-    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
-        if msg.text == Text('.bots'):
-            self._respond_with_ibip(msg)
 
     def _respond_with_ibip(self, msg: IncomingPrivateMessage) -> None:
         """Makes the bot identify itself as defined by The IRC Bot

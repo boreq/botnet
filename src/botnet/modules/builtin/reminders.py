@@ -95,10 +95,7 @@ class RemindersStore:
     def _load(self) -> None:
         p = self._path()
         if os.path.isfile(p):
-            try:
-                self._store = load_json(p)
-            except:
-                self._store = []
+            self._store = load_json(p)
 
     def _save(self) -> None:
         save_json(self._path(), self._store)

@@ -38,7 +38,7 @@ def test_inactivity_monitor(make_signal_trap):
         ping_timeout = 0.1
         abort_timeout = 0.2
 
-        def now(self):
+        def _now(self):
             return datetime.fromtimestamp(123.456)
 
     class MockRestarter:
@@ -84,7 +84,7 @@ def test_inactivity_monitor_repeated(make_signal_trap):
         ping_repeat = 0.05
         abort_timeout = 0.2
 
-        def now(self):
+        def _now(self):
             return datetime.fromtimestamp(123.456)
 
     class MockRestarter:
@@ -106,14 +106,14 @@ def test_inactivity_monitor_repeated(make_signal_trap):
         trap.wait(check_pings)
 
 
-def test_ignore_empty_config(test_irc):
-    irc = test_irc.module
+def test_ignore_empty_config(tested_irc):
+    irc = tested_irc.module
 
     msg = Message.new_from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
     assert not irc.should_ignore(msg)
 
 
-def test_ignore(test_irc, irc_config):
+def test_ignore(tested_irc, irc_config):
     ignore_list = [
         "nick!*@*",
         "*!*@example.com",
@@ -121,7 +121,7 @@ def test_ignore(test_irc, irc_config):
 
     irc_config['module_config']['botnet']['irc']['ignore'] = ignore_list
 
-    irc = test_irc.module
+    irc = tested_irc.module
 
     msg = Message.new_from_string(':nick!~user@host.com PRIVMSG #channel :lorem ipsum')
     assert irc.should_ignore(msg)
@@ -159,8 +159,8 @@ def irc_config():
 
 
 @pytest.fixture
-def test_irc(module_harness_factory, irc_config):
-    class TestIRC(IRC):
+def tested_irc(module_harness_factory, irc_config):
+    class TestedIRC(IRC):
         def start(self):
             pass
 
@@ -168,4 +168,4 @@ def test_irc(module_harness_factory, irc_config):
             super(BaseResponder, self).stop()
             self.stop_event.set()
 
-    return module_harness_factory.make(TestIRC, irc_config)
+    return module_harness_factory.make(TestedIRC, irc_config)

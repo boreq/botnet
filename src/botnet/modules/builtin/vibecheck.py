@@ -25,8 +25,10 @@ from .. import BaseModule
 from .. import BaseResponder
 from .. import CommandHandler
 from .. import command
+from .. import message_handler
 from .. import parse_command
 from .. import predicates
+from .. import privmsg_message_handler
 from ..lib import Color
 from ..lib import MemoryCache
 from ..lib import colored
@@ -212,7 +214,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         super().__init__(config)
         self._store = Store(lambda: self.get_config().data)
         self._stop_event = threading.Event()
-        self._t = threading.Thread(target=self.run)
+        self._t = threading.Thread(target=self._run)
         self._t.start()
 
     @command('vibecheck')
@@ -316,6 +318,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         channel = msg.target.channel
         if channel is not None:
@@ -323,12 +326,16 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                 with self._store as state:
                     state.on_privmsg(msg.sender)
 
+    @message_handler()
+    def handle_msg(self, msg: Message) -> None:
+        super().handle_msg(msg)
+
     def stop(self) -> None:
         super().stop()
         self._stop_event.set()
         self._t.join()
 
-    def run(self) -> None:
+    def _run(self) -> None:
         while not self._stop_event.is_set():
             try:
                 self._maybe_pester_people()
@@ -399,6 +406,12 @@ class State:
     personas: list[Persona]
     nick_infos: dict[Nick, NickInfo]
 
+    def on_join(self, nick: Nick) -> None:
+        if nick not in self.nick_infos:
+            self.nick_infos[nick] = NickInfo.new_due_to_being_in_the_channel()
+            return
+        self.nick_infos[nick].on_being_in_the_channel()
+
     def on_privmsg(self, nick: Nick) -> None:
         if nick not in self.nick_infos:
             self.nick_infos[nick] = NickInfo.new_due_to_privmsg()
@@ -466,6 +479,13 @@ class State:
             return
         self.authorised_people_infos[auth_uuid].update_due_to_pestering()
 
+    def _mark_all_as_seen(self, nicks: list[Nick]) -> None:
+        for nick in nicks:
+            if nick not in self.nick_infos:
+                self.nick_infos[nick] = NickInfo.new_due_to_privmsg()
+                return
+            self.nick_infos[nick].on_privmsg()
+
 
 @dataclass
 class Persona:
@@ -484,20 +504,97 @@ class Persona:
 class NickInfo:
     first_message: None | datetime
     last_message: None | datetime
+    first_join: None | datetime
+    last_join: None | datetime
+    first_seen_in_the_channel: None | datetime
+    last_seen_in_the_channel: None | datetime
     endorsements: list[str]
 
     @classmethod
+    def new_due_to_join(cls) -> NickInfo:
+        now = datetime.now()
+        return cls(
+            first_message=None,
+            last_message=None,
+            first_join=now,
+            last_join=now,
+            first_seen_in_the_channel=now,
+            last_seen_in_the_channel=now,
+            endorsements=[],
+        )
+
+    @classmethod
+    def new_due_to_being_in_the_channel(cls) -> NickInfo:
+        now = datetime.now()
+        return cls(
+            first_message=None,
+            last_message=None,
+            first_join=None,
+            last_join=None,
+            first_seen_in_the_channel=now,
+            last_seen_in_the_channel=now,
+            endorsements=[],
+        )
+
+    @classmethod
     def new_due_to_privmsg(cls) -> NickInfo:
-        return cls(datetime.now(), datetime.now(), [])
+        now = datetime.now()
+        return cls(
+            first_message=now,
+            last_message=now,
+            first_join=None,
+            last_join=None,
+            first_seen_in_the_channel=now,
+            last_seen_in_the_channel=now,
+            endorsements=[],
+        )
 
     @classmethod
     def new_due_to_endorsement(cls, endorser_uuid: str) -> NickInfo:
-        return cls(None, None, [endorser_uuid])
+        return cls(
+            first_message=None,
+            last_message=None,
+            first_join=None,
+            last_join=None,
+            first_seen_in_the_channel=None,
+            last_seen_in_the_channel=None,
+            endorsements=[endorser_uuid],
+        )
+
+    def on_join(self) -> None:
+        now = datetime.now()
+
+        if self.first_join is None:
+            self.first_join = now
+        self.last_join = now
+
+        # update old entries
+        if self.first_seen_in_the_channel is None:
+            self.first_seen_in_the_channel = now
+        if self.last_seen_in_the_channel is None:
+            self.last_seen_in_the_channel = now
 
     def on_privmsg(self) -> None:
+        now = datetime.now()
+
         if self.first_message is None:
-            self.first_message = datetime.now()
-        self.last_message = datetime.now()
+            self.first_message = now
+        self.last_message = now
+
+        # update old entries
+        if self.first_seen_in_the_channel is None:
+            self.first_seen_in_the_channel = now
+        if self.last_seen_in_the_channel is None:
+            self.last_seen_in_the_channel = now
+
+    def on_being_in_the_channel(self) -> None:
+        now = datetime.now()
+
+        # update old entries
+        if self.first_seen_in_the_channel is None:
+            self.first_seen_in_the_channel = now
+        if self.last_seen_in_the_channel is None:
+            self.last_seen_in_the_channel = now
 
     def endorse(self, endorser_uuid: str) -> None:
         if endorser_uuid not in self.endorsements:
@@ -698,6 +795,10 @@ class TransportPersona:
 class TransportNickInfo:
     first_message: None | float
     last_message: None | float
+    first_join: None | float
+    last_join: None | float
+    first_seen_in_the_channel: None | float
+    last_seen_in_the_channel: None | float
     endorsements: list[str]
 
     @classmethod
@@ -705,6 +806,10 @@ class TransportNickInfo:
         return cls(
             v.first_message.timestamp() if v.first_message is not None else None,
             v.last_message.timestamp() if v.last_message is not None else None,
+            v.first_join.timestamp() if v.first_join is not None else None,
+            v.last_join.timestamp() if v.last_join is not None else None,
+            v.first_seen_in_the_channel.timestamp() if v.first_seen_in_the_channel is not None else None,
+            v.last_seen_in_the_channel.timestamp() if v.last_seen_in_the_channel is not None else None,
             v.endorsements,
         )
 
@@ -712,6 +817,10 @@ class TransportNickInfo:
         return NickInfo(
             datetime.fromtimestamp(self.first_message) if self.first_message is not None else None,
             datetime.fromtimestamp(self.last_message) if self.last_message is not None else None,
+            datetime.fromtimestamp(self.first_join) if self.first_join is not None else None,
+            datetime.fromtimestamp(self.last_join) if self.last_join is not None else None,
+            datetime.fromtimestamp(self.first_seen_in_the_channel) if self.first_seen_in_the_channel is not None else None,
+            datetime.fromtimestamp(self.last_seen_in_the_channel) if self.last_seen_in_the_channel is not None else None,
             self.endorsements,
         )
 

@@ -8,8 +8,10 @@ from botnet.modules.builtin.vibecheck import Vibecheck
 from botnet.modules.lib import Color
 from botnet.modules.lib import colored
 
+from ...conftest import MakePrivmsgFixture
 
-def test_pester(make_privmsg, make_incoming_privmsg, unauthorised_context, tested_vibecheck) -> None:
+
+def test_pester(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_vibecheck) -> None:
     tested_vibecheck.expect_message_out_signals(
         [
             {
@@ -42,7 +44,7 @@ def test_pester(make_privmsg, make_incoming_privmsg, unauthorised_context, teste
     )
 
 
-def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_context, tested_vibecheck) -> None:
+def test_endorsement_session(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_vibecheck) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
@@ -69,7 +71,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     )
 
     tested_vibecheck.reset_message_out_signals()
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -87,7 +89,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     )
 
     tested_vibecheck.reset_message_out_signals()
-    msg = make_incoming_privmsg('.endorse nick1', target='bot_nick')
+    msg = make_privmsg('.endorse nick1', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -99,7 +101,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     )
 
     tested_vibecheck.reset_message_out_signals()
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -117,7 +119,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     )
 
     tested_vibecheck.reset_message_out_signals()
-    msg = make_incoming_privmsg('.endorse nick2', target='bot_nick')
+    msg = make_privmsg('.endorse nick2', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -129,7 +131,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     )
 
     tested_vibecheck.reset_message_out_signals()
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -147,7 +149,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     )
 
     tested_vibecheck.reset_message_out_signals()
-    msg = make_incoming_privmsg('.unendorse nick2', target='bot_nick')
+    msg = make_privmsg('.unendorse nick2', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -159,7 +161,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     )
 
     tested_vibecheck.reset_message_out_signals()
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -177,7 +179,7 @@ def test_endorsement_session(make_privmsg, make_incoming_privmsg, unauthorised_c
     )
 
 
-def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, tested_vibecheck) -> None:
+def test_healthcheck(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_vibecheck) -> None:
     some_authorisations = [
         {
             'kind': 'irc',
@@ -259,7 +261,7 @@ def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, 
     tested_vibecheck.reset_message_out_signals()
 
     ctx = AuthContext('person1-uuid', ['group'])
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick', nick="person1nick")
+    msg = make_privmsg('.vibecheck', target='bot_nick', nick="person1nick")
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -279,7 +281,7 @@ def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, 
     tested_vibecheck.reset_message_out_signals()
 
     ctx = AuthContext('person2-uuid', ['group'])
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick', nick="person2nick")
+    msg = make_privmsg('.vibecheck', target='bot_nick', nick="person2nick")
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -297,7 +299,7 @@ def test_healthcheck(make_privmsg, make_incoming_privmsg, unauthorised_context, 
     )
 
 
-def test_part_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vibecheck) -> None:
+def test_part_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
@@ -308,7 +310,7 @@ def test_part_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
 
     tested_vibecheck.reset_message_out_signals()
 
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -330,7 +332,7 @@ def test_part_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
     msg = Message.new_from_string(':nick1!user@host PART #channel')
     tested_vibecheck.receive_message_in(msg)
 
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -348,7 +350,7 @@ def test_part_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
     )
 
 
-def test_join_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vibecheck) -> None:
+def test_join_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1'])
@@ -359,7 +361,7 @@ def test_join_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
 
     tested_vibecheck.reset_message_out_signals()
 
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -381,7 +383,7 @@ def test_join_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
     msg = Message.new_from_string(':nick2!user@host JOIN #channel')
     tested_vibecheck.receive_message_in(msg)
 
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -399,7 +401,7 @@ def test_join_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
     )
 
 
-def test_quit_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vibecheck) -> None:
+def test_quit_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
@@ -410,7 +412,7 @@ def test_quit_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
 
     tested_vibecheck.reset_message_out_signals()
 
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -432,7 +434,7 @@ def test_quit_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
     msg = Message.new_from_string(':nick1!user@host QUIT :Quit message')
     tested_vibecheck.receive_message_in(msg)
 
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -450,7 +452,7 @@ def test_quit_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
     )
 
 
-def test_kick_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vibecheck) -> None:
+def test_kick_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
@@ -461,7 +463,7 @@ def test_kick_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
 
     tested_vibecheck.reset_message_out_signals()
 
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -483,7 +485,7 @@ def test_kick_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
     msg = Message.new_from_string(':kicker!user@host KICK #channel nick1')
     tested_vibecheck.receive_message_in(msg)
 
-    msg = make_incoming_privmsg('.vibecheck', target='bot_nick')
+    msg = make_privmsg('.vibecheck', target='bot_nick')
     tested_vibecheck.receive_auth_message_in(msg, ctx)
 
     tested_vibecheck.expect_message_out_signals(
@@ -503,9 +505,6 @@ def test_kick_updates_names_cache(make_privmsg, make_incoming_privmsg, tested_vi
 
 @pytest.fixture()
 def tested_vibecheck(module_harness_factory, tmp_file):
-    class TestVibecheck(Vibecheck):
-        pass
-
     with open(tmp_file, 'w') as f:
         f.write('{ "authorised_people_infos": {}, "personas": [], "nick_infos": {} }')
 
@@ -538,4 +537,4 @@ def tested_vibecheck(module_harness_factory, tmp_file):
         }
     )
 
-    return module_harness_factory.make(TestVibecheck, config)
+    return module_harness_factory.make(Vibecheck, config)

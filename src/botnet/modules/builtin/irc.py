@@ -102,18 +102,18 @@ class InactivityMonitor:
     def on_timer_ping(self) -> None:
         """Launched by _timer_ping."""
         self.logger.debug('ping the server')
-        timestamp = self.now().timestamp()
+        timestamp = self._now().timestamp()
         msg = Message(command='PING', params=[str(timestamp)])
         message_out.send(self, msg=msg)
         self._set_ping(self.ping_repeat)
-
-    def now(self) -> datetime.datetime:
-        return datetime.datetime.now()
 
     def on_timer_abort(self) -> None:
         """Launched by _timer_abort."""
         self.logger.debug('restart the connection')
         self.restarter.restart()
+
+    def _now(self) -> datetime.datetime:
+        return datetime.datetime.now()
 
 
 class Buffer:

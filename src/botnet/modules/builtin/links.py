@@ -5,6 +5,8 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 
+from botnet.modules import privmsg_message_handler
+
 from ...config import Config
 from ...message import Channel
 from ...message import IncomingPrivateMessage
@@ -55,6 +57,7 @@ class Links(BaseResponder[LinksConfig]):
     def __init__(self, config: Config) -> None:
         super().__init__(config)
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         config = self.get_config()
 

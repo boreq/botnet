@@ -2,10 +2,12 @@ import pytest
 
 from botnet.config import Config
 from botnet.message import Message
+from botnet.modules.builtin.sed import MsgEntry
 from botnet.modules.builtin.sed import Sed
-from botnet.modules.builtin.sed import make_msg_entry
 from botnet.modules.builtin.sed import parse_message
 from botnet.modules.builtin.sed import replace
+
+from ...conftest import MakePrivmsgFixture
 
 
 def test_parse_message():
@@ -32,34 +34,34 @@ def test_parse_message_invalid():
 
 def test_replace_single():
     messages = [
-        make_msg_entry('nick', 'lorem ipsum lorem'),
+        MsgEntry('nick', 'lorem ipsum lorem'),
     ]
     assert replace(messages, *parse_message('nick: s/lorem/test')) == 'test ipsum lorem'
 
 
 def test_replace_multiple():
     messages = [
-        make_msg_entry('nick', 'lorem ipsum one'),
-        make_msg_entry('nick', 'lorem ipsum two'),
+        MsgEntry('nick', 'lorem ipsum one'),
+        MsgEntry('nick', 'lorem ipsum two'),
     ]
     assert replace(messages, *parse_message('nick: s/lorem/test')) == 'test ipsum one'
 
 
 def test_replace_global():
     messages = [
-        make_msg_entry('nick', 'lorem ipsum lorem'),
+        MsgEntry('nick', 'lorem ipsum lorem'),
     ]
     assert replace(messages, *parse_message('nick: s/lorem/test/g')) == 'test ipsum test'
 
 
-def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context, test_sed):
+def test_same_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_sed):
     msg = make_privmsg('Hellp!', nick='author', target='#channel')
-    test_sed.receive_message_in(msg)
+    tested_sed.receive_message_in(msg)
 
     msg = make_privmsg('s/Hellp!/Hello!', nick='author', target='#channel')
-    test_sed.receive_message_in(msg)
+    tested_sed.receive_message_in(msg)
 
-    test_sed.expect_message_out_signals(
+    tested_sed.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :author meant to say: Hello!')
@@ -69,7 +71,10 @@ def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context,
 
 
 @pytest.fixture()
-def test_sed(module_harness_factory, tmp_file):
+def tested_sed(module_harness_factory, tmp_file):
+    with open(tmp_file, 'w', encoding='utf-8') as f:
+        f.write('{}')
+
     config = {
         'module_config': {
             'botnet': {

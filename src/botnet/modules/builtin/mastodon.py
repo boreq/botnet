@@ -3,6 +3,8 @@ from typing import Protocol
 
 from mastodon import Mastodon as MastodonLib
 
+from botnet.modules import privmsg_message_handler
+
 from ...message import Channel
 from ...message import IncomingPrivateMessage
 from .. import AuthContext
@@ -79,6 +81,7 @@ class Mastodon(BaseResponder[MastodonConfig]):
                     rw.add(entry.command)
         return rw
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
         if command_name is None:

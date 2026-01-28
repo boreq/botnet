@@ -7,21 +7,23 @@ from botnet.config import Config
 from botnet.message import Message
 from botnet.modules.builtin.tell import Tell
 
+from ...conftest import MakePrivmsgFixture
 
-def test_multiple_messages_for_multiple_users(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
-    msg = make_incoming_privmsg('.tell target1 message1', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    msg = make_incoming_privmsg('.tell target1 message2', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
+def test_multiple_messages_for_multiple_users(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+    msg = make_privmsg('.tell target1 message1', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    msg = make_incoming_privmsg('.tell target2 message1', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.tell target1 message2', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    msg = make_incoming_privmsg('.tell target2 message2', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.tell target2 message1', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    test_tell.expect_message_out_signals(
+    msg = make_privmsg('.tell target2 message2', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
+
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -39,8 +41,8 @@ def test_multiple_messages_for_multiple_users(make_privmsg, make_incoming_privms
     )
 
     msg = make_privmsg('sth', nick='target1', target='#channel')
-    test_tell.receive_message_in(msg)
-    test_tell.expect_message_out_signals(
+    tested_tell.receive_message_in(msg)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -64,8 +66,8 @@ def test_multiple_messages_for_multiple_users(make_privmsg, make_incoming_privms
     )
 
     msg = make_privmsg('sth', nick='target2', target='#channel')
-    test_tell.receive_message_in(msg)
-    test_tell.expect_message_out_signals(
+    tested_tell.receive_message_in(msg)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -95,13 +97,13 @@ def test_multiple_messages_for_multiple_users(make_privmsg, make_incoming_privms
     )
 
 
-def test_duplicate_messages_are_ignored(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
-    msg = make_incoming_privmsg('.tell target message', nick='author', target='#channel')
+def test_duplicate_messages_are_ignored(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+    msg = make_privmsg('.tell target message', nick='author', target='#channel')
 
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    test_tell.expect_message_out_signals(
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -110,8 +112,8 @@ def test_duplicate_messages_are_ignored(make_privmsg, make_incoming_privmsg, una
     )
 
     msg = make_privmsg('sth', nick='target', target='#channel')
-    test_tell.receive_message_in(msg)
-    test_tell.expect_message_out_signals(
+    tested_tell.receive_message_in(msg)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -123,14 +125,14 @@ def test_duplicate_messages_are_ignored(make_privmsg, make_incoming_privmsg, una
     )
 
 
-def test_messages_arrive_in_the_same_order_they_were_sent(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
-    msg = make_incoming_privmsg('.tell target message1', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
+def test_messages_arrive_in_the_same_order_they_were_sent(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+    msg = make_privmsg('.tell target message1', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    msg = make_incoming_privmsg('.tell target message2', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
+    msg = make_privmsg('.tell target message2', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
 
-    test_tell.expect_message_out_signals(
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -142,8 +144,8 @@ def test_messages_arrive_in_the_same_order_they_were_sent(make_privmsg, make_inc
     )
 
     msg = make_privmsg('sth', nick='target', target='#channel')
-    test_tell.receive_message_in(msg)
-    test_tell.expect_message_out_signals(
+    tested_tell.receive_message_in(msg)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -161,10 +163,10 @@ def test_messages_arrive_in_the_same_order_they_were_sent(make_privmsg, make_inc
     )
 
 
-def test_channel_is_case_insensitive(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
-    msg = make_incoming_privmsg('.tell target message text', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
-    test_tell.expect_message_out_signals(
+def test_channel_is_case_insensitive(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+    msg = make_privmsg('.tell target message text', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -173,8 +175,8 @@ def test_channel_is_case_insensitive(make_privmsg, make_incoming_privmsg, unauth
     )
 
     msg = make_privmsg('sth', nick='target', target='#chAnnel')
-    test_tell.receive_message_in(msg)
-    test_tell.expect_message_out_signals(
+    tested_tell.receive_message_in(msg)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -186,10 +188,10 @@ def test_channel_is_case_insensitive(make_privmsg, make_incoming_privmsg, unauth
     )
 
 
-def test_target_is_case_insensitive(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
-    msg = make_incoming_privmsg('.tell target message text', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
-    test_tell.expect_message_out_signals(
+def test_target_is_case_insensitive(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+    msg = make_privmsg('.tell target message text', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -198,8 +200,8 @@ def test_target_is_case_insensitive(make_privmsg, make_incoming_privmsg, unautho
     )
 
     msg = make_privmsg('sth', nick='tArget', target='#channel')
-    test_tell.receive_message_in(msg)
-    test_tell.expect_message_out_signals(
+    tested_tell.receive_message_in(msg)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -211,10 +213,10 @@ def test_target_is_case_insensitive(make_privmsg, make_incoming_privmsg, unautho
     )
 
 
-def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
-    msg = make_incoming_privmsg('.tell target message text', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
-    test_tell.expect_message_out_signals(
+def test_same_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+    msg = make_privmsg('.tell target message text', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -223,8 +225,8 @@ def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context,
     )
 
     msg = make_privmsg('sth', nick='target', target='#channel')
-    test_tell.receive_message_in(msg)
-    test_tell.expect_message_out_signals(
+    tested_tell.receive_message_in(msg)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -236,10 +238,10 @@ def test_same_channel(make_privmsg, make_incoming_privmsg, unauthorised_context,
     )
 
 
-def test_other_channel(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell):
-    msg = make_incoming_privmsg('.tell target message text', nick='author', target='#channel')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
-    test_tell.expect_message_out_signals(
+def test_other_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+    msg = make_privmsg('.tell target message text', nick='author', target='#channel')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -248,8 +250,8 @@ def test_other_channel(make_privmsg, make_incoming_privmsg, unauthorised_context
     )
 
     msg = make_privmsg('sth', nick='target', target='#otherchannel')
-    test_tell.receive_message_in(msg)
-    test_tell.expect_message_out_signals(
+    tested_tell.receive_message_in(msg)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :Will do!')
@@ -258,10 +260,10 @@ def test_other_channel(make_privmsg, make_incoming_privmsg, unauthorised_context
     )
 
 
-def test_priv(make_privmsg, make_incoming_privmsg, unauthorised_context, test_tell) -> None:
-    msg = make_incoming_privmsg('.tell target message text', nick='author', target='bot')
-    test_tell.receive_auth_message_in(msg, unauthorised_context)
-    test_tell.expect_message_out_signals(
+def test_priv(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell) -> None:
+    msg = make_privmsg('.tell target message text', nick='author', target='bot')
+    tested_tell.receive_auth_message_in(msg, unauthorised_context)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG author :Will do!')
@@ -270,8 +272,8 @@ def test_priv(make_privmsg, make_incoming_privmsg, unauthorised_context, test_te
     )
 
     msg = make_privmsg('message in public channel', nick='target', target='#channel')
-    test_tell.receive_message_in(msg)
-    test_tell.expect_message_out_signals(
+    tested_tell.receive_message_in(msg)
+    tested_tell.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG author :Will do!')
@@ -284,13 +286,12 @@ def test_priv(make_privmsg, make_incoming_privmsg, unauthorised_context, test_te
 
 
 @pytest.fixture()
-def test_tell(module_harness_factory, tmp_file):
+def tested_tell(module_harness_factory, tmp_file):
     with open(tmp_file, 'w') as f:
         f.write('{"messages": []}')
 
-    class TestTell(Tell):
-
-        def now(self) -> datetime:
+    class TestedTell(Tell):
+        def _now(self) -> datetime:
             return datetime(2026, 1, 2, 11, 12, 13, tzinfo=timezone.utc)
 
     config = {
@@ -303,4 +304,4 @@ def test_tell(module_harness_factory, tmp_file):
         }
     }
 
-    return module_harness_factory.make(TestTell, Config(config))
+    return module_harness_factory.make(TestedTell, Config(config))

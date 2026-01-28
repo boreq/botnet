@@ -4,6 +4,10 @@ import threading
 from dataclasses import dataclass
 from typing import Callable
 
+import dacite
+
+from botnet.modules import privmsg_message_handler
+
 from ...config import Config
 from ...helpers import load_json
 from ...helpers import save_json
@@ -13,11 +17,10 @@ from ...message import Nick
 from .. import BaseResponder
 
 
-def make_msg_entry(author: str, message: str) -> dict[str, str]:
-    return {
-        'author': author,
-        'message': message,
-    }
+@dataclass()
+class MsgEntry:
+    author: str
+    message: str
 
 
 def parse_message(message_text: str) -> tuple[str | None, str, str, list[str]]:
@@ -41,13 +44,13 @@ def parse_message(message_text: str) -> tuple[str | None, str, str, list[str]]:
     return tuple(groups)  # type: ignore
 
 
-def replace(messages: list[dict[str, str]], nick: str, a: str, b: str, flags: list[str]) -> str | None:
+def replace(messages: list[MsgEntry], nick: str, a: str, b: str, flags: list[str]) -> str | None:
     for stored_msg in messages:
-        if a in stored_msg['message'] and stored_msg['author'] == nick:
+        if a in stored_msg.message and stored_msg.author == nick:
             if 'g' in flags:
-                return stored_msg['message'].replace(a, b)
+                return stored_msg.message.replace(a, b)
             else:
-                return stored_msg['message'].replace(a, b, 1)
+                return stored_msg.message.replace(a, b, 1)
     return None
 
 
@@ -58,36 +61,38 @@ class MessageStore:
     path: function to call to get path to the data file.
     """
 
-    def __init__(self, path: Callable[[], str], limit: Callable[[str], int]) -> None:
+    def __init__(self, path_func: Callable[[], str], limit_func: Callable[[str], int]) -> None:
         self.lock = threading.Lock()
-        self._limit = limit
-        self._path = path
-        self._store: dict[str, list[dict[str, str]]] = {}
+        self._path_func = path_func
+        self._limit_func = limit_func
+        self._store: dict[str, list[MsgEntry]] = {}
         self._load()
 
     def _load(self) -> None:
-        p = self._path()
+        p = self._path_func()
         if os.path.isfile(p):
-            try:
-                self._store = load_json(p)
-            except:
-                self._store = {}
+            j = load_json(p)
+            self._store = {
+                channel_name: [dacite.from_dict(data_class=MsgEntry, data=channel_message) for channel_message in channel_messages]
+                for channel_name, channel_messages in j.items()
+            }
 
     def _save(self) -> None:
-        save_json(self._path(), self._store)
+        save_json(self._path_func(), self._store)
 
     def add_message(self, channel: Channel, author: str, message: str) -> bool:
         ch = channel.s.lower()
         with self.lock:
             if ch not in self._store:
                 self._store[ch] = []
-            self._store[ch].insert(0, make_msg_entry(author, message))
-            while len(self._store[ch]) > self._limit(ch):
+            msg_entry = MsgEntry(author=author, message=message)
+            self._store[ch].insert(0, msg_entry)
+            while len(self._store[ch]) > self._limit_func(ch):
                 self._store[ch].pop()
             self._save()
         return True
 
-    def get_messages(self, channel: Channel) -> list[dict[str, str]]:
+    def get_messages(self, channel: Channel) -> list[MsgEntry]:
         """Returns a list of messages for the given channel."""
         ch = channel.s.lower()
         with self.lock:
@@ -127,6 +132,7 @@ class Sed(BaseResponder[SedConfig]):
             lambda c: self.get_config().message_limit,
         )
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         channel = msg.target.channel
         if channel is not None:

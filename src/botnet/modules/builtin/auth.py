@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Callable
 
+from botnet.modules import message_handler
+
 from ...config import Config
-from ...message import IncomingPrivateMessage
 from ...message import Message
 from ...message import Nick
 from ...signals import auth_message_in
@@ -233,8 +234,9 @@ class Auth(WhoisMixin, BaseResponder[AuthConfig]):
     def __init__(self, config: Config) -> None:
         super().__init__(config)
 
-    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
-        super().handle_privmsg(msg)
+    @message_handler()
+    def handle_msg(self, msg: Message) -> None:
+        super().handle_msg(msg)
 
         def on_complete(whois_data: WhoisResponse) -> None:
             config = self.get_config()
@@ -257,9 +259,10 @@ class Auth(WhoisMixin, BaseResponder[AuthConfig]):
                             raise Exception('unknown authorisation kind: {}'.format(authorisation.kind))
             self._emit_auth_message_in(msg, None, [])
 
-        self.whois_schedule(msg.sender, on_complete)
+        if msg.nickname is not None:
+            self.whois_schedule(Nick(msg.nickname), on_complete)
 
-    def _emit_auth_message_in(self, msg: IncomingPrivateMessage, uuid: str | None, groups: list[str]) -> None:
+    def _emit_auth_message_in(self, msg: Message, uuid: str | None, groups: list[str]) -> None:
         auth_context = AuthContext(uuid, groups)
         auth_message_in.send(self, msg=msg, auth=auth_context)
 

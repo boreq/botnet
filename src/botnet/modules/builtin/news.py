@@ -27,10 +27,7 @@ class NewsStore:
 
     def _load(self) -> None:
         if os.path.isfile(self._get_path()):
-            try:
-                self._news = load_json(self._get_path())
-            except:
-                self._news = {}
+            self._news = load_json(self._get_path())
 
     def _save(self) -> None:
         save_json(self._get_path(), self._news)

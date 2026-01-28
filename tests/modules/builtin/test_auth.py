@@ -1,12 +1,8 @@
 import pytest
 
 from botnet.config import Config
-from botnet.message import Channel
-from botnet.message import IncomingPrivateMessage
 from botnet.message import Message
 from botnet.message import Nick
-from botnet.message import Target
-from botnet.message import Text
 from botnet.modules import AuthContext
 from botnet.modules.builtin.auth import Auth
 from botnet.modules.builtin.auth import WhoisResponse
@@ -189,7 +185,7 @@ def test_identify_user(subtests, make_tested_auth, make_signal_trap, rec_msg) ->
             tested_auth.expect_auth_message_in_signals(
                 [
                     {
-                        'msg': IncomingPrivateMessage(sender=Nick('someone'), target=Target(Channel('#channel')), text=Text('Hello!')),
+                        'msg': received_msg,
                         'auth': test_case['context'],
                     }
                 ]
@@ -250,15 +246,14 @@ def test_cache_invalidation(subtests, make_tested_auth) -> None:
             tested_auth.expect_auth_message_in_signals(
                 [
                     {
-                        'msg': IncomingPrivateMessage(sender=Nick('someone'), target=Target(Channel('#channel')), text=Text('Hello!')),
+                        'msg': received_msg,
                         'auth': AuthContext('someones_uuid', ['group1', 'group2']),
                     }
                 ]
             )
 
             for message_string in test_case['messages']:
-                received_msg = Message.new_from_string(message_string)
-                tested_auth.receive_message_in(received_msg)
+                tested_auth.receive_message_in(Message.new_from_string(message_string))
 
             tested_auth.reset_message_out_signals()
 

@@ -3,6 +3,8 @@ import random
 from dataclasses import dataclass
 from typing import Iterator
 
+from botnet.modules import privmsg_message_handler
+
 from ...message import IncomingPrivateMessage
 from ...signals import on_exception
 from .. import AuthContext
@@ -50,6 +52,7 @@ class Quotes(BaseResponder[QuotesConfig]):
             rw.add(filename)
         return rw
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
 

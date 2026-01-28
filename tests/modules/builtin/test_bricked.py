@@ -1,9 +1,16 @@
 import pytest
 
 from botnet.config import Config
+from botnet.message import Channel
+from botnet.message import IncomingPrivateMessage
 from botnet.message import Message
+from botnet.message import Nick
+from botnet.message import Target
+from botnet.message import Text
 from botnet.modules.builtin.bricked import Bricked
 from botnet.modules.builtin.bricked import Status
+
+from ...conftest import MakePrivmsgFixture
 
 
 class FakeBrickedAPI:
@@ -11,16 +18,16 @@ class FakeBrickedAPI:
         return Status(status=0.42)
 
 
-def test_help(make_privmsg, make_incoming_privmsg, unauthorised_context, test_bricked):
-    msg = make_incoming_privmsg('.help', target='#channel')
-    assert test_bricked.module.get_all_commands(msg, unauthorised_context) == {'help', 'issomeoneonone'}
+def test_help(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_bricked):
+    msg = IncomingPrivateMessage(sender=Nick('someone'), target=Target(Channel('#channel')), text=Text('some message'))
+    assert tested_bricked.module.get_all_commands(msg, unauthorised_context) == {'help', 'issomeoneonone'}
 
 
-def test_issomeoneonone(make_privmsg, make_incoming_privmsg, unauthorised_context, test_bricked):
+def test_issomeoneonone(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_bricked):
     msg = make_privmsg('.issomeoneonone', target='#channel')
-    test_bricked.receive_message_in(msg)
+    tested_bricked.receive_message_in(msg)
 
-    test_bricked.expect_message_out_signals([
+    tested_bricked.expect_message_out_signals([
         {
             'msg': Message.new_from_string('PRIVMSG #channel :42%')
         },
@@ -28,8 +35,8 @@ def test_issomeoneonone(make_privmsg, make_incoming_privmsg, unauthorised_contex
 
 
 @pytest.fixture()
-def test_bricked(module_harness_factory):
-    class TestBricked(Bricked):
+def tested_bricked(module_harness_factory):
+    class TestedBricked(Bricked):
         mock_api = FakeBrickedAPI()
 
         def _create_api(self, instance: str):
@@ -54,4 +61,4 @@ def test_bricked(module_harness_factory):
         }
     )
 
-    return module_harness_factory.make(TestBricked, config)
+    return module_harness_factory.make(TestedBricked, config)

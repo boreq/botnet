@@ -6,6 +6,8 @@ from botnet.config import Config
 from botnet.message import Message
 from botnet.modules.builtin.countdown import Countdown
 
+from ...conftest import MakePrivmsgFixture
+
 
 def make_config():
     config = {
@@ -34,9 +36,9 @@ def make_config():
     return Config(config)
 
 
-def test_camp(make_privmsg, countdown):
-    countdown.receive_message_in(make_privmsg('.camp'))
-    countdown.expect_message_out_signals(
+def test_camp(make_privmsg: MakePrivmsgFixture, tested_countdown):
+    tested_countdown.receive_message_in(make_privmsg('.camp'))
+    tested_countdown.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :It already happened!')
@@ -45,9 +47,9 @@ def test_camp(make_privmsg, countdown):
     )
 
 
-def test_congress(make_privmsg, countdown):
-    countdown.receive_message_in(make_privmsg('.congress'))
-    countdown.expect_message_out_signals(
+def test_congress(make_privmsg: MakePrivmsgFixture, tested_countdown):
+    tested_countdown.receive_message_in(make_privmsg('.congress'))
+    tested_countdown.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :14 days left!')
@@ -56,9 +58,9 @@ def test_congress(make_privmsg, countdown):
     )
 
 
-def test_countdown_summary(make_privmsg, countdown):
-    countdown.receive_message_in(make_privmsg('.summary'))
-    countdown.expect_message_out_signals(
+def test_countdown_summary(make_privmsg: MakePrivmsgFixture, tested_countdown):
+    tested_countdown.receive_message_in(make_privmsg('.summary'))
+    tested_countdown.expect_message_out_signals(
         [
             {
                 'msg': Message.new_from_string('PRIVMSG #channel :camp: It already happened, congress: 14 days left')
@@ -68,10 +70,10 @@ def test_countdown_summary(make_privmsg, countdown):
 
 
 @pytest.fixture()
-def countdown(module_harness_factory):
-    class TestCountdown(Countdown):
-        def now(self):
+def tested_countdown(module_harness_factory):
+    class TestedCountdown(Countdown):
+        def _now(self):
             return date(2025, 8, 1)
 
-    m = module_harness_factory.make(TestCountdown, make_config())
+    m = module_harness_factory.make(TestedCountdown, make_config())
     return m

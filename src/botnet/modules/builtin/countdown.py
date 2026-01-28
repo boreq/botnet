@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import date
 
+from botnet.modules import privmsg_message_handler
+
 from ...config import Config
 from ...message import IncomingPrivateMessage
 from .. import AuthContext
@@ -61,6 +63,7 @@ class Countdown(BaseResponder[CountdownConfig]):
             rw.add(command.names[0])
         return rw
 
+    @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         command_name = self.get_command_name(msg)
 
@@ -89,14 +92,14 @@ class Countdown(BaseResponder[CountdownConfig]):
         day = int(command.day)
 
         d0 = date(year, month, day)
-        d1 = self.now()
+        d1 = self._now()
         delta = d0 - d1
         if delta.days < 0:
             return 'It already happened'
         else:
             return '{} days left'.format(delta.days)
 
-    def now(self) -> date:
+    def _now(self) -> date:
         return date.today()
 
 
