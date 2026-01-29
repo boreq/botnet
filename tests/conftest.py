@@ -195,6 +195,9 @@ class ModuleHarness(Generic[MODULE]):
 
     def stop(self) -> None:
         self.module.stop()
+        for captured in self.on_exception_trap.trapped:
+            e = captured['e']
+            raise e
 
 
 class ModuleHarnessFactory:
