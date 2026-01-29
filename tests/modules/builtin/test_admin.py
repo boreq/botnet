@@ -1,20 +1,24 @@
 import pytest
 
 from botnet.config import Config
+from botnet.message import IncomingPrivateMessage
 from botnet.message import Message
+from botnet.modules import AuthContext
 from botnet.modules.builtin.admin import Admin
 
 from ...conftest import MakePrivmsgFixture
+from ...conftest import ModuleHarness
+from ...conftest import ModuleHarnessFactory
 
 
-def test_help(make_privmsg: MakePrivmsgFixture, admin_context, tested_admin) -> None:
-    msg = make_privmsg('.help', target='#channel')
+def test_help(make_privmsg: MakePrivmsgFixture, admin_context: AuthContext, tested_admin: ModuleHarness[Admin]) -> None:
+    msg = IncomingPrivateMessage.new_from_message(make_privmsg('.help', target='#channel'))
     assert tested_admin.module.get_all_commands(msg, admin_context) == {
         'help', 'module_load', 'module_unload', 'module_reload', 'config_reload'
     }
 
 
-def test_module_load(make_privmsg: MakePrivmsgFixture, admin_context, tested_admin):
+def test_module_load(make_privmsg: MakePrivmsgFixture, admin_context: AuthContext, tested_admin: ModuleHarness[Admin]) -> None:
     msg = make_privmsg('.module_load module1 module2', target='#channel')
     tested_admin.receive_auth_message_in(msg, admin_context)
 
@@ -36,7 +40,7 @@ def test_module_load(make_privmsg: MakePrivmsgFixture, admin_context, tested_adm
     ])
 
 
-def test_module_unload(make_privmsg: MakePrivmsgFixture, admin_context, tested_admin):
+def test_module_unload(make_privmsg: MakePrivmsgFixture, admin_context: AuthContext, tested_admin: ModuleHarness[Admin]) -> None:
     msg = make_privmsg('.module_unload module1', target='#channel')
     tested_admin.receive_auth_message_in(msg, admin_context)
 
@@ -53,7 +57,7 @@ def test_module_unload(make_privmsg: MakePrivmsgFixture, admin_context, tested_a
     ])
 
 
-def test_module_reload(make_privmsg: MakePrivmsgFixture, admin_context, tested_admin):
+def test_module_reload(make_privmsg: MakePrivmsgFixture, admin_context: AuthContext, tested_admin: ModuleHarness[Admin]) -> None:
     msg = make_privmsg('.module_reload module1', target='#channel')
     tested_admin.receive_auth_message_in(msg, admin_context)
 
@@ -77,7 +81,7 @@ def test_module_reload(make_privmsg: MakePrivmsgFixture, admin_context, tested_a
     ])
 
 
-def test_config_reload(make_privmsg: MakePrivmsgFixture, admin_context, tested_admin):
+def test_config_reload(make_privmsg: MakePrivmsgFixture, admin_context: AuthContext, tested_admin: ModuleHarness[Admin]) -> None:
     msg = make_privmsg('.config_reload', target='#channel')
     tested_admin.receive_auth_message_in(msg, admin_context)
 
@@ -95,5 +99,5 @@ def test_config_reload(make_privmsg: MakePrivmsgFixture, admin_context, tested_a
 
 
 @pytest.fixture()
-def tested_admin(module_harness_factory):
+def tested_admin(module_harness_factory: ModuleHarnessFactory) -> ModuleHarness[Admin]:
     return module_harness_factory.make(Admin, Config())

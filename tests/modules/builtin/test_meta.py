@@ -1,18 +1,18 @@
+import pytest
+
 from botnet.config import Config
 from botnet.message import IncomingPrivateMessage
 from botnet.message import Message
+from botnet.modules import AuthContext
 from botnet.modules.builtin.meta import Meta
 
 from ...conftest import MakePrivmsgFixture
+from ...conftest import ModuleHarness
+from ...conftest import ModuleHarnessFactory
 
 
-def make_config() -> Config:
-    config = {'module_config': {'botnet': {'base_responder': {'command_prefix': ':'}}}}
-    return Config(config)
-
-
-def test_help(module_harness_factory, unauthorised_context, make_privmsg: MakePrivmsgFixture):
-    m = module_harness_factory.make(Meta, make_config())
+def test_help(unauthorised_context: AuthContext, make_privmsg: MakePrivmsgFixture, tested_meta: ModuleHarness[Meta]) -> None:
+    m = tested_meta
 
     msg = make_privmsg(':help')
     m.receive_auth_message_in(msg, unauthorised_context)
@@ -26,8 +26,8 @@ def test_help(module_harness_factory, unauthorised_context, make_privmsg: MakePr
     )
 
 
-def test_bots(module_harness_factory, make_privmsg: MakePrivmsgFixture):
-    m = module_harness_factory.make(Meta, make_config())
+def test_bots(unauthorised_context: AuthContext, make_privmsg: MakePrivmsgFixture, tested_meta: ModuleHarness[Meta]) -> None:
+    m = tested_meta
 
     m.receive_message_in(make_privmsg('.bots'))
     m.expect_message_out_signals(
@@ -39,8 +39,8 @@ def test_bots(module_harness_factory, make_privmsg: MakePrivmsgFixture):
     )
 
 
-def test_git(module_harness_factory, unauthorised_context, make_privmsg: MakePrivmsgFixture):
-    m = module_harness_factory.make(Meta, make_config())
+def test_git(unauthorised_context: AuthContext, make_privmsg: MakePrivmsgFixture, tested_meta: ModuleHarness[Meta]) -> None:
+    m = tested_meta
 
     m.receive_auth_message_in(make_privmsg(':git'), unauthorised_context)
     m.expect_message_out_signals(
@@ -50,3 +50,9 @@ def test_git(module_harness_factory, unauthorised_context, make_privmsg: MakePri
             }
         ]
     )
+
+
+@pytest.fixture()
+def tested_meta(module_harness_factory: ModuleHarnessFactory) -> ModuleHarness[Meta]:
+    config = {'module_config': {'botnet': {'base_responder': {'command_prefix': ':'}}}}
+    return module_harness_factory.make(Meta, Config(config))

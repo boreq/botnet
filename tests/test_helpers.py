@@ -2,7 +2,7 @@ from botnet.helpers import load_json
 from botnet.helpers import save_json
 
 
-def test_load_save_json(tmp_file):
+def test_load_save_json(tmp_file: str) -> None:
     data = {'key': 'value'}
     save_json(tmp_file, data)
     loaded_data = load_json(tmp_file)

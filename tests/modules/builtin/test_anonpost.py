@@ -2,12 +2,15 @@ import pytest
 
 from botnet.config import Config
 from botnet.message import Message
+from botnet.modules import AuthContext
 from botnet.modules.builtin.anonpost import Anonpost
 
 from ...conftest import MakePrivmsgFixture
+from ...conftest import ModuleHarness
+from ...conftest import ModuleHarnessFactory
 
 
-def test_person_anonpost_to_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_anonpost) -> None:
+def test_person_anonpost_to_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_anonpost: ModuleHarness[Anonpost]) -> None:
     msg = make_privmsg('.anonpost #channel Hello world!')
     tested_anonpost.receive_auth_message_in(msg, unauthorised_context)
 
@@ -20,7 +23,7 @@ def test_person_anonpost_to_channel(make_privmsg: MakePrivmsgFixture, unauthoris
     )
 
 
-def test_admin_anonpost_to_person(make_privmsg: MakePrivmsgFixture, admin_context, tested_anonpost) -> None:
+def test_admin_anonpost_to_person(make_privmsg: MakePrivmsgFixture, admin_context: AuthContext, tested_anonpost: ModuleHarness[Anonpost]) -> None:
     msg = make_privmsg('.anonpost victim Hello from admin!')
     tested_anonpost.receive_auth_message_in(msg, admin_context)
 
@@ -33,7 +36,7 @@ def test_admin_anonpost_to_person(make_privmsg: MakePrivmsgFixture, admin_contex
     )
 
 
-def test_admin_anonpost_to_channel(make_privmsg: MakePrivmsgFixture, admin_context, tested_anonpost) -> None:
+def test_admin_anonpost_to_channel(make_privmsg: MakePrivmsgFixture, admin_context: AuthContext, tested_anonpost: ModuleHarness[Anonpost]) -> None:
     msg = make_privmsg('.anonpost #channel Hello from admin!')
     tested_anonpost.receive_auth_message_in(msg, admin_context)
 
@@ -46,7 +49,7 @@ def test_admin_anonpost_to_channel(make_privmsg: MakePrivmsgFixture, admin_conte
     )
 
 
-def test_person_anonpost_to_person_fails(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_anonpost) -> None:
+def test_person_anonpost_to_person_fails(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_anonpost: ModuleHarness[Anonpost]) -> None:
     msg = make_privmsg('.anonpost victim Hello world!')
     tested_anonpost.receive_auth_message_in(msg, unauthorised_context)
 
@@ -55,7 +58,7 @@ def test_person_anonpost_to_person_fails(make_privmsg: MakePrivmsgFixture, unaut
 
 
 @pytest.fixture()
-def tested_anonpost(module_harness_factory):
+def tested_anonpost(module_harness_factory: ModuleHarnessFactory) -> ModuleHarness[Anonpost]:
     config = Config(
         {
             'module_config': {

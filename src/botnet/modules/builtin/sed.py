@@ -1,6 +1,7 @@
 import os
 import re
 import threading
+from dataclasses import asdict
 from dataclasses import dataclass
 from typing import Callable
 
@@ -18,34 +19,47 @@ from .. import BaseResponder
 
 
 @dataclass()
-class MsgEntry:
+class PersistedMessage:
     author: str
     message: str
 
 
-def parse_message(message_text: str) -> tuple[str | None, str, str, list[str]]:
+@dataclass()
+class PersistedMessages:
+    messages: dict[str, list[PersistedMessage]]
+
+
+@dataclass()
+class ParsedSedCommand:
+    nick: str | None
+    a: str
+    b: str
+    flags: list[str]
+
+
+def parse_message(message_text: str) -> ParsedSedCommand | None:
     pattern = re.compile('^([^:, ]*)[:, ]*s/([^/]*)/([^/]*)(/|/[a-z]+)?$')
     result = pattern.search(message_text)
     if result is None:
-        raise ValueError
+        return None
     groups = list(result.groups())
 
-    # Nickname
     if groups[0] == '':
-        groups[0] = None
-
-    # Flags
-    if groups[3] is not None:
-        groups[3] = groups[3].lstrip('/')
+        nick = None
     else:
-        groups[3] = ''
-    groups[3] = list(groups[3])
+        nick = groups[0]
 
-    return tuple(groups)  # type: ignore
+    if groups[3] is not None:
+        flags = list(groups[3].lstrip('/'))
+    else:
+        flags = []
+
+    return ParsedSedCommand(nick, groups[1], groups[2], flags)
 
 
-def replace(messages: list[MsgEntry], nick: str, a: str, b: str, flags: list[str]) -> str | None:
+def replace(messages: list[PersistedMessage], nick: str, a: str, b: str, flags: list[str]) -> str | None:
     for stored_msg in messages:
+        print(stored_msg, nick, a, b, flags)
         if a in stored_msg.message and stored_msg.author == nick:
             if 'g' in flags:
                 return stored_msg.message.replace(a, b)
@@ -55,49 +69,39 @@ def replace(messages: list[MsgEntry], nick: str, a: str, b: str, flags: list[str
 
 
 class MessageStore:
-    """MessageStore saves the past messages.
-
-    limit: function to call to get the message limit for a specified channel.
-    path: function to call to get path to the data file.
-    """
+    _store: PersistedMessages
 
     def __init__(self, path_func: Callable[[], str], limit_func: Callable[[str], int]) -> None:
-        self.lock = threading.Lock()
+        self._lock = threading.Lock()
         self._path_func = path_func
         self._limit_func = limit_func
-        self._store: dict[str, list[MsgEntry]] = {}
         self._load()
 
     def _load(self) -> None:
         p = self._path_func()
         if os.path.isfile(p):
             j = load_json(p)
-            self._store = {
-                channel_name: [dacite.from_dict(data_class=MsgEntry, data=channel_message) for channel_message in channel_messages]
-                for channel_name, channel_messages in j.items()
-            }
+            self._store = dacite.from_dict(data_class=PersistedMessages, data=j)
 
     def _save(self) -> None:
-        save_json(self._path_func(), self._store)
+        save_json(self._path_func(), asdict(self._store))
 
-    def add_message(self, channel: Channel, author: str, message: str) -> bool:
+    def add_message(self, channel: Channel, author: str, message: str) -> None:
         ch = channel.s.lower()
-        with self.lock:
-            if ch not in self._store:
-                self._store[ch] = []
-            msg_entry = MsgEntry(author=author, message=message)
-            self._store[ch].insert(0, msg_entry)
-            while len(self._store[ch]) > self._limit_func(ch):
-                self._store[ch].pop()
+        with self._lock:
+            if ch not in self._store.messages:
+                self._store.messages[ch] = []
+            msg_entry = PersistedMessage(author=author, message=message)
+            self._store.messages[ch].insert(0, msg_entry)
+            while len(self._store.messages[ch]) > self._limit_func(ch):
+                self._store.messages[ch].pop()
             self._save()
-        return True
 
-    def get_messages(self, channel: Channel) -> list[MsgEntry]:
-        """Returns a list of messages for the given channel."""
+    def get_messages(self, channel: Channel) -> list[PersistedMessage]:
         ch = channel.s.lower()
-        with self.lock:
-            if ch in self._store:
-                return list(self._store[ch])
+        with self._lock:
+            if ch in self._store.messages:
+                return list(self._store.messages[ch])
         return []
 
 
@@ -136,20 +140,24 @@ class Sed(BaseResponder[SedConfig]):
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         channel = msg.target.channel
         if channel is not None:
-            try:
-                nick, a, b, flags = parse_message(msg.text.s)
-                if nick is None:
-                    nick = msg.sender.s
-                messages = self.store.get_messages(channel)
-                message = replace(messages, nick, a, b, flags)
-                if message is not None:
-                    if Nick(nick) == msg.sender:
-                        text = '%s meant to say: %s' % (nick, message)
-                    else:
-                        text = '%s thinks %s meant to say: %s' % (msg.sender, nick, message)
-                    self.respond(msg, text)
-            except ValueError:
+            parsed_message = parse_message(msg.text.s)
+            if parsed_message is None:
                 self.store.add_message(channel, msg.sender.s, msg.text.s)
+                return
+
+            if parsed_message.nick is not None:
+                nick = parsed_message.nick
+            else:
+                nick = msg.sender.s
+
+            messages = self.store.get_messages(channel)
+            message = replace(messages, nick, parsed_message.a, parsed_message.b, parsed_message.flags)
+            if message is not None:
+                if Nick(nick) == msg.sender:
+                    text = '%s meant to say: %s' % (nick, message)
+                else:
+                    text = '%s thinks %s meant to say: %s' % (msg.sender, nick, message)
+                self.respond(msg, text)
 
 
 mod = Sed

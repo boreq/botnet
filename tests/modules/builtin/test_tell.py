@@ -5,12 +5,15 @@ import pytest
 
 from botnet.config import Config
 from botnet.message import Message
+from botnet.modules import AuthContext
 from botnet.modules.builtin.tell import Tell
 
 from ...conftest import MakePrivmsgFixture
+from ...conftest import ModuleHarness
+from ...conftest import ModuleHarnessFactory
 
 
-def test_multiple_messages_for_multiple_users(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+def test_multiple_messages_for_multiple_users(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_tell: ModuleHarness[Tell]) -> None:
     msg = make_privmsg('.tell target1 message1', nick='author', target='#channel')
     tested_tell.receive_auth_message_in(msg, unauthorised_context)
 
@@ -97,7 +100,7 @@ def test_multiple_messages_for_multiple_users(make_privmsg: MakePrivmsgFixture, 
     )
 
 
-def test_duplicate_messages_are_ignored(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+def test_duplicate_messages_are_ignored(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_tell: ModuleHarness[Tell]) -> None:
     msg = make_privmsg('.tell target message', nick='author', target='#channel')
 
     tested_tell.receive_auth_message_in(msg, unauthorised_context)
@@ -125,7 +128,7 @@ def test_duplicate_messages_are_ignored(make_privmsg: MakePrivmsgFixture, unauth
     )
 
 
-def test_messages_arrive_in_the_same_order_they_were_sent(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+def test_messages_arrive_in_the_same_order_they_were_sent(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_tell: ModuleHarness[Tell]) -> None:
     msg = make_privmsg('.tell target message1', nick='author', target='#channel')
     tested_tell.receive_auth_message_in(msg, unauthorised_context)
 
@@ -163,7 +166,7 @@ def test_messages_arrive_in_the_same_order_they_were_sent(make_privmsg: MakePriv
     )
 
 
-def test_channel_is_case_insensitive(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+def test_channel_is_case_insensitive(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_tell: ModuleHarness[Tell]) -> None:
     msg = make_privmsg('.tell target message text', nick='author', target='#channel')
     tested_tell.receive_auth_message_in(msg, unauthorised_context)
     tested_tell.expect_message_out_signals(
@@ -188,7 +191,7 @@ def test_channel_is_case_insensitive(make_privmsg: MakePrivmsgFixture, unauthori
     )
 
 
-def test_target_is_case_insensitive(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+def test_target_is_case_insensitive(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_tell: ModuleHarness[Tell]) -> None:
     msg = make_privmsg('.tell target message text', nick='author', target='#channel')
     tested_tell.receive_auth_message_in(msg, unauthorised_context)
     tested_tell.expect_message_out_signals(
@@ -213,7 +216,7 @@ def test_target_is_case_insensitive(make_privmsg: MakePrivmsgFixture, unauthoris
     )
 
 
-def test_same_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+def test_same_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_tell: ModuleHarness[Tell]) -> None:
     msg = make_privmsg('.tell target message text', nick='author', target='#channel')
     tested_tell.receive_auth_message_in(msg, unauthorised_context)
     tested_tell.expect_message_out_signals(
@@ -238,7 +241,7 @@ def test_same_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context, te
     )
 
 
-def test_other_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell):
+def test_other_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_tell: ModuleHarness[Tell]) -> None:
     msg = make_privmsg('.tell target message text', nick='author', target='#channel')
     tested_tell.receive_auth_message_in(msg, unauthorised_context)
     tested_tell.expect_message_out_signals(
@@ -260,7 +263,7 @@ def test_other_channel(make_privmsg: MakePrivmsgFixture, unauthorised_context, t
     )
 
 
-def test_priv(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tell) -> None:
+def test_priv(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_tell: ModuleHarness[Tell]) -> None:
     msg = make_privmsg('.tell target message text', nick='author', target='bot')
     tested_tell.receive_auth_message_in(msg, unauthorised_context)
     tested_tell.expect_message_out_signals(
@@ -286,7 +289,7 @@ def test_priv(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_tel
 
 
 @pytest.fixture()
-def tested_tell(module_harness_factory, tmp_file):
+def tested_tell(module_harness_factory: ModuleHarnessFactory, tmp_file: str) -> ModuleHarness[Tell]:
     with open(tmp_file, 'w') as f:
         f.write('{"messages": []}')
 

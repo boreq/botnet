@@ -10,6 +10,7 @@ from botnet.message import Message
 from botnet.message import Nick
 from botnet.message import Target
 from botnet.message import Text
+from botnet.modules import AuthContext
 from botnet.modules.builtin.traccar import Device
 from botnet.modules.builtin.traccar import Geofence
 from botnet.modules.builtin.traccar import Position
@@ -17,6 +18,8 @@ from botnet.modules.builtin.traccar import Traccar
 from botnet.modules.builtin.traccar import TraccarAPI
 
 from ...conftest import MakePrivmsgFixture
+from ...conftest import ModuleHarness
+from ...conftest import ModuleHarnessFactory
 
 
 class FakeTraccarAPI(TraccarAPI):
@@ -43,7 +46,16 @@ class FakeTraccarAPI(TraccarAPI):
         return self.mocked_geofences
 
 
-def test_help_channel(unauthorised_context, tested_traccar) -> None:
+class TraccarForTest(Traccar):
+    mock_api = FakeTraccarAPI()
+
+    def _create_api(self, url: str, token: str) -> TraccarAPI:
+        assert url == 'https://example.com'
+        assert token == 'some-token'
+        return self.mock_api
+
+
+def test_help_channel(unauthorised_context: AuthContext, tested_traccar: ModuleHarness[TraccarForTest]) -> None:
     msg = IncomingPrivateMessage(
         sender=Nick('nick'),
         target=Target(Channel('#channel')),
@@ -52,7 +64,7 @@ def test_help_channel(unauthorised_context, tested_traccar) -> None:
     assert tested_traccar.module.get_all_commands(msg, unauthorised_context) == {'help', 'whatissomeonesbatterylevel', 'whereissomeone'}
 
 
-def test_help_direct(unauthorised_context, tested_traccar) -> None:
+def test_help_direct(unauthorised_context: AuthContext, tested_traccar: ModuleHarness[TraccarForTest]) -> None:
     msg = IncomingPrivateMessage(
         sender=Nick('nick'),
         target=Target(Nick('bot_nick')),
@@ -61,8 +73,8 @@ def test_help_direct(unauthorised_context, tested_traccar) -> None:
     assert tested_traccar.module.get_all_commands(msg, unauthorised_context) == {'help'}
 
 
-def test_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
-    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
+def test_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar: ModuleHarness[TraccarForTest]) -> None:
+    mock_api = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -105,8 +117,8 @@ def test_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
     )
 
 
-def test_not_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
-    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
+def test_not_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar: ModuleHarness[TraccarForTest]) -> None:
+    mock_api = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -149,8 +161,8 @@ def test_not_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar) -> No
     )
 
 
-def test_battery_not_available(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
-    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
+def test_battery_not_available(make_privmsg: MakePrivmsgFixture, tested_traccar: ModuleHarness[TraccarForTest]) -> None:
+    mock_api = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -186,8 +198,8 @@ def test_battery_not_available(make_privmsg: MakePrivmsgFixture, tested_traccar)
     )
 
 
-def test_battery_charging(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
-    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
+def test_battery_charging(make_privmsg: MakePrivmsgFixture, tested_traccar: ModuleHarness[TraccarForTest]) -> None:
+    mock_api = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -226,8 +238,8 @@ def test_battery_charging(make_privmsg: MakePrivmsgFixture, tested_traccar) -> N
     )
 
 
-def test_battery_not_charging(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
-    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
+def test_battery_not_charging(make_privmsg: MakePrivmsgFixture, tested_traccar: ModuleHarness[TraccarForTest]) -> None:
+    mock_api = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -265,8 +277,8 @@ def test_battery_not_charging(make_privmsg: MakePrivmsgFixture, tested_traccar) 
     )
 
 
-def test_location_connection_error(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
-    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
+def test_location_connection_error(make_privmsg: MakePrivmsgFixture, tested_traccar: ModuleHarness[TraccarForTest]) -> None:
+    mock_api = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -286,8 +298,8 @@ def test_location_connection_error(make_privmsg: MakePrivmsgFixture, tested_trac
     )
 
 
-def test_battery_connection_error(make_privmsg: MakePrivmsgFixture, tested_traccar) -> None:
-    mock_api: FakeTraccarAPI = tested_traccar.module.mock_api
+def test_battery_connection_error(make_privmsg: MakePrivmsgFixture, tested_traccar: ModuleHarness[TraccarForTest]) -> None:
+    mock_api = tested_traccar.module.mock_api
 
     mock_api.mocked_devices = [
         Device(id=1, name='device-name', uniqueId='123', lastUpdate=datetime.now())
@@ -308,15 +320,7 @@ def test_battery_connection_error(make_privmsg: MakePrivmsgFixture, tested_tracc
 
 
 @pytest.fixture()
-def tested_traccar(module_harness_factory):
-    class TestedTraccar(Traccar):
-        mock_api = FakeTraccarAPI()
-
-        def _create_api(self, url: str, token: str) -> TraccarAPI:
-            assert url == 'https://example.com'
-            assert token == 'some-token'
-            return self.mock_api
-
+def tested_traccar(module_harness_factory: ModuleHarnessFactory) -> ModuleHarness[TraccarForTest]:
     config = Config(
         {
             'module_config': {
@@ -351,4 +355,4 @@ def tested_traccar(module_harness_factory):
         }
     )
 
-    return module_harness_factory.make(TestedTraccar, config)
+    return module_harness_factory.make(TraccarForTest, config)

@@ -9,9 +9,11 @@ from botnet.modules.lib import Color
 from botnet.modules.lib import colored
 
 from ...conftest import MakePrivmsgFixture
+from ...conftest import ModuleHarness
+from ...conftest import ModuleHarnessFactory
 
 
-def test_pester(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_vibecheck) -> None:
+def test_pester(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     tested_vibecheck.expect_message_out_signals(
         [
             {
@@ -44,7 +46,7 @@ def test_pester(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_v
     )
 
 
-def test_endorsement_session(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_vibecheck) -> None:
+def test_endorsement_session(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
@@ -179,7 +181,7 @@ def test_endorsement_session(make_privmsg: MakePrivmsgFixture, unauthorised_cont
     )
 
 
-def test_healthcheck(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_vibecheck) -> None:
+def test_healthcheck(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     some_authorisations = [
         {
             'kind': 'irc',
@@ -299,7 +301,7 @@ def test_healthcheck(make_privmsg: MakePrivmsgFixture, unauthorised_context, tes
     )
 
 
-def test_part_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck) -> None:
+def test_part_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
@@ -350,7 +352,7 @@ def test_part_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibec
     )
 
 
-def test_join_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck) -> None:
+def test_join_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1'])
@@ -401,7 +403,7 @@ def test_join_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibec
     )
 
 
-def test_quit_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck) -> None:
+def test_quit_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
@@ -452,7 +454,7 @@ def test_quit_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibec
     )
 
 
-def test_kick_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck) -> None:
+def test_kick_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
@@ -504,7 +506,7 @@ def test_kick_updates_names_cache(make_privmsg: MakePrivmsgFixture, tested_vibec
 
 
 @pytest.fixture()
-def tested_vibecheck(module_harness_factory, tmp_file):
+def tested_vibecheck(module_harness_factory: ModuleHarnessFactory, tmp_file: str) -> ModuleHarness[Vibecheck]:
     with open(tmp_file, 'w') as f:
         f.write('{ "authorised_people_infos": {}, "personas": [], "nick_infos": {} }')
 

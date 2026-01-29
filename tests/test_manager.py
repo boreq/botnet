@@ -6,7 +6,7 @@ from botnet import modules
 from botnet.manager import Manager
 
 
-def test_stop():
+def test_stop() -> None:
     manager = Manager()
 
     # Launch Manager.run in a separate thread
@@ -21,7 +21,7 @@ def test_stop():
         pytest.fail('Manager did not terminate.')
 
 
-def test_load_module():
+def test_load_module() -> None:
     class DummyModule(modules.BaseModule):
         pass
 
@@ -34,7 +34,7 @@ def test_load_module():
     assert manager._get_wrapper(DummyModule) is None
 
 
-def test_load_twice():
+def test_load_twice() -> None:
     class DummyModule(modules.BaseModule):
         pass
 
@@ -49,7 +49,7 @@ def test_load_twice():
     assert len(manager.module_wrappers) == 1
 
 
-def test_load_twice_by_name():
+def test_load_twice_by_name() -> None:
     manager = Manager()
 
     manager.load_module_by_name('meta')
@@ -59,7 +59,7 @@ def test_load_twice_by_name():
     assert len(manager.module_wrappers) == 1
 
 
-def test_get_wrapper():
+def test_get_wrapper() -> None:
     """Checks if _get_wrapper properly handles inheritance. Ensures that
     a child is not returned when querying for a parent."""
     class DummyModule(modules.BaseModule):
@@ -68,11 +68,14 @@ def test_get_wrapper():
     class DummyModuleChild(DummyModule):
         value = 'child'
 
-    def test(manager):
+    def test(manager: Manager) -> None:
         parent = manager._get_wrapper(DummyModule)
+        assert parent is not None
+        assert str(type(parent.module)) == '<class \'tests.test_manager.test_get_wrapper.<locals>.DummyModule\'>'
+
         child = manager._get_wrapper(DummyModuleChild)
-        assert parent.module.value == 'parent'
-        assert child.module.value == 'child'
+        assert child is not None
+        assert str(type(child.module)) == '<class \'tests.test_manager.test_get_wrapper.<locals>.DummyModuleChild\'>'
 
     manager = Manager()
     manager.load_module(DummyModule)

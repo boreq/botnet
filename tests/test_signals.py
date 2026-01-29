@@ -1,10 +1,16 @@
+from dataclasses import dataclass
+
 from botnet import signals
 from botnet.config import Config
 from botnet.modules import BaseResponder
 
 
-def test_unsubscribe_from_all(clear_signal_state) -> None:
-    r = BaseResponder(Config())
+def test_unsubscribe_from_all(clear_signal_state: None) -> None:
+    @dataclass()
+    class ConfigClass:
+        pass
+
+    r: BaseResponder[ConfigClass] = BaseResponder(Config())
 
     assert signals.message_in.receivers
     assert signals.auth_message_in.receivers

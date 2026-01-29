@@ -2,12 +2,16 @@ import logging
 import os
 import tempfile
 import time
+from typing import Any
 from typing import Callable
+from typing import Generic
 from typing import Optional
 from typing import Protocol
+from typing import TypeVar
 
 import pytest
 
+from botnet import BaseModule
 from botnet.config import Config
 from botnet.message import Message
 from botnet.modules import AuthContext
@@ -31,10 +35,10 @@ logging.basicConfig(format=log_format, level=log_level)
 
 
 @pytest.fixture()
-def tmp_file(request):
+def tmp_file(request: pytest.FixtureRequest) -> str:
     fd, path = tempfile.mkstemp()
 
-    def teardown():
+    def teardown() -> None:
         os.close(fd)
         os.remove(path)
 
@@ -43,7 +47,7 @@ def tmp_file(request):
 
 
 class MakePrivmsgFixture(Protocol):
-    def __call__(self, text: str, nick: Optional[str] = None, target: Optional[str] = None):
+    def __call__(self, text: str, nick: Optional[str] = None, target: Optional[str] = None) -> Message:
         ...
 
 
@@ -60,47 +64,47 @@ def make_privmsg() -> Callable[[str, str, str], Message]:
 
 
 @pytest.fixture()
-def rec_msg():
+def rec_msg() -> Callable[[Message], None]:
     """Provides a function used for sending messages via message_in signal."""
-    def f(msg):
+    def f(msg: Message) -> None:
         message_in.send(None, msg=msg)
     return f
 
 
 @pytest.fixture()
-def rec_auth_msg():
+def rec_auth_msg() -> Callable[[Message], None]:
     """Provides a function used for sending messages via auth_message_in signal."""
-    def f(msg):
+    def f(msg: Message) -> None:
         auth_message_in.send(None, msg=msg)
     return f
 
 
 @pytest.fixture()
-def resource_path():
+def resource_path() -> Callable[[str], str]:
     """Provides a function used for creating paths to resources."""
-    def f(path):
+    def f(path: str) -> str:
         dirpath = os.path.dirname(os.path.realpath(__file__))
         return os.path.join(dirpath, 'resources', path)
     return f
 
 
 @pytest.fixture()
-def clear_signal_state():
+def clear_signal_state() -> None:
     clear_state()
 
 
 class Trap(object):
-    def __init__(self, signal) -> None:
-        self.trapped: list[dict] = []
+    def __init__(self, signal: Any) -> None:
+        self.trapped: list[dict[str, Any]] = []
         signal.connect(self.on_signal)
 
-    def on_signal(self, sender, **kwargs) -> None:
+    def on_signal(self, sender: Any, **kwargs: Any) -> None:
         self.trapped.append(kwargs)
 
     def reset(self) -> None:
         self.trapped = []
 
-    def wait(self, assertion: Callable[[list], None], max_seconds=1) -> None:
+    def wait(self, assertion: Callable[[list[dict[str, Any]]], None], max_seconds: int = 1) -> None:
         for i in range(max_seconds * 10):
             if i != 0:
                 time.sleep(0.1)
@@ -115,13 +119,16 @@ class Trap(object):
 
 
 @pytest.fixture()
-def make_signal_trap():
+def make_signal_trap() -> type[Trap]:
     return Trap
 
 
-class ModuleHarness:
+MODULE = TypeVar('MODULE', bound=BaseModule)
 
-    def __init__(self, module_class, config: Config) -> None:
+
+class ModuleHarness(Generic[MODULE]):
+
+    def __init__(self, module_class: type[MODULE], config: Config) -> None:
         self._request_list_commands_trap = Trap(_request_list_commands)
         self.auth_message_in_trap = Trap(auth_message_in)
         self.message_out_trap = Trap(message_out)
@@ -148,38 +155,38 @@ class ModuleHarness:
     def send_config_reloaded(self) -> None:
         config_reloaded.send(None)
 
-    def expect_request_list_commands_signals(self, expected_signals: list[dict]) -> None:
-        def wait_condition(trapped):
+    def expect_request_list_commands_signals(self, expected_signals: list[dict[str, Any]]) -> None:
+        def wait_condition(trapped: list[dict[str, Any]]) -> None:
             assert trapped == expected_signals
         self._request_list_commands_trap.wait(wait_condition)
 
-    def expect_auth_message_in_signals(self, expected_signals: list[dict]) -> None:
-        def wait_condition(trapped):
+    def expect_auth_message_in_signals(self, expected_signals: list[dict[str, Any]]) -> None:
+        def wait_condition(trapped: list[dict[str, Any]]) -> None:
             assert trapped == expected_signals
         self.auth_message_in_trap.wait(wait_condition)
 
-    def expect_module_load_signals(self, expected_signals: list[dict]) -> None:
-        def wait_condition(trapped):
+    def expect_module_load_signals(self, expected_signals: list[dict[str, Any]]) -> None:
+        def wait_condition(trapped: list[dict[str, Any]]) -> None:
             assert trapped == expected_signals
         self.module_load_trap.wait(wait_condition)
 
-    def expect_module_unload_signals(self, expected_signals: list[dict]) -> None:
-        def wait_condition(trapped):
+    def expect_module_unload_signals(self, expected_signals: list[dict[str, Any]]) -> None:
+        def wait_condition(trapped: list[dict[str, Any]]) -> None:
             assert trapped == expected_signals
         self.module_unload_trap.wait(wait_condition)
 
-    def expect_config_reload_signals(self, expected_signals: list[dict]) -> None:
-        def wait_condition(trapped):
+    def expect_config_reload_signals(self, expected_signals: list[dict[str, Any]]) -> None:
+        def wait_condition(trapped: list[dict[str, Any]]) -> None:
             assert trapped == expected_signals
         self.config_reload_trap.wait(wait_condition)
 
-    def expect_message_out_signals(self, expected_signals: list[dict]) -> None:
-        def wait_condition(trapped):
+    def expect_message_out_signals(self, expected_signals: list[dict[str, Any]]) -> None:
+        def wait_condition(trapped: list[dict[str, Any]]) -> None:
             assert trapped == expected_signals
         self.message_out_trap.wait(wait_condition)
 
-    def expect_config_changed_signals(self, expected_signals: list[dict]) -> None:
-        def wait_condition(trapped):
+    def expect_config_changed_signals(self, expected_signals: list[dict[str, Any]]) -> None:
+        def wait_condition(trapped: list[dict[str, Any]]) -> None:
             assert trapped == expected_signals
         self.config_changed_trap.wait(wait_condition)
 
@@ -193,9 +200,9 @@ class ModuleHarness:
 class ModuleHarnessFactory:
 
     def __init__(self) -> None:
-        self._harnesses: list[ModuleHarness] = []
+        self._harnesses: list[ModuleHarness[Any]] = []
 
-    def make(self, module_class: Callable, config: Config) -> ModuleHarness:
+    def make(self, module_class: type[MODULE], config: Config) -> ModuleHarness[MODULE]:
         harness = ModuleHarness(module_class, config)
         self._harnesses.append(harness)
         return harness
@@ -206,10 +213,10 @@ class ModuleHarnessFactory:
 
 
 @pytest.fixture()
-def module_harness_factory(request) -> ModuleHarnessFactory:
+def module_harness_factory(request: pytest.FixtureRequest) -> ModuleHarnessFactory:
     factory = ModuleHarnessFactory()
 
-    def teardown():
+    def teardown() -> None:
         factory._stop_all()
 
     request.addfinalizer(teardown)

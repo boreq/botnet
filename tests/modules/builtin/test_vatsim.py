@@ -1,28 +1,39 @@
 import pytest
 
 from botnet.config import Config
+from botnet.message import IncomingPrivateMessage
 from botnet.message import Message
+from botnet.modules import AuthContext
 from botnet.modules.builtin.vatsim import Metar
 from botnet.modules.builtin.vatsim import Vatsim
 from botnet.modules.builtin.vatsim import VatsimAPI
 
 from ...conftest import MakePrivmsgFixture
+from ...conftest import ModuleHarness
+from ...conftest import ModuleHarnessFactory
 
 
 class FakeVatsimAPI(VatsimAPI):
-    def __init__(self):
-        self.mock_metars = {}
+    def __init__(self) -> None:
+        self.mock_metars: dict[str, Metar] = {}
 
     def get_metar(self, icao: str) -> Metar:
         return self.mock_metars.get(icao, Metar(text=''))
 
 
-def test_help(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_vatsim):
-    msg = make_privmsg('.help', target='#channel')
+class VatsimForTest(Vatsim):
+    mock_api = FakeVatsimAPI()
+
+    def _create_api(self) -> FakeVatsimAPI:
+        return self.mock_api
+
+
+def test_help(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_vatsim: ModuleHarness[VatsimForTest]) -> None:
+    msg = IncomingPrivateMessage.new_from_message(make_privmsg('.help', target='#channel'))
     assert tested_vatsim.module.get_all_commands(msg, unauthorised_context) == {'help', 'metar'}
 
 
-def test_metar(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_vatsim) -> None:
+def test_metar(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_vatsim: ModuleHarness[VatsimForTest]) -> None:
     api: FakeVatsimAPI = tested_vatsim.module.mock_api
     api.mock_metars['EGLL'] = Metar(text='EGLL 241350Z 02010KT 9999 NCD 08/04 Q1013')
 
@@ -36,7 +47,7 @@ def test_metar(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_va
     ])
 
 
-def test_metar_empty(make_privmsg: MakePrivmsgFixture, unauthorised_context, tested_vatsim) -> None:
+def test_metar_empty(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_vatsim: ModuleHarness[VatsimForTest]) -> None:
     api: FakeVatsimAPI = tested_vatsim.module.mock_api
     api.mock_metars['EGLL'] = Metar(text='')
 
@@ -51,13 +62,7 @@ def test_metar_empty(make_privmsg: MakePrivmsgFixture, unauthorised_context, tes
 
 
 @pytest.fixture()
-def tested_vatsim(module_harness_factory):
-    class TestedVatsim(Vatsim):
-        mock_api = FakeVatsimAPI()
-
-        def _create_api(self) -> VatsimAPI:
-            return self.mock_api
-
+def tested_vatsim(module_harness_factory: ModuleHarnessFactory) -> ModuleHarness[VatsimForTest]:
     config = Config(
         {
             'module_config': {
@@ -70,4 +75,4 @@ def tested_vatsim(module_harness_factory):
         }
     )
 
-    return module_harness_factory.make(TestedVatsim, config)
+    return module_harness_factory.make(VatsimForTest, config)

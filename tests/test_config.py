@@ -1,18 +1,18 @@
 from botnet.config import Config
 
 
-def test_base():
+def test_base() -> None:
     c = Config()
     assert c == {}
 
 
-def test_defaults():
+def test_defaults() -> None:
     defaults = {'key': 'value'}
     c = Config(defaults)
     assert c['key'] == 'value'
 
 
-def test_from_json(tmp_file):
+def test_from_json(tmp_file: str) -> None:
     # Write json to tmp file
     val = '{"key": "value", "dkey": "new"}'
     with open(tmp_file, 'w') as f:

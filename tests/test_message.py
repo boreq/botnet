@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 
+import pytest
+
 from botnet.codes import Code
 from botnet.message import Channel
 from botnet.message import IncomingJoin
 from botnet.message import IncomingKick
 from botnet.message import IncomingPart
+from botnet.message import IncomingPing
 from botnet.message import IncomingPrivateMessage
 from botnet.message import IncomingQuit
 from botnet.message import Message
@@ -13,7 +16,7 @@ from botnet.message import Target
 from botnet.message import Text
 
 
-def test_message_from_string(subtests):
+def test_message_from_string(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
         string: str
@@ -66,7 +69,7 @@ def test_message_from_string(subtests):
             assert msg.to_string() == test_case.string
 
 
-def test_message_to_string(subtests):
+def test_message_to_string(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
         prefix: str | None
@@ -113,10 +116,10 @@ def test_message_to_string(subtests):
             assert msg.to_string() == test_case.expected_message
 
 
-def test_nick(subtests):
+def test_nick(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
-        nick: str | None
+        nick: str
         error: str | None
 
     test_cases = [
@@ -143,10 +146,6 @@ def test_nick(subtests):
         TestCase(
             nick='n',
             error=None,
-        ),
-        TestCase(
-            nick=None,
-            error='nick cannot be none or empty',
         ),
         TestCase(
             nick='',
@@ -193,7 +192,7 @@ def test_nick(subtests):
                     raise
 
 
-def test_nick_is_not_case_sensitive(subtests):
+def test_nick_is_not_case_sensitive(subtests: pytest.Subtests) -> None:
     assert Nick('a') != Nick('b')
     assert hash(Nick('a')) != hash(Nick('b'))
 
@@ -204,10 +203,10 @@ def test_nick_is_not_case_sensitive(subtests):
     assert hash(Nick('test')) == hash(Nick('TEST'))
 
 
-def test_channel(subtests):
+def test_channel(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
-        channel: str | None
+        channel: str
         error: str | None
 
     test_cases = [
@@ -231,10 +230,6 @@ def test_channel(subtests):
             channel='',
             error='channel cannot be none or empty',
         ),
-        TestCase(
-            channel=None,
-            error='channel cannot be none or empty',
-        ),
     ]
 
     for test_case in test_cases:
@@ -252,7 +247,7 @@ def test_channel(subtests):
                     raise
 
 
-def test_channel_is_not_case_sensitive(subtests):
+def test_channel_is_not_case_sensitive(subtests: pytest.Subtests) -> None:
     assert Channel('#a') != Channel('#b')
     assert hash(Channel('#a')) != hash(Channel('#b'))
 
@@ -263,7 +258,7 @@ def test_channel_is_not_case_sensitive(subtests):
     assert hash(Channel('#test')) == hash(Channel('#TEST'))
 
 
-def test_target(subtests):
+def test_target(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
         target: str
@@ -295,23 +290,15 @@ def test_target(subtests):
                 assert target.nick is not None
 
 
-def test_text(subtests):
+def test_text(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
-        text: str | None
+        text: str
         error: str | None
 
     test_cases = [
         TestCase(
-            text='message text',
-            error=None,
-        ),
-        TestCase(
             text='',
-            error='text cannot be none or empty',
-        ),
-        TestCase(
-            text=None,
             error='text cannot be none or empty',
         ),
     ]
@@ -331,7 +318,7 @@ def test_text(subtests):
                     raise
 
 
-def test_incoming_private_message_from_message():
+def test_incoming_private_message_from_message() -> None:
     msg = Message(command='PRIVMSG', prefix='nick!~user@example.com', params=['#channel', 'message text'])
     ipm = IncomingPrivateMessage.new_from_message(msg)
     assert ipm.sender == Nick('nick')
@@ -339,7 +326,7 @@ def test_incoming_private_message_from_message():
     assert ipm.text == Text('message text')
 
 
-def test_incoming_join_from_message(subtests):
+def test_incoming_join_from_message(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
         string: str
@@ -359,7 +346,7 @@ def test_incoming_join_from_message(subtests):
             assert ij == test_case.expected
 
 
-def test_incoming_part_from_message(subtests):
+def test_incoming_part_from_message(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
         string: str
@@ -383,7 +370,7 @@ def test_incoming_part_from_message(subtests):
             assert ip == test_case.expected
 
 
-def test_incoming_quit_from_message(subtests):
+def test_incoming_quit_from_message(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
         string: str
@@ -407,7 +394,7 @@ def test_incoming_quit_from_message(subtests):
             assert iq == test_case.expected
 
 
-def test_incoming_kick_from_message(subtests):
+def test_incoming_kick_from_message(subtests: pytest.Subtests) -> None:
     @dataclass
     class TestCase:
         string: str
@@ -429,3 +416,27 @@ def test_incoming_kick_from_message(subtests):
             msg = Message.new_from_string(test_case.string)
             ik = IncomingKick.new_from_message(msg)
             assert ik == test_case.expected
+
+
+def test_incoming_ping_from_message(subtests: pytest.Subtests) -> None:
+    @dataclass
+    class TestCase:
+        string: str
+        expected: IncomingPing
+
+    test_cases = [
+        TestCase(
+            string='PING :server.example.com',
+            expected=IncomingPing(['server.example.com']),
+        ),
+        TestCase(
+            string='PING server1.example.com server2.example.com',
+            expected=IncomingPing(['server1.example.com', 'server2.example.com']),
+        ),
+    ]
+
+    for test_case in test_cases:
+        with subtests.test(test_case=test_case):
+            msg = Message.new_from_string(test_case.string)
+            ip = IncomingPing.new_from_message(msg)
+            assert ip == test_case.expected

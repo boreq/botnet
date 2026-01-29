@@ -3,7 +3,7 @@ import pytest
 from botnet.modules.builtin.reminders import parse_message
 
 
-def test_parse_seconds():
+def test_parse_seconds() -> None:
     assert parse_message('11.1s lorem ipsum') == (11.1, 'lorem ipsum')
     assert parse_message('11.1sec lorem ipsum') == (11.1, 'lorem ipsum')
     assert parse_message('11.1second lorem ipsum') == (11.1, 'lorem ipsum')
@@ -15,7 +15,7 @@ def test_parse_seconds():
     assert parse_message('11.1 seconds lorem ipsum') == (11.1, 'lorem ipsum')
 
 
-def test_parse_minutes():
+def test_parse_minutes() -> None:
     assert parse_message('1.5m lorem ipsum') == (90, 'lorem ipsum')
     assert parse_message('1.5min lorem ipsum') == (90, 'lorem ipsum')
     assert parse_message('1.5mins lorem ipsum') == (90, 'lorem ipsum')
@@ -29,7 +29,7 @@ def test_parse_minutes():
     assert parse_message('1.5 minutes lorem ipsum') == (90, 'lorem ipsum')
 
 
-def test_parse_hours():
+def test_parse_hours() -> None:
     assert parse_message('1.5h lorem ipsum') == (60 * 60 * 1.5, 'lorem ipsum')
     assert parse_message('1.5hour lorem ipsum') == (60 * 60 * 1.5, 'lorem ipsum')
     assert parse_message('1.5hours lorem ipsum') == (60 * 60 * 1.5, 'lorem ipsum')
@@ -39,7 +39,7 @@ def test_parse_hours():
     assert parse_message('1.5 hours lorem ipsum') == (60 * 60 * 1.5, 'lorem ipsum')
 
 
-def test_parse_days():
+def test_parse_days() -> None:
     assert parse_message('1.5d lorem ipsum') == (60 * 60 * 24 * 1.5, 'lorem ipsum')
     assert parse_message('1.5day lorem ipsum') == (60 * 60 * 24 * 1.5, 'lorem ipsum')
     assert parse_message('1.5days lorem ipsum') == (60 * 60 * 24 * 1.5, 'lorem ipsum')
@@ -49,7 +49,7 @@ def test_parse_days():
     assert parse_message('1.5 days lorem ipsum') == (60 * 60 * 24 * 1.5, 'lorem ipsum')
 
 
-def test_parse_months():
+def test_parse_months() -> None:
     assert parse_message('1.5month lorem ipsum') == (60 * 60 * 24 * 30 * 1.5, 'lorem ipsum')
     assert parse_message('1.5months lorem ipsum') == (60 * 60 * 24 * 30 * 1.5, 'lorem ipsum')
 
@@ -57,7 +57,7 @@ def test_parse_months():
     assert parse_message('1.5 months lorem ipsum') == (60 * 60 * 24 * 30 * 1.5, 'lorem ipsum')
 
 
-def test_parse_years():
+def test_parse_years() -> None:
     assert parse_message('1.5y lorem ipsum') == (60 * 60 * 24 * 365 * 1.5, 'lorem ipsum')
     assert parse_message('1.5year lorem ipsum') == (60 * 60 * 24 * 365 * 1.5, 'lorem ipsum')
     assert parse_message('1.5years lorem ipsum') == (60 * 60 * 24 * 365 * 1.5, 'lorem ipsum')
@@ -67,16 +67,16 @@ def test_parse_years():
     assert parse_message('1.5 years lorem ipsum') == (60 * 60 * 24 * 365 * 1.5, 'lorem ipsum')
 
 
-def test_parse_no_message():
+def test_parse_no_message() -> None:
     with pytest.raises(ValueError):
         parse_message('1.5y')
 
 
-def test_parse_no_unit():
+def test_parse_no_unit() -> None:
     with pytest.raises(ValueError):
         parse_message('1.5 lorem ipsum')
 
 
-def test_parse_no_amount():
+def test_parse_no_amount() -> None:
     with pytest.raises(ValueError):
         parse_message('y lorem ipsum')

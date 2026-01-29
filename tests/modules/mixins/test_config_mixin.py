@@ -1,13 +1,16 @@
 from dataclasses import dataclass
 
+import pytest
+
 from botnet.config import Config
 from botnet.modules.mixins import ConfigMixin
+from tests.conftest import ModuleHarnessFactory
 
 
-def test_get_config_with_optional_config_fields_does_not_fail_if_config_is_empty(subtests) -> None:
+def test_get_config_with_optional_config_fields_does_not_fail_if_config_is_empty(subtests: pytest.Subtests) -> None:
     @dataclass()
     class TestCase:
-        config_data: dict
+        config_data: dict[str, object]
 
     test_cases = [
         TestCase(
@@ -51,10 +54,10 @@ def test_get_config_with_optional_config_fields_does_not_fail_if_config_is_empty
                 config_class = TestConfig
 
             t = TestConfigMixin(Config(test_case.config_data))
-            t.get_config()
+            assert t.get_config() is not None
 
 
-def test_updating_empty_config_sets_config_fields_and_sends_a_signal(module_harness_factory) -> None:
+def test_updating_empty_config_sets_config_fields_and_sends_a_signal(module_harness_factory: ModuleHarnessFactory) -> None:
     @dataclass()
     class TestConfig:
         field: str | None
