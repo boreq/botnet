@@ -3,7 +3,8 @@ from datetime import datetime
 from datetime import timezone
 from typing import Generator
 
-from ...message import Message, Nick
+from ...message import Message
+from ...message import Nick
 
 
 @dataclass()
@@ -30,7 +31,6 @@ class LogLoader:
                 received_at = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
                 received_at = received_at.replace(tzinfo=timezone.utc)
 
-
                 message_text = parts[3].removeprefix('IRC: Received: ')
                 message_text = message_text.strip()
 
@@ -47,7 +47,7 @@ class LogLoader:
                 try:
                     if message.nickname is not None:
                         Nick(message.nickname)
-                except:
+                except Exception:
                     continue
 
                 if message.command != 'PING' and message.command != 'PONG':
