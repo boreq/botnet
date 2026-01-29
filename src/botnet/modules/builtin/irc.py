@@ -51,14 +51,14 @@ class InactivityMonitor:
     """
 
     # PING command will be sent after that many seconds without communication
-    ping_timeout: float = 60
+    ping_timeout: float = 60 * 5
 
-    # PING command will continue to be be resent in those intervals after the
+    # PING command will continue to be resent in those intervals after the
     # initial PING command
     ping_repeat: float = 10
 
     # IRC module will be restarted after that many seconds without communication
-    abort_timeout: float = 240
+    abort_timeout: float = 60 * 6
 
     def __init__(self, restarter: Restarter):
         self.logger = get_logger(self)
