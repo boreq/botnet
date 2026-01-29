@@ -33,6 +33,7 @@ _COLOR = chr(0x03)
 class Color(Enum):
     GREEN = '03'
     RED = '04'
+    YELLOW = '08'
 
 
 def colored(text: str, color: Color) -> str:

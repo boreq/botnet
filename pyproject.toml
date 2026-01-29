@@ -23,6 +23,7 @@ dependencies = [
     "Mastodon.py==2.1.1",
     "dacite==1.9.2",
     'requests==2.32.*',
+    'ago==0.1.0',
 ]
 
 [project.optional-dependencies]
