@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import Callable
 
 from ...codes import Code
@@ -19,6 +20,8 @@ from .. import AuthContext
 from .. import BaseResponder
 from ..base import BaseModule
 from ..lib import MemoryCache
+
+_HACKINT_MATRIX_SERVER = 'matrix.hackint.org'
 
 
 @dataclass()
@@ -172,19 +175,22 @@ class AuthConfigPerson:
             raise ValueError('person must have at least one authorisation otherwise they will never be identified')
 
 
+class AuthorisationKind(Enum):
+    IRC = 'irc'
+    MATRIX = 'matrix'
+
+
 @dataclass()
 class AuthConfigAuthorisation:
-    kind: str
+    kind: AuthorisationKind
     nick: str
 
     def __post_init__(self) -> None:
-        if self.kind not in ['irc', 'matrix']:
-            raise ValueError('unknown authorisation kind: {}'.format(self.kind))
         match self.kind:
-            case 'irc':
+            case AuthorisationKind.IRC:
                 if not Nick(self.nick):
                     raise ValueError('invalid irc nick in authorisation: {}'.format(self.nick))
-            case 'matrix':
+            case AuthorisationKind.MATRIX:
                 if not self.nick.startswith('@') or ':' not in self.nick:
                     raise ValueError('invalid matrix nick in authorisation: {}'.format(self.nick))
 
@@ -227,34 +233,34 @@ class Auth(WhoisMixin, BaseResponder[AuthConfig]):
     config_name = 'auth'
     config_class = AuthConfig
 
-    def __init__(self, config: Config) -> None:
-        super().__init__(config)
-
     @message_handler()
     def handle_msg(self, msg: Message) -> None:
         def on_complete(whois_data: WhoisResponse) -> None:
             config = self.get_config()
             for person in config.people:
                 for authorisation in person.authorisations:
-                    match authorisation.kind:
-                        case 'irc':
-                            if whois_data.nick_identified != authorisation.nick:
-                                continue
-                            self._emit_auth_message_in(msg, person.uuid, person.groups)
-                            return
-                        case 'matrix':
-                            if whois_data.server != 'matrix.hackint.org':
-                                continue
-                            if whois_data.real_name != authorisation.nick:
-                                continue
-                            self._emit_auth_message_in(msg, person.uuid, person.groups)
-                            return
-                        case _:
-                            raise Exception('unknown authorisation kind: {}'.format(authorisation.kind))
+                    if self._authorisation_matches_whois(authorisation, whois_data):
+                        self._emit_auth_message_in(msg, person.uuid, person.groups)
+                        return
             self._emit_auth_message_in(msg, None, [])
 
         if msg.nickname is not None:
             self.whois_schedule(Nick(msg.nickname), on_complete)
+
+    def _authorisation_matches_whois(self, authorisation: AuthConfigAuthorisation, whois_data: WhoisResponse) -> bool:
+        match authorisation.kind:
+            case AuthorisationKind.IRC:
+                if whois_data.nick_identified != authorisation.nick:
+                    return False
+                return True
+            case AuthorisationKind.MATRIX:
+                if whois_data.server != _HACKINT_MATRIX_SERVER:
+                    return False
+                if whois_data.real_name != authorisation.nick:
+                    return False
+                return True
+            case _:
+                raise Exception('unknown authorisation kind: {}'.format(authorisation.kind))
 
     def _emit_auth_message_in(self, msg: Message, uuid: str | None, groups: list[str]) -> None:
         auth_context = AuthContext(uuid, groups)
