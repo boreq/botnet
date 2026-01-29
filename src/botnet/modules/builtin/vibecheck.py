@@ -322,7 +322,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
     def _run(self) -> None:
         while not self._stop_event.is_set():
             try:
-                self._maybe_pester_people()
+                self._update()
                 self._stop_event.wait(self.maybe_pester_people_every)
             except Exception as e:
                 on_exception.send(self, e=e)
@@ -330,25 +330,31 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
     def _now(self) -> datetime:
         return datetime.now()
 
-    def _maybe_pester_people(self) -> None:
-        command_prefix = self.get_command_prefix()
-
+    def _update(self) -> None:
         def on_names_available(names: list[Nick]) -> None:
-            config = self.get_config()
-            auth_module_people = self._peek_auth_module_people(config)
-            auth_module_people_uuids = set([person.uuid for person in auth_module_people])
-
-            for person in auth_module_people:
-                with self._store as state:
-                    report = state.generate_pestering_report(self._now(), person.uuid, names, auth_module_people_uuids)
-                if report is not None:
-                    for nick in [Target(Nick(nick_string)) for nick_string in person.contact]:
-                        self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
-                        self.message(nick, ', '.join([v.for_display(person.uuid) for v in reversed(report.persona_reports)]))
-                        self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}vibecheck\' command.')
+            self._maybe_pester_people(names)
+            self._mark_names_as_in_the_channel(names)
 
         channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
+
+    def _maybe_pester_people(self, names: list[Nick]) -> None:
+        config = self.get_config()
+        command_prefix = self.get_command_prefix()
+        auth_module_people = self._peek_auth_module_people(config)
+        auth_module_people_uuids = set([person.uuid for person in auth_module_people])
+        for person in auth_module_people:
+            with self._store as state:
+                report = state.generate_pestering_report(self._now(), person.uuid, names, auth_module_people_uuids)
+            if report is not None:
+                for nick in [Target(Nick(nick_string)) for nick_string in person.contact]:
+                    self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
+                    self.message(nick, ', '.join([v.for_display(person.uuid) for v in reversed(report.persona_reports)]))
+                    self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}vibecheck\' command.')
+
+    def _mark_names_as_in_the_channel(self, names: list[Nick]) -> None:
+        with self._store as state:
+            state.mark_as_being_in_the_channel(names)
 
     def _peek_auth_module_people(self, config: VibecheckConfig) -> list[AuthConfigPerson]:
         auth_config = self.peek_loaded_config_for_module('botnet', 'auth', AuthConfig)
@@ -435,6 +441,13 @@ class State:
         self._mark_pestered(auth_uuid)
         return MinorityReport.generate(now, self, nicks, authorised_group_auth_uuids)
 
+    def mark_as_being_in_the_channel(self, nicks: list[Nick]) -> None:
+        for nick in nicks:
+            if nick not in self.nick_infos:
+                self.nick_infos[nick] = NickInfo.new_due_to_being_in_the_channel()
+                return
+            self.nick_infos[nick].on_being_in_the_channel()
+
     def _all_nicks_of(self, nick: Nick) -> list[Nick]:
         all_nicks = set([nick])
         for persona in self.personas:
@@ -462,13 +475,6 @@ class State:
             self.authorised_people_infos[auth_uuid] = AuthorisedPersonInfo.new_due_to_pestering()
             return
         self.authorised_people_infos[auth_uuid].update_due_to_pestering()
-
-    def _mark_all_as_seen(self, nicks: list[Nick]) -> None:
-        for nick in nicks:
-            if nick not in self.nick_infos:
-                self.nick_infos[nick] = NickInfo.new_due_to_privmsg()
-                return
-            self.nick_infos[nick].on_privmsg()
 
 
 @dataclass
