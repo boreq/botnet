@@ -108,21 +108,21 @@ class Admin(BaseResponder[AdminConfig]):
     def _on_module_loaded(self, sender: Any, cls: type) -> None:
         try:
             msg = self._load_commands.pop()
-            self.respond(msg, 'Loaded module %s' % get_ident_string(cls))
+            self.respond(msg, 'Loaded module %s!' % get_ident_string(cls))
         except IndexError:
             pass
 
     def _on_module_unloaded(self, sender: Any, cls: type) -> None:
         try:
             msg = self._unload_commands.pop()
-            self.respond(msg, 'Unloaded module %s' % get_ident_string(cls))
+            self.respond(msg, 'Unloaded module %s!' % get_ident_string(cls))
         except IndexError:
             pass
 
     def _on_config_reloaded(self, sender: Any) -> None:
         try:
             msg = self._config_reload_commands.pop()
-            self.respond(msg, 'Config reloaded')
+            self.respond(msg, 'Config reloaded!')
         except IndexError:
             pass
 

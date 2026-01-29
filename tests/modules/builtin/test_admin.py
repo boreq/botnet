@@ -32,10 +32,10 @@ def test_module_load(make_privmsg: MakePrivmsgFixture, admin_context: AuthContex
 
     tested_admin.expect_message_out_signals([
         {
-            'msg': Message.new_from_string("PRIVMSG #channel :Loaded module tests.modules.builtin.test_admin.Module1")
+            'msg': Message.new_from_string("PRIVMSG #channel :Loaded module tests.modules.builtin.test_admin.Module1!")
         },
         {
-            'msg': Message.new_from_string("PRIVMSG #channel :Loaded module tests.modules.builtin.test_admin.Module2")
+            'msg': Message.new_from_string("PRIVMSG #channel :Loaded module tests.modules.builtin.test_admin.Module2!")
         }
     ])
 
@@ -52,7 +52,7 @@ def test_module_unload(make_privmsg: MakePrivmsgFixture, admin_context: AuthCont
 
     tested_admin.expect_message_out_signals([
         {
-            'msg': Message.new_from_string("PRIVMSG #channel :Unloaded module tests.modules.builtin.test_admin.Module1")
+            'msg': Message.new_from_string("PRIVMSG #channel :Unloaded module tests.modules.builtin.test_admin.Module1!")
         }
     ])
 
@@ -73,10 +73,10 @@ def test_module_reload(make_privmsg: MakePrivmsgFixture, admin_context: AuthCont
 
     tested_admin.expect_message_out_signals([
         {
-            'msg': Message.new_from_string("PRIVMSG #channel :Unloaded module tests.modules.builtin.test_admin.Module1")
+            'msg': Message.new_from_string("PRIVMSG #channel :Unloaded module tests.modules.builtin.test_admin.Module1!")
         },
         {
-            'msg': Message.new_from_string("PRIVMSG #channel :Loaded module tests.modules.builtin.test_admin.Module1")
+            'msg': Message.new_from_string("PRIVMSG #channel :Loaded module tests.modules.builtin.test_admin.Module1!")
         }
     ])
 
@@ -93,7 +93,7 @@ def test_config_reload(make_privmsg: MakePrivmsgFixture, admin_context: AuthCont
 
     tested_admin.expect_message_out_signals([
         {
-            'msg': Message.new_from_string("PRIVMSG #channel :Config reloaded")
+            'msg': Message.new_from_string("PRIVMSG #channel :Config reloaded!")
         }
     ])
 
