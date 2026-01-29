@@ -15,6 +15,7 @@ from .decorators import command
 from .decorators import join_message_handler
 from .decorators import kick_message_handler
 from .decorators import message_handler
+from .decorators import nick_message_handler
 from .decorators import only_admins
 from .decorators import parse_command
 from .decorators import part_message_handler
@@ -54,4 +55,5 @@ __all__ = [
     'auth_privmsg_message_handler',
     'reply_handler',
     'ping_message_handler',
+    'nick_message_handler',
 ]

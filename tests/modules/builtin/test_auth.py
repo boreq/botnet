@@ -238,6 +238,18 @@ def test_cache_invalidation(subtests: pytest.Subtests, make_tested_auth: Callabl
         ),
         TestCase(
             messages=[
+                ':someone!example.com NICK someoneelse',
+            ],
+            invalidates=True,
+        ),
+        TestCase(
+            messages=[
+                ':someoneelse!example.com NICK someone',
+            ],
+            invalidates=True,
+        ),
+        TestCase(
+            messages=[
                 ':someone!example.com PRIVMSG #channel :Hello!',
             ],
             invalidates=False,

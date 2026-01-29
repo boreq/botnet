@@ -276,6 +276,7 @@ class MessageCommand(Enum):
     KICK = 'KICK'
     QUIT = 'QUIT'
     PING = 'PING'
+    NICK = 'NICK'
 
 
 class IncomingPrivateMessage:
@@ -490,3 +491,35 @@ class IncomingPing:
         if not isinstance(other, IncomingPing):
             raise NotImplementedError
         return self.params == other.params
+
+
+class IncomingNick:
+    old_nick: Nick
+    new_nick: Nick
+
+    def __init__(self, old_nick: Nick, new_nick: Nick) -> None:
+        self.old_nick = old_nick
+        self.new_nick = new_nick
+
+    @classmethod
+    def new_from_message(cls, msg: Message) -> IncomingNick:
+        if msg.command != MessageCommand.NICK.value:
+            raise Exception('passed a message that isn\'t a NICK')
+
+        if len(msg.params) != 1:
+            raise Exception('a received NICK should have 1 parameter')
+
+        if msg.nickname is None:
+            raise Exception('a received NICK should have a nickname available')
+
+        old_nick = Nick(msg.nickname)
+        new_nick = Nick(msg.params[0])
+        return cls(old_nick, new_nick)
+
+    def __repr__(self) -> str:
+        return f'<IncomingNick: old_nick={self.old_nick} new_nick={self.new_nick}>'
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, IncomingNick):
+            raise NotImplementedError
+        return self.new_nick == other.new_nick and self.old_nick == other.old_nick

@@ -14,6 +14,7 @@ from ago import human
 
 from botnet.modules import join_message_handler
 from botnet.modules import kick_message_handler
+from botnet.modules import nick_message_handler
 from botnet.modules import part_message_handler
 from botnet.modules import quit_message_handler
 
@@ -25,6 +26,7 @@ from ...helpers import save_json
 from ...message import Channel
 from ...message import IncomingJoin
 from ...message import IncomingKick
+from ...message import IncomingNick
 from ...message import IncomingPart
 from ...message import IncomingPrivateMessage
 from ...message import IncomingQuit
@@ -109,6 +111,13 @@ class NamesMixin(BaseModule):
         nicks = self._cache.get(msg.channel)
         if nicks is not None and msg.kickee in nicks:
             nicks.remove(msg.kickee)
+
+    @nick_message_handler()
+    def names_handler_nick(self, msg: IncomingNick) -> None:
+        for (_, names) in self._cache:
+            if msg.old_nick in names:
+                names.remove(msg.old_nick)
+            names.append(msg.new_nick)
 
     def request_names(self, channel: Channel, on_names_available: Callable[[list[Nick]], None]) -> None:
         """Schedules an action to be completed when the names for the channel

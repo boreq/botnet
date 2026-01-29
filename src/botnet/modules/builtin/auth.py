@@ -2,9 +2,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable
 
+from botnet.modules.decorators import nick_message_handler
+
 from ...codes import Code
 from ...config import Config
 from ...message import IncomingKick
+from ...message import IncomingNick
 from ...message import IncomingPart
 from ...message import IncomingQuit
 from ...message import Message
@@ -114,6 +117,11 @@ class WhoisMixin(BaseModule):
     @kick_message_handler()
     def handler_kick(self, msg: IncomingKick) -> None:
         self._whois_cache.delete(msg.kickee)
+
+    @nick_message_handler()
+    def handler_nick(self, msg: IncomingNick) -> None:
+        self._whois_cache.delete(msg.old_nick)
+        self._whois_cache.delete(msg.new_nick)
 
     def whois_schedule(self, nick: Nick, on_complete: Callable[[WhoisResponse], None]) -> None:
         """Schedules an action to be completed when the whois for the nick is

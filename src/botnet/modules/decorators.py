@@ -8,6 +8,7 @@ from typing import cast
 from botnet.codes import Code
 from botnet.message import IncomingJoin
 from botnet.message import IncomingKick
+from botnet.message import IncomingNick
 from botnet.message import IncomingPart
 from botnet.message import IncomingPing
 from botnet.message import IncomingPrivateMessage
@@ -66,6 +67,7 @@ PartMessageHandler = Callable[[Any, IncomingPart], None]
 QuitMessageHandler = Callable[[Any, IncomingQuit], None]
 KickMessageHandler = Callable[[Any, IncomingKick], None]
 PingMessageHandler = Callable[[Any, IncomingPing], None]
+NickMessageHandler = Callable[[Any, IncomingNick], None]
 PrivateMessageMessageHandler = Callable[[Any, IncomingPrivateMessage], None]
 
 AuthMessageHandler = Callable[[Any, Message, AuthContext], None]
@@ -199,6 +201,23 @@ def ping_message_handler() -> Callable[[PingMessageHandler], MessageHandler]:
                 return
             kick = IncomingPing.new_from_message(msg)
             f(self, kick)
+
+        return wrapped
+
+    return decorator
+
+
+def nick_message_handler() -> Callable[[NickMessageHandler], MessageHandler]:
+    """Decorator which marks methods as NICK message handlers."""
+    def decorator(f: NickMessageHandler) -> MessageHandler:
+        setattr(f, _ATTR_MESSAGE_HANDLER, True)
+
+        @wraps(f)
+        def wrapped(self: Any, msg: Message) -> None:
+            if msg.command != MessageCommand.NICK.value:
+                return
+            nick = IncomingNick.new_from_message(msg)
+            f(self, nick)
 
         return wrapped
 
