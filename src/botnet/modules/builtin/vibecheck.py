@@ -239,7 +239,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                 nick = Nick(cleanup_nick(nick_argument))
                 if nick in names:
                     with self._store as state:
-                        state.endorse(auth.uuid, nick)
+                        state.endorse(auth.uuid, nick, self._now())
                     self.respond(msg, 'You endorsed {}!'.format(nick))
                 else:
                     self.respond(msg, 'There is no {} in the channel.'.format(nick))
@@ -260,7 +260,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         for nick_argument in args['nick']:
             nick = Nick(cleanup_nick(nick_argument))
             with self._store as state:
-                unendorsed = state.unendorse(auth.uuid, nick)
+                unendorsed = state.unendorse(auth.uuid, nick, self._now())
             if unendorsed:
                 self.respond(msg, 'You unendorsed {}!'.format(nick))
             else:
@@ -283,7 +283,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
 
             if nick1 in names and nick2 in names:
                 with self._store as state:
-                    state.merge_personas(auth.uuid, nick1, nick2)
+                    state.merge_personas(auth.uuid, nick1, nick2, self._now())
                 self.respond(msg, 'You merged {} and {}!'.format(nick1, nick2))
             else:
                 self.respond(msg, 'At least one of those nicks isn\'t in the channel!')
@@ -465,21 +465,21 @@ class State:
             return
         self.nick_infos[nick].on_privmsg(now)
 
-    def endorse(self, endorser_uuid: str, endorsee_nick: Nick) -> None:
-        self._mark_command_executed(endorser_uuid)
+    def endorse(self, endorser_uuid: str, endorsee_nick: Nick, now: datetime) -> None:
+        self._mark_command_executed(endorser_uuid, now)
         if endorsee_nick not in self.nick_infos:
             self.nick_infos[endorsee_nick] = NickInfo.new_due_to_endorsement(endorser_uuid)
         else:
             self.nick_infos[endorsee_nick].endorse(endorser_uuid)
 
-    def unendorse(self, unendorser_uuid: str, unendorsee_nick: Nick) -> bool:
-        self._mark_command_executed(unendorser_uuid)
+    def unendorse(self, unendorser_uuid: str, unendorsee_nick: Nick, now: datetime) -> bool:
+        self._mark_command_executed(unendorser_uuid, now)
         if unendorsee_nick not in self.nick_infos:
             return False
         return self.nick_infos[unendorsee_nick].unendorse(unendorser_uuid)
 
-    def merge_personas(self, auth_uuid: str, nick1: Nick, nick2: Nick) -> None:
-        self._mark_command_executed(auth_uuid)
+    def merge_personas(self, auth_uuid: str, nick1: Nick, nick2: Nick, now: datetime) -> None:
+        self._mark_command_executed(auth_uuid, now)
         for persona in self.personas:
             if nick1 in persona.nicks or nick2 in persona.nicks:
                 persona.add_nick(nick1)
@@ -488,14 +488,14 @@ class State:
         self.personas.append(Persona.new(nick1, nick2))
 
     def generate_report(self, now: datetime, auth_uuid: str, nicks: list[Nick], authorised_group_auth_uuids: set[str]) -> MinorityReport:
-        self._mark_command_executed(auth_uuid)
+        self._mark_command_executed(auth_uuid, now)
         return MinorityReport.generate(now, self, nicks, authorised_group_auth_uuids)
 
     def generate_pestering_report(self, now: datetime, auth_uuid: str, nicks: list[Nick], authorised_group_auth_uuids: set[str]) -> MinorityReport | None:
         if auth_uuid in self.authorised_people_infos:
-            if not self.authorised_people_infos[auth_uuid].should_pester():
+            if not self.authorised_people_infos[auth_uuid].should_pester(now):
                 return None
-        self._mark_pestered(auth_uuid)
+        self._mark_pestered(auth_uuid, now)
         return MinorityReport.generate(now, self, nicks, authorised_group_auth_uuids)
 
     def mark_as_being_in_the_channel(self, nicks: list[Nick], now: datetime) -> None:
@@ -520,17 +520,17 @@ class State:
                 infos.append(info)
         return infos
 
-    def _mark_command_executed(self, auth_uuid: str) -> None:
+    def _mark_command_executed(self, auth_uuid: str, now: datetime) -> None:
         if auth_uuid not in self.authorised_people_infos:
-            self.authorised_people_infos[auth_uuid] = AuthorisedPersonInfo.new_due_to_command_execution()
+            self.authorised_people_infos[auth_uuid] = AuthorisedPersonInfo.new_due_to_command_execution(now)
             return
-        self.authorised_people_infos[auth_uuid].update_due_to_command_execution()
+        self.authorised_people_infos[auth_uuid].update_due_to_command_execution(now)
 
-    def _mark_pestered(self, auth_uuid: str) -> None:
+    def _mark_pestered(self, auth_uuid: str, now: datetime) -> None:
         if auth_uuid not in self.authorised_people_infos:
-            self.authorised_people_infos[auth_uuid] = AuthorisedPersonInfo.new_due_to_pestering()
+            self.authorised_people_infos[auth_uuid] = AuthorisedPersonInfo.new_due_to_pestering(now)
             return
-        self.authorised_people_infos[auth_uuid].update_due_to_pestering()
+        self.authorised_people_infos[auth_uuid].update_due_to_pestering(now)
 
 
 @dataclass
@@ -665,29 +665,27 @@ class AuthorisedPersonInfo:
     last_command_executed_at: None | datetime
 
     @classmethod
-    def new_due_to_pestering(cls) -> AuthorisedPersonInfo:
-        return cls(datetime.now(timezone.utc), None)
+    def new_due_to_pestering(cls, now: datetime) -> AuthorisedPersonInfo:
+        return cls(now, None)
 
     @classmethod
-    def new_due_to_command_execution(cls) -> AuthorisedPersonInfo:
-        return cls(None, datetime.now(timezone.utc))
+    def new_due_to_command_execution(cls, now: datetime) -> AuthorisedPersonInfo:
+        return cls(None, now)
 
-    def update_due_to_pestering(self) -> None:
-        self.last_pestered_at = datetime.now(timezone.utc)
+    def update_due_to_pestering(self, now: datetime) -> None:
+        self.last_pestered_at = now
 
-    def update_due_to_command_execution(self) -> None:
-        self.last_command_executed_at = datetime.now(timezone.utc)
+    def update_due_to_command_execution(self, now: datetime) -> None:
+        self.last_command_executed_at = now
 
-    def should_pester(self) -> bool:
-        now = datetime.now().timestamp()
-
+    def should_pester(self, now: datetime) -> bool:
         if self.last_pestered_at is not None:
-            seconds_since_pestering = now - self.last_pestered_at.timestamp()
+            seconds_since_pestering = now.timestamp() - self.last_pestered_at.timestamp()
             if seconds_since_pestering < _PESTER_IF_NOT_PESTERED_FOR:
                 return False
 
         if self.last_command_executed_at is not None:
-            seconds_since_executing_a_command = now - self.last_command_executed_at.timestamp()
+            seconds_since_executing_a_command = now.timestamp() - self.last_command_executed_at.timestamp()
             if seconds_since_executing_a_command < _PESTER_IF_NO_COMMAND_FOR:
                 return False
 
@@ -1010,8 +1008,8 @@ class TransportAuthorisedPersonInfo:
 
     def to(self) -> AuthorisedPersonInfo:
         return AuthorisedPersonInfo(
-            datetime.fromtimestamp(self.last_pestered_at) if self.last_pestered_at is not None else None,
-            datetime.fromtimestamp(self.last_command_executed_at) if self.last_command_executed_at is not None else None,
+            datetime.fromtimestamp(self.last_pestered_at, tz=timezone.utc) if self.last_pestered_at is not None else None,
+            datetime.fromtimestamp(self.last_command_executed_at, tz=timezone.utc) if self.last_command_executed_at is not None else None,
         )
 
 
