@@ -959,14 +959,10 @@ class TransportPersona:
 _DT_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 
-def load_dt(v: None | float | str) -> None | datetime:
+def load_dt(v: None | str) -> None | datetime:
     if v is None:
         return None
-    if isinstance(v, str):
-        return datetime.strptime(v, _DT_FORMAT)
-    if isinstance(v, float):
-        return datetime.fromtimestamp(v, tz=timezone.utc)
-    raise Exception('Logic error')
+    return datetime.strptime(v, _DT_FORMAT)
 
 
 def save_dt(v: None | datetime) -> None | str:
@@ -977,14 +973,14 @@ def save_dt(v: None | datetime) -> None | str:
 
 @dataclass
 class TransportNickInfo:
-    first_message: None | float | str
-    last_message: None | float | str
-    first_join: None | float | str
-    last_join: None | float | str
-    first_kick: None | float | str
-    last_kick: None | float | str
-    first_seen_in_the_channel: None | float | str
-    last_seen_in_the_channel: None | float | str
+    first_message: None | str
+    last_message: None | str
+    first_join: None | str
+    last_join: None | str
+    first_kick: None | str
+    last_kick: None | str
+    first_seen_in_the_channel: None | str
+    last_seen_in_the_channel: None | str
     endorsements: list[str]
 
     @classmethod
@@ -1017,8 +1013,8 @@ class TransportNickInfo:
 
 @dataclass
 class TransportAuthorisedPersonInfo:
-    last_pestered_at: None | float | str
-    last_command_executed_at: None | float | str
+    last_pestered_at: None | str
+    last_command_executed_at: None | str
 
     @classmethod
     def create(cls, v: AuthorisedPersonInfo) -> TransportAuthorisedPersonInfo:

@@ -50,7 +50,4 @@ class LogLoader:
                 except Exception:
                     continue
 
-                if message.command != 'PING' and message.command != 'PONG':
-                    print(message_text)
-
                 yield ReceivedMessage(received_at=received_at, message=message)
