@@ -207,6 +207,8 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         self._store = Store(lambda: self.get_config().data)
         self._stop_event = threading.Event()
         self._t = threading.Thread(target=self._run)
+
+    def start(self) -> None:
         self._t.start()
 
     @command('vibecheck')
@@ -308,7 +310,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                     state.on_join(msg.nick, self._now())
 
     @privmsg_message_handler()
-    def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
+    def handler_privmsg(self, msg: IncomingPrivateMessage) -> None:
         channel = msg.target.channel
         if channel is not None:
             if channel == Channel(self.get_config().channel):
@@ -954,62 +956,81 @@ class TransportPersona:
         return Persona([Nick(v) for v in self.nicks])
 
 
+_DT_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
+
+
+def load_dt(v: None | float | str) -> None | datetime:
+    if v is None:
+        return None
+    if isinstance(v, str):
+        return datetime.strptime(v, _DT_FORMAT)
+    if isinstance(v, float):
+        return datetime.fromtimestamp(v, tz=timezone.utc)
+    raise Exception('Logic error')
+
+
+def save_dt(v: None | datetime) -> None | str:
+    if v is None:
+        return None
+    return v.strftime(_DT_FORMAT)
+
+
 @dataclass
 class TransportNickInfo:
-    first_message: None | float
-    last_message: None | float
-    first_join: None | float
-    last_join: None | float
-    first_kick: None | float
-    last_kick: None | float
-    first_seen_in_the_channel: None | float
-    last_seen_in_the_channel: None | float
+    first_message: None | float | str
+    last_message: None | float | str
+    first_join: None | float | str
+    last_join: None | float | str
+    first_kick: None | float | str
+    last_kick: None | float | str
+    first_seen_in_the_channel: None | float | str
+    last_seen_in_the_channel: None | float | str
     endorsements: list[str]
 
     @classmethod
     def create(cls, v: NickInfo) -> TransportNickInfo:
         return cls(
-            v.first_message.timestamp() if v.first_message is not None else None,
-            v.last_message.timestamp() if v.last_message is not None else None,
-            v.first_join.timestamp() if v.first_join is not None else None,
-            v.last_join.timestamp() if v.last_join is not None else None,
-            v.first_kick.timestamp() if v.first_kick is not None else None,
-            v.last_kick.timestamp() if v.last_kick is not None else None,
-            v.first_seen_in_the_channel.timestamp() if v.first_seen_in_the_channel is not None else None,
-            v.last_seen_in_the_channel.timestamp() if v.last_seen_in_the_channel is not None else None,
-            v.endorsements,
+            first_message=save_dt(v.first_message),
+            last_message=save_dt(v.last_message),
+            first_join=save_dt(v.first_join),
+            last_join=save_dt(v.last_join),
+            first_kick=save_dt(v.first_kick),
+            last_kick=save_dt(v.last_kick),
+            first_seen_in_the_channel=save_dt(v.first_seen_in_the_channel),
+            last_seen_in_the_channel=save_dt(v.last_seen_in_the_channel),
+            endorsements=v.endorsements,
         )
 
     def to(self) -> NickInfo:
         return NickInfo(
-            datetime.fromtimestamp(self.first_message, tz=timezone.utc) if self.first_message is not None else None,
-            datetime.fromtimestamp(self.last_message, tz=timezone.utc) if self.last_message is not None else None,
-            datetime.fromtimestamp(self.first_join, tz=timezone.utc) if self.first_join is not None else None,
-            datetime.fromtimestamp(self.last_join, tz=timezone.utc) if self.last_join is not None else None,
-            datetime.fromtimestamp(self.first_kick, tz=timezone.utc) if self.first_kick is not None else None,
-            datetime.fromtimestamp(self.last_kick, tz=timezone.utc) if self.last_kick is not None else None,
-            datetime.fromtimestamp(self.first_seen_in_the_channel, tz=timezone.utc) if self.first_seen_in_the_channel is not None else None,
-            datetime.fromtimestamp(self.last_seen_in_the_channel, tz=timezone.utc) if self.last_seen_in_the_channel is not None else None,
-            self.endorsements,
+            first_message=load_dt(self.first_message),
+            last_message=load_dt(self.last_message),
+            first_join=load_dt(self.first_join),
+            last_join=load_dt(self.last_join),
+            first_kick=load_dt(self.first_kick),
+            last_kick=load_dt(self.last_kick),
+            first_seen_in_the_channel=load_dt(self.first_seen_in_the_channel),
+            last_seen_in_the_channel=load_dt(self.last_seen_in_the_channel),
+            endorsements=self.endorsements,
         )
 
 
 @dataclass
 class TransportAuthorisedPersonInfo:
-    last_pestered_at: None | float
-    last_command_executed_at: None | float
+    last_pestered_at: None | float | str
+    last_command_executed_at: None | str | str
 
     @classmethod
     def create(cls, v: AuthorisedPersonInfo) -> TransportAuthorisedPersonInfo:
         return cls(
-            v.last_pestered_at.timestamp() if v.last_pestered_at is not None else None,
-            v.last_command_executed_at.timestamp() if v.last_command_executed_at is not None else None,
+            save_dt(v.last_pestered_at),
+            save_dt(v.last_command_executed_at),
         )
 
     def to(self) -> AuthorisedPersonInfo:
         return AuthorisedPersonInfo(
-            datetime.fromtimestamp(self.last_pestered_at, tz=timezone.utc) if self.last_pestered_at is not None else None,
-            datetime.fromtimestamp(self.last_command_executed_at, tz=timezone.utc) if self.last_command_executed_at is not None else None,
+            load_dt(self.last_pestered_at),
+            load_dt(self.last_command_executed_at),
         )
 
 

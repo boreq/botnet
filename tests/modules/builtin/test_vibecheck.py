@@ -744,4 +744,6 @@ def tested_vibecheck(module_harness_factory: ModuleHarnessFactory, tmp_file: str
         }
     )
 
-    return module_harness_factory.make(VibecheckForTest, config)
+    m = module_harness_factory.make(VibecheckForTest, config)
+    m.module.start()
+    return m
