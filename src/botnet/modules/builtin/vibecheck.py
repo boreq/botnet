@@ -1018,7 +1018,7 @@ class TransportNickInfo:
 @dataclass
 class TransportAuthorisedPersonInfo:
     last_pestered_at: None | float | str
-    last_command_executed_at: None | str | str
+    last_command_executed_at: None | float | str
 
     @classmethod
     def create(cls, v: AuthorisedPersonInfo) -> TransportAuthorisedPersonInfo:
