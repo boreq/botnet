@@ -1,6 +1,7 @@
 import datetime
 import os
 import threading
+from dataclasses import asdict
 from dataclasses import dataclass
 from typing import Callable
 
@@ -68,7 +69,13 @@ class MessageStore:
             }
 
     def _save(self) -> None:
-        save_json(self._path_func(), self._msg_store)
+        save_json(
+            self._path_func(),
+            {
+                key: asdict(msg_entry)
+                for key, msg_entry in self._msg_store.items()
+            }
+        )
 
     def _make_msg_entry(self, channel: Channel, message: Text, now: datetime.datetime) -> MsgEntry:
         return MsgEntry(
