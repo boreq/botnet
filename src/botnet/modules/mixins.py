@@ -3,6 +3,7 @@ import re
 from collections.abc import Callable
 from dataclasses import Field
 from dataclasses import asdict
+from enum import Enum
 from typing import Any
 from typing import ClassVar
 from typing import Generic
@@ -92,7 +93,7 @@ class ConfigMixin(Generic[MODULE_CONFIG_DATACLASS], BaseModule):
             data = self._config[_MODULE_CONFIG_KEY][namespace][module_name]
         else:
             data = {}
-        return dacite.from_dict(data_class=config_dataclass, data=data)
+        return dacite.from_dict(data_class=config_dataclass, data=data, config=dacite.Config(cast=[Enum], strict=True))
 
 
 BoundCommandHandler = Callable[[IncomingPrivateMessage, AuthContext], None]
