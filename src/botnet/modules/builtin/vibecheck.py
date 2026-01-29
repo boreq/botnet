@@ -72,14 +72,14 @@ class NamesMixin(BaseModule):
         self._current: dict[Channel, list[Nick]] = {}
 
     @reply_handler(Code.RPL_NAMREPLY)
-    def handler_rpl_namreply(self, msg: Message) -> None:
+    def names_handler_rpl_namreply(self, msg: Message) -> None:
         channel = Channel(msg.params[2])
         if channel not in self._current:
             self._current[channel] = []
         self._current[channel].extend([Nick(cleanup_nick(v)) for v in msg.params[3].split(' ')])
 
     @reply_handler(Code.RPL_ENDOFNAMES)
-    def handler_rpl_endofnames(self, msg: Message) -> None:
+    def names_handler_rpl_endofnames(self, msg: Message) -> None:
         channel = Channel(msg.params[1])
         if channel not in self._current:
             return
@@ -87,25 +87,25 @@ class NamesMixin(BaseModule):
         self._run_deferred()
 
     @join_message_handler()
-    def handler_join(self, msg: IncomingJoin) -> None:
+    def names_handler_join(self, msg: IncomingJoin) -> None:
         nicks = self._cache.get(msg.channel)
         if nicks is not None and msg.nick not in nicks:
             nicks.append(msg.nick)
 
     @part_message_handler()
-    def handler_part(self, msg: IncomingPart) -> None:
+    def names_handler_part(self, msg: IncomingPart) -> None:
         nicks = self._cache.get(msg.channel)
         if nicks is not None and msg.nick in nicks:
             nicks.remove(msg.nick)
 
     @quit_message_handler()
-    def handler_quit(self, msg: IncomingQuit) -> None:
+    def names_handler_quit(self, msg: IncomingQuit) -> None:
         for (_, names) in self._cache:
             if msg.nick in names:
                 names.remove(msg.nick)
 
     @kick_message_handler()
-    def handler_kick(self, msg: IncomingKick) -> None:
+    def names_handler_kick(self, msg: IncomingKick) -> None:
         nicks = self._cache.get(msg.channel)
         if nicks is not None and msg.kickee in nicks:
             nicks.remove(msg.kickee)
@@ -291,13 +291,29 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
 
+    @kick_message_handler()
+    def handler_kick(self, msg: IncomingKick) -> None:
+        channel = msg.channel
+        if channel is not None:
+            if channel == Channel(self.get_config().channel):
+                with self._store as state:
+                    state.on_kick(msg.kickee, self._now())
+
+    @join_message_handler()
+    def handler_join(self, msg: IncomingJoin) -> None:
+        channel = msg.channel
+        if channel is not None:
+            if channel == Channel(self.get_config().channel):
+                with self._store as state:
+                    state.on_join(msg.nick, self._now())
+
     @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         channel = msg.target.channel
         if channel is not None:
             if channel == Channel(self.get_config().channel):
                 with self._store as state:
-                    state.on_privmsg(msg.sender)
+                    state.on_privmsg(msg.sender, self._now())
 
     def stop(self) -> None:
         super().stop()
@@ -349,7 +365,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                     persona_report.for_display(auth.uuid)
                 )
 
-                for line in persona_report.for_detailed_display(auth.uuid):
+                for line in persona_report.for_detailed_display(auth.uuid, self._now()):
                     self.respond(msg, line)
 
                 break
@@ -389,7 +405,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
 
     def _mark_names_as_in_the_channel(self, names: list[Nick]) -> None:
         with self._store as state:
-            state.mark_as_being_in_the_channel(names)
+            state.mark_as_being_in_the_channel(names, self._now())
 
     def _peek_auth_module_people(self, config: VibecheckConfig) -> list[AuthConfigPerson]:
         auth_config = self.peek_loaded_config_for_module('botnet', 'auth', AuthConfig)
@@ -431,17 +447,23 @@ class State:
     personas: list[Persona]
     nick_infos: dict[Nick, NickInfo]
 
-    def on_join(self, nick: Nick) -> None:
+    def on_kick(self, nick: Nick, now: datetime) -> None:
         if nick not in self.nick_infos:
-            self.nick_infos[nick] = NickInfo.new_due_to_being_in_the_channel()
+            self.nick_infos[nick] = NickInfo.new_due_to_kick(now)
             return
-        self.nick_infos[nick].on_being_in_the_channel()
+        self.nick_infos[nick].on_kick(now)
 
-    def on_privmsg(self, nick: Nick) -> None:
+    def on_join(self, nick: Nick, now: datetime) -> None:
         if nick not in self.nick_infos:
-            self.nick_infos[nick] = NickInfo.new_due_to_privmsg()
+            self.nick_infos[nick] = NickInfo.new_due_to_join(now)
             return
-        self.nick_infos[nick].on_privmsg()
+        self.nick_infos[nick].on_join(now)
+
+    def on_privmsg(self, nick: Nick, now: datetime) -> None:
+        if nick not in self.nick_infos:
+            self.nick_infos[nick] = NickInfo.new_due_to_privmsg(now)
+            return
+        self.nick_infos[nick].on_privmsg(now)
 
     def endorse(self, endorser_uuid: str, endorsee_nick: Nick) -> None:
         self._mark_command_executed(endorser_uuid)
@@ -476,12 +498,12 @@ class State:
         self._mark_pestered(auth_uuid)
         return MinorityReport.generate(now, self, nicks, authorised_group_auth_uuids)
 
-    def mark_as_being_in_the_channel(self, nicks: list[Nick]) -> None:
+    def mark_as_being_in_the_channel(self, nicks: list[Nick], now: datetime) -> None:
         for nick in nicks:
             if nick not in self.nick_infos:
-                self.nick_infos[nick] = NickInfo.new_due_to_being_in_the_channel()
+                self.nick_infos[nick] = NickInfo.new_due_to_being_in_the_channel(now)
                 return
-            self.nick_infos[nick].on_being_in_the_channel()
+            self.nick_infos[nick].on_being_in_the_channel(now)
 
     def _all_nicks_of(self, nick: Nick) -> list[Nick]:
         all_nicks = set([nick])
@@ -530,44 +552,63 @@ class NickInfo:
     last_message: None | datetime
     first_join: None | datetime
     last_join: None | datetime
+    first_kick: None | datetime
+    last_kick: None | datetime
     first_seen_in_the_channel: None | datetime
     last_seen_in_the_channel: None | datetime
     endorsements: list[str]
 
     @classmethod
-    def new_due_to_join(cls) -> NickInfo:
-        now = datetime.now(timezone.utc)
-        return cls(
-            first_message=None,
-            last_message=None,
-            first_join=now,
-            last_join=now,
-            first_seen_in_the_channel=now,
-            last_seen_in_the_channel=now,
-            endorsements=[],
-        )
-
-    @classmethod
-    def new_due_to_being_in_the_channel(cls) -> NickInfo:
-        now = datetime.now(timezone.utc)
-        return cls(
-            first_message=None,
-            last_message=None,
-            first_join=None,
-            last_join=None,
-            first_seen_in_the_channel=now,
-            last_seen_in_the_channel=now,
-            endorsements=[],
-        )
-
-    @classmethod
-    def new_due_to_privmsg(cls) -> NickInfo:
-        now = datetime.now(timezone.utc)
+    def new_due_to_privmsg(cls, now: datetime) -> NickInfo:
         return cls(
             first_message=now,
             last_message=now,
             first_join=None,
             last_join=None,
+            first_kick=None,
+            last_kick=None,
+            first_seen_in_the_channel=now,
+            last_seen_in_the_channel=now,
+            endorsements=[],
+        )
+
+    @classmethod
+    def new_due_to_join(cls, now: datetime) -> NickInfo:
+        return cls(
+            first_message=None,
+            last_message=None,
+            first_join=now,
+            last_join=now,
+            first_kick=None,
+            last_kick=None,
+            first_seen_in_the_channel=now,
+            last_seen_in_the_channel=now,
+            endorsements=[],
+        )
+
+    @classmethod
+    def new_due_to_kick(cls, now: datetime) -> NickInfo:
+        return cls(
+            first_message=None,
+            last_message=None,
+            first_join=None,
+            last_join=None,
+            first_kick=now,
+            last_kick=now,
+            first_seen_in_the_channel=now,
+            last_seen_in_the_channel=now,
+            endorsements=[],
+        )
+
+    @classmethod
+    def new_due_to_being_in_the_channel(cls, now: datetime) -> NickInfo:
+        return cls(
+            first_message=None,
+            last_message=None,
+            first_join=None,
+            last_join=None,
+            first_kick=None,
+            last_kick=None,
             first_seen_in_the_channel=now,
             last_seen_in_the_channel=now,
             endorsements=[],
@@ -580,31 +621,31 @@ class NickInfo:
             last_message=None,
             first_join=None,
             last_join=None,
+            first_kick=None,
+            last_kick=None,
             first_seen_in_the_channel=None,
             last_seen_in_the_channel=None,
             endorsements=[endorser_uuid],
         )
 
-    def on_join(self) -> None:
-        now = datetime.now(timezone.utc)
-
-        if self.first_join is None:
-            self.first_join = now
-        self.last_join = now
-
-    def on_privmsg(self) -> None:
-        now = datetime.now(timezone.utc)
-
+    def on_privmsg(self, now: datetime) -> None:
         if self.first_message is None:
             self.first_message = now
         self.last_message = now
 
-    def on_being_in_the_channel(self) -> None:
-        now = datetime.now(timezone.utc)
+    def on_join(self, now: datetime) -> None:
+        if self.first_join is None:
+            self.first_join = now
+        self.last_join = now
 
+    def on_kick(self, now: datetime) -> None:
+        if self.first_kick is None:
+            self.first_kick = now
+        self.last_kick = now
+
+    def on_being_in_the_channel(self, now: datetime) -> None:
         if self.first_seen_in_the_channel is None:
             self.first_seen_in_the_channel = now
-
         self.last_seen_in_the_channel = now
 
     def endorse(self, endorser_uuid: str) -> None:
@@ -700,6 +741,8 @@ class PersonaReport:
     last_message: None | datetime
     first_join: None | datetime
     last_join: None | datetime
+    first_kick: None | datetime
+    last_kick: None | datetime
     first_seen_in_the_channel: None | datetime
     last_seen_in_the_channel: None | datetime
 
@@ -713,6 +756,8 @@ class PersonaReport:
             last_message=None,
             first_join=None,
             last_join=None,
+            first_kick=None,
+            last_kick=None,
             first_seen_in_the_channel=None,
             last_seen_in_the_channel=None,
         )
@@ -737,6 +782,14 @@ class PersonaReport:
             if info.last_join is not None:
                 if r.last_join is None or info.last_join > r.last_join:
                     r.last_join = info.last_join
+
+            if info.first_kick is not None:
+                if r.first_kick is None or info.first_kick < r.first_kick:
+                    r.first_kick = info.first_kick
+
+            if info.last_kick is not None:
+                if r.last_kick is None or info.last_kick > r.last_kick:
+                    r.last_kick = info.last_kick
 
             if info.first_seen_in_the_channel is not None:
                 if r.first_seen_in_the_channel is None or info.first_seen_in_the_channel < r.first_seen_in_the_channel:
@@ -764,15 +817,17 @@ class PersonaReport:
             warning_no_endorsements = ''
         return '{} ({}{})'.format(nicks, '^' if endorsed else '?', warning_no_endorsements)
 
-    def for_detailed_display(self, uuid: str) -> list[str]:
+    def for_detailed_display(self, uuid: str, now: datetime) -> list[str]:
         info = [
             '  All nicks: {}'.format(', '.join([v.s for v in self.all_nicks])),
-            '  First message: {}'.format(self._maybe_human(self.first_message, Badness.RECENT_BAD)),
-            '  Last message: {}'.format(self._maybe_human(self.last_message, Badness.OLD_BAD)),
-            '  First join: {}'.format(self._maybe_human(self.first_join, Badness.RECENT_BAD)),
-            '  Last join: {}'.format(self._maybe_human(self.last_join, Badness.WHATEVER)),
-            '  First seen in the channel: {}'.format(self._maybe_human(self.first_seen_in_the_channel, Badness.RECENT_BAD)),
-            '  Last seen in the channel: {}'.format(self._maybe_human(self.last_seen_in_the_channel, Badness.OLD_BAD)),
+            '  First message: {}'.format(self._maybe_human(self.first_message, Badness.RECENT_BAD, now)),
+            '  Last message: {}'.format(self._maybe_human(self.last_message, Badness.OLD_BAD, now)),
+            '  First join: {}'.format(self._maybe_human(self.first_join, Badness.RECENT_BAD, now)),
+            '  Last join: {}'.format(self._maybe_human(self.last_join, Badness.WHATEVER, now)),
+            '  First kick: {}'.format(self._maybe_human(self.first_kick, Badness.WHATEVER, now)),
+            '  Last kick: {}'.format(self._maybe_human(self.last_kick, Badness.WHATEVER, now)),
+            '  First seen in the channel: {}'.format(self._maybe_human(self.first_seen_in_the_channel, Badness.RECENT_BAD, now)),
+            '  Last seen in the channel: {}'.format(self._maybe_human(self.last_seen_in_the_channel, Badness.OLD_BAD, now)),
         ]
 
         if uuid in self.endorsements:
@@ -787,19 +842,19 @@ class PersonaReport:
 
         return info
 
-    def _maybe_human(self, dt: None | datetime, badness: Badness) -> str:
+    def _maybe_human(self, dt: None | datetime, badness: Badness, now: datetime) -> str:
         if dt is None:
             return colored('unknown', Color.YELLOW)
         text = human(dt, precision=1)
 
         match badness:
             case Badness.OLD_BAD:
-                if (datetime.now(timezone.utc) - dt) > timedelta(days=30):
+                if (now - dt) > timedelta(days=30):
                     return colored(text, Color.RED)
                 else:
                     return colored(text, Color.GREEN)
             case Badness.RECENT_BAD:
-                if (datetime.now(timezone.utc) - dt) < timedelta(days=30):
+                if (now - dt) < timedelta(days=30):
                     return colored(text, Color.RED)
                 else:
                     return colored(text, Color.GREEN)
@@ -907,6 +962,8 @@ class TransportNickInfo:
     last_message: None | float
     first_join: None | float
     last_join: None | float
+    first_kick: None | float
+    last_kick: None | float
     first_seen_in_the_channel: None | float
     last_seen_in_the_channel: None | float
     endorsements: list[str]
@@ -918,6 +975,8 @@ class TransportNickInfo:
             v.last_message.timestamp() if v.last_message is not None else None,
             v.first_join.timestamp() if v.first_join is not None else None,
             v.last_join.timestamp() if v.last_join is not None else None,
+            v.first_kick.timestamp() if v.first_kick is not None else None,
+            v.last_kick.timestamp() if v.last_kick is not None else None,
             v.first_seen_in_the_channel.timestamp() if v.first_seen_in_the_channel is not None else None,
             v.last_seen_in_the_channel.timestamp() if v.last_seen_in_the_channel is not None else None,
             v.endorsements,
@@ -929,6 +988,8 @@ class TransportNickInfo:
             datetime.fromtimestamp(self.last_message, tz=timezone.utc) if self.last_message is not None else None,
             datetime.fromtimestamp(self.first_join, tz=timezone.utc) if self.first_join is not None else None,
             datetime.fromtimestamp(self.last_join, tz=timezone.utc) if self.last_join is not None else None,
+            datetime.fromtimestamp(self.first_kick, tz=timezone.utc) if self.first_kick is not None else None,
+            datetime.fromtimestamp(self.last_kick, tz=timezone.utc) if self.last_kick is not None else None,
             datetime.fromtimestamp(self.first_seen_in_the_channel, tz=timezone.utc) if self.first_seen_in_the_channel is not None else None,
             datetime.fromtimestamp(self.last_seen_in_the_channel, tz=timezone.utc) if self.last_seen_in_the_channel is not None else None,
             self.endorsements,
