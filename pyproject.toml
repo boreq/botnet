@@ -24,6 +24,7 @@ dependencies = [
     "dacite==1.9.2",
     'requests==2.32.*',
     'ago==0.1.0',
+    'prometheus-client==0.17.*',
 ]
 
 [project.optional-dependencies]
