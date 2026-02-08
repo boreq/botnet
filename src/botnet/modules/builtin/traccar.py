@@ -284,7 +284,13 @@ class Traccar(BaseResponder[TraccarConfig]):
             self.respond(msg, 'The eagle has left the nest, over.')
             return
 
-        self.respond(msg, 'Currently at: {} ({})'.format(', '.join(sanitized_geofences), self._confidence(position)))
+        states = self._states(position)
+        if len(states) > 0:
+            state = ' [{}].'.format(', '.join(states))
+        else:
+            state = ''
+
+        self.respond(msg, 'Currently at: {} ({}){}'.format(', '.join(sanitized_geofences), self._confidence(position), state))
 
     def _respond_with_battery(self, msg: IncomingPrivateMessage, instance: str, token: str, device_name: str) -> None:
         api = self._create_api(instance, token)
@@ -315,6 +321,11 @@ class Traccar(BaseResponder[TraccarConfig]):
             return 'probably'
 
         return 'confidence is high, I repeat, confidence is high'
+
+    def _states(self, position: Position) -> list[str]:
+        if position.speed > 25:
+            return ['must be pedaling furiously']
+        return []
 
     def _find_device(self, devices: list[Device], device_name: str) -> Device | None:
         for device in devices:
