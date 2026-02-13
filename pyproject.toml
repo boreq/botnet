@@ -27,7 +27,7 @@ dependencies = [
     'prometheus-client==0.17.*',
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "pytest",
     "flake8",
