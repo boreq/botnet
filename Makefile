@@ -3,27 +3,27 @@ ci: lint test
 
 .PHONY: test
 test:
-	py.test -vv tests
+	uv run py.test -vv tests
 
 .PHONY: lint
 lint: flake8 mypy ruff
 
 .PHONY: flake8
 flake8:
-	flake8 src
-	flake8 tests
+	uv run flake8 src
+	uv run flake8 tests
 
 .PHONY: mypy
 mypy:
-	mypy src
-	mypy tests
+	uv run mypy src
+	uv run mypy tests
 
 .PHONY: ruff
 ruff:
-	ruff check src
-	ruff check tests
+	uv run ruff check src
+	uv run ruff check tests
 
 .PHONY: fix
 fix:
-	ruff check --fix src
-	ruff check --fix tests
+	uv run ruff check --fix src
+	uv run ruff check --fix tests
