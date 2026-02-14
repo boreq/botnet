@@ -332,8 +332,6 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         self._t.join()
 
     def _vibecheck(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
-        command_prefix = self.get_command_prefix()
-
         def on_names_available(names: list[Nick]) -> None:
             assert auth.uuid is not None
 
@@ -352,7 +350,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                 )
             )
 
-            self.respond(msg, f'If you would like to endorse anyone then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'.')
+            self.respond(msg, self._general_instruction())
             self.respond(msg, f'Transparency: {report.authorised_people_report.for_display()}')
 
         channel = Channel(self.get_config().channel)
@@ -402,7 +400,6 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
 
     def _maybe_pester_people(self, names: list[Nick]) -> None:
         config = self.get_config()
-        command_prefix = self.get_command_prefix()
         auth_module_people = self._peek_auth_module_people(config)
         auth_module_people_uuids = set([person.uuid for person in auth_module_people])
         for person in auth_module_people:
@@ -412,7 +409,17 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                 for nick in [Target(Nick(nick_string)) for nick_string in person.contact]:
                     self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
                     self.message(nick, ', '.join([v.for_display(person.uuid) for v in reversed(report.persona_reports)]))
-                    self.message(nick, f'If you would like to endorse any of them then you can privately use the \'{command_prefix}endorse NICK\' command in this buffer. Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'. If you want to see the full report use the \'{command_prefix}vibecheck\' command.')
+                    self.message(nick, self._general_instruction())
+
+    def _general_instruction(self) -> str:
+        command_prefix = self.get_command_prefix()
+        instructions = [
+            f'If you would like to endorse anyone then you can privately use \'{command_prefix}endorse NICK\' in this buffer.',
+            f'Please note that this isn\'t a big decision as you can easily reverse it with \'{command_prefix}unendorse NICK\'.',
+            f'The full report can always be recalled with \'{command_prefix}vibecheck\'.',
+            f'If you want to know more about a nick use \'{command_prefix}vibecheck NICK\'.',
+        ]
+        return ' '.join(instructions)
 
     def _mark_names_as_in_the_channel(self, names: list[Nick]) -> None:
         with self._store as state:
