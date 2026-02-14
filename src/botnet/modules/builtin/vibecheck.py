@@ -816,10 +816,7 @@ class PersonaReport:
     def for_display(self, uuid: str) -> str:
         endorsed = uuid in self.endorsements
         nicks = '/'.join([v.s for v in self.nicks_now_in_the_channel])
-        if endorsed:
-            nicks = colored(nicks, Color.GREEN)
-        else:
-            nicks = colored(nicks, Color.RED)
+        nicks = colored(nicks, self._endorsement_color(uuid))
         if len(self.endorsements) == 0:
             warning_no_endorsements = colored('0', Color.RED)
         else:
@@ -839,17 +836,28 @@ class PersonaReport:
             '  Last seen in the channel: {}'.format(self._maybe_human(self.last_seen_in_the_channel, Badness.OLD_BAD, now)),
         ]
 
+        endorsement_color = self._endorsement_color(uuid)
+
         if uuid in self.endorsements:
-            info.append(colored('  Was endorsed by you.', Color.GREEN))
+            info.append(colored('  Was endorsed by you.', endorsement_color))
         else:
-            info.append(colored('  Was NOT endorsed by you.', Color.RED))
+            info.append(colored('  Was NOT endorsed by you.', endorsement_color))
 
         if len(self.endorsements) > 0:
-            info.append(colored('  Was endorsed by at least one person.', Color.GREEN))
+            info.append(colored('  Was endorsed by at least one person.', endorsement_color))
         else:
-            info.append(colored('  Was NOT endorsed by anyone.', Color.RED))
+            info.append(colored('  Was NOT endorsed by anyone.', endorsement_color))
 
         return info
+
+    def _endorsement_color(self, uuid: str) -> Color:
+        if uuid in self.endorsements:
+            return Color.GREEN
+        else:
+            if len(self.endorsements) == 0:
+                return Color.RED
+            else:
+                return Color.YELLOW
 
     def _maybe_human(self, dt: None | datetime, badness: Badness, now: datetime) -> str:
         if dt is None:
