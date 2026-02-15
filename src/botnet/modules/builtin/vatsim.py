@@ -28,7 +28,7 @@ class RestVatsimAPI:
 
     def get_metar(self, icao: str) -> Metar:
         url = self._api_url_template % icao
-        r = requests.get(url)
+        r = requests.get(url, timeout=10)
         r.raise_for_status()
         return Metar(text=r.text)
 

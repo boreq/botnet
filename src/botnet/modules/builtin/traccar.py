@@ -91,7 +91,7 @@ class RestTraccarAPI(TraccarAPI):
         ]
 
     def _get(self, path: str) -> requests.Response:
-        response = requests.get(self._url(path), headers=self._headers())
+        response = requests.get(self._url(path), headers=self._headers(), timeout=10)
         response.raise_for_status()
         return response
 

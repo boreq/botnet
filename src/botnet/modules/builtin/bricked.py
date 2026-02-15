@@ -32,7 +32,7 @@ class RestBrickedAPI(BrickedAPI):
         return dacite.from_dict(data_class=Status, data=j)
 
     def _get(self, path: str) -> requests.Response:
-        r = requests.get(self._url(path))
+        r = requests.get(self._url(path), timeout=10)
         r.raise_for_status()
         return r
 

@@ -46,7 +46,7 @@ class MetricsMoodotfarmAPI(MoooodotfarmAPI):
         )
 
     def _get(self) -> requests.Response:
-        response = requests.get(self._url)
+        response = requests.get(self._url, timeout=10)
         response.raise_for_status()
         return response
 
