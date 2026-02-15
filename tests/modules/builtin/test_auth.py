@@ -129,12 +129,14 @@ def test_whois_parsing(subtests: pytest.Subtests, make_tested_auth: Callable[[],
 def test_identify_user(subtests: pytest.Subtests, make_tested_auth: Callable[[], ModuleHarness[Auth]]) -> None:
     @dataclass
     class TestCase:
+        nick: str
         messages: list[str]
         context: AuthContext
 
     test_cases = [
         # logged in via hackint irc
         TestCase(
+            nick='someone',
             messages=[
                 ':vindobona.hackint.org 311 target_nick someone ~user hackint/user/username * :real name',
                 ':vindobona.hackint.org 319 target_nick someone :@#channel1 @#channel2 #channel3',
@@ -147,6 +149,7 @@ def test_identify_user(subtests: pytest.Subtests, make_tested_auth: Callable[[],
         ),
         # logged in via hackint irc to a wrong nick
         TestCase(
+            nick='someone',
             messages=[
                 ':vindobona.hackint.org 311 target_nick someone ~user hackint/user/username * :real name',
                 ':vindobona.hackint.org 319 target_nick someone :@#channel1 @#channel2 #channel3',
@@ -159,6 +162,7 @@ def test_identify_user(subtests: pytest.Subtests, make_tested_auth: Callable[[],
         ),
         # logged in via hackint matrix
         TestCase(
+            nick='someone',
             messages=[
                 ':vindobona.hackint.org 311 robotnet_test someone ~someonemill fd1d:6215:5333::24e * @matrixnick:example.com',
                 ':vindobona.hackint.org 319 robotnet_test someone :#channel1 #channel2 #channel3',
@@ -170,6 +174,7 @@ def test_identify_user(subtests: pytest.Subtests, make_tested_auth: Callable[[],
         ),
         # logged in via hackint matrix to a wrong nick
         TestCase(
+            nick='someone',
             messages=[
                 ':vindobona.hackint.org 311 robotnet_test someone ~someonemill fd1d:6215:5333::24e * @othermatrixnick:example.com',
                 ':vindobona.hackint.org 319 robotnet_test someone :#channel1 #channel2 #channel3',
@@ -179,19 +184,43 @@ def test_identify_user(subtests: pytest.Subtests, make_tested_auth: Callable[[],
             ],
             context=AuthContext(None, []),
         ),
+        # host and nick
+        TestCase(
+            nick='hostnick',
+            messages=[
+                ':vindobona.hackint.org 311 target_nick hostnick ~user 1.2.3.4 * :real name',
+                ':vindobona.hackint.org 319 target_nick hostnick :@#channel1 @#channel2 #channel3',
+                ':vindobona.hackint.org 312 target_nick hostnick palermo.hackint.org :The HackINT irc network',
+                ':vindobona.hackint.org 671 target_nick hostnick :is using a secure connection',
+                ':vindobona.hackint.org 318 target_nick hostnick :End of /WHOIS list.',
+            ],
+            context=AuthContext('someones_uuid', ['group1', 'group2']),
+        ),
+        # host and nick, invalid host
+        TestCase(
+            nick='hostnick',
+            messages=[
+                ':vindobona.hackint.org 311 target_nick hostnick ~user 5.6.7.8 * :real name',
+                ':vindobona.hackint.org 319 target_nick hostnick :@#channel1 @#channel2 #channel3',
+                ':vindobona.hackint.org 312 target_nick hostnick palermo.hackint.org :The HackINT irc network',
+                ':vindobona.hackint.org 671 target_nick hostnick :is using a secure connection',
+                ':vindobona.hackint.org 318 target_nick hostnick :End of /WHOIS list.',
+            ],
+            context=AuthContext(None, []),
+        ),
     ]
 
     for test_case in test_cases:
         with subtests.test(test_case=test_case):
             tested_auth = make_tested_auth()
 
-            received_msg = Message.new_from_string(':someone!example.com PRIVMSG #channel :Hello!')
+            received_msg = Message.new_from_string(f':{test_case.nick}!example.com PRIVMSG #channel :Hello!')
             tested_auth.receive_message_in(received_msg)
 
             tested_auth.expect_message_out_signals(
                 [
                     {
-                        'msg': Message.new_from_string('WHOIS someone'),
+                        'msg': Message.new_from_string(f'WHOIS {test_case.nick}'),
                     },
                 ],
             )
@@ -329,12 +358,20 @@ def make_tested_auth(module_harness_factory: ModuleHarnessFactory) -> Callable[[
                                 'uuid': 'someones_uuid',
                                 'authorisations': [
                                     {
-                                        'kind': 'irc',
-                                        'nick': 'ircnick',
+                                        'logged_in_as': {
+                                            'nick': 'ircnick',
+                                        }
                                     },
                                     {
-                                        'kind': 'matrix',
-                                        'nick': '@matrixnick:example.com',
+                                        'matrix': {
+                                            'nick': '@matrixnick:example.com',
+                                        }
+                                    },
+                                    {
+                                        'nick_and_host': {
+                                            'nick': 'hostnick',
+                                            'host': '1.2.3.4',
+                                        }
                                     },
                                 ],
                                 'groups': ['group1', 'group2'],

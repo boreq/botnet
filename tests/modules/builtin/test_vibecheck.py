@@ -22,7 +22,7 @@ class VibecheckForTest(Vibecheck):
         return datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
 
-def test_pester(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
+def test_pester(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     tested_vibecheck.expect_message_out_signals(
         [
             {
@@ -55,7 +55,7 @@ def test_pester(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthCont
     )
 
 
-def test_endorsement_session(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
+def test_endorsement_session(make_privmsg: MakePrivmsgFixture, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     ctx = AuthContext('person-uuid', ['group'])
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
@@ -190,12 +190,13 @@ def test_endorsement_session(make_privmsg: MakePrivmsgFixture, unauthorised_cont
     )
 
 
-def test_healthcheck(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
+def test_healthcheck(make_privmsg: MakePrivmsgFixture, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     some_authorisations = [
         {
-            'kind': 'irc',
-            'nick': 'ircnick',
-        }
+            'logged_in_as': {
+                'nick': 'ircnick',
+            },
+        },
     ]
 
     tested_vibecheck.module._config['module_config']['botnet']['auth']['people'] = [
@@ -724,9 +725,10 @@ def tested_vibecheck(module_harness_factory: ModuleHarnessFactory, tmp_file: str
                                 'uuid': 'person-uuid',
                                 'authorisations': [
                                     {
-                                        'kind': 'irc',
-                                        'nick': 'ircnick',
-                                    }
+                                        'logged_in_as': {
+                                            'nick': 'ircnick',
+                                        },
+                                    },
                                 ],
                                 'groups': ['group'],
                                 'contact': ['person'],
@@ -737,7 +739,7 @@ def tested_vibecheck(module_harness_factory: ModuleHarnessFactory, tmp_file: str
                         'data': tmp_file,
                         'channel': '#channel',
                         'authorised_group': 'group',
-                    }
+                    },
                 },
             },
         }

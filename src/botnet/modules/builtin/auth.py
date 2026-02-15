@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import Callable
 
 from botnet.modules.decorators import nick_message_handler
@@ -183,24 +182,59 @@ class AuthConfigPerson:
             raise ValueError('person must have at least one authorisation otherwise they will never be identified')
 
 
-class AuthorisationKind(Enum):
-    IRC = 'irc'
-    MATRIX = 'matrix'
+@dataclass()
+class AuthConfigAuthorisationLoggedInAs:
+    nick: str
+
+    def __post_init__(self) -> None:
+        try:
+            Nick(self.nick)
+        except Exception as e:
+            raise ValueError('logged_in_as authorisation nick must be a valid nick') from e
+
+
+@dataclass()
+class AuthConfigAuthorisationMatrix:
+    nick: str
+
+    def __post_init__(self) -> None:
+        if not self.nick.startswith('@'):
+            raise ValueError('matrix authorisation nick must start with @')
+        if ':' not in self.nick:
+            raise ValueError('matrix authorisation nick must contain a server part separated by a colon')
+
+
+@dataclass()
+class AuthConfigAuthorisationNickAndHost:
+    nick: str
+    host: str
+
+    def __post_init__(self) -> None:
+        try:
+            Nick(self.nick)
+        except Exception as e:
+            raise ValueError('logged_in_as authorisation nick must be a valid nick') from e
+
+        if self.host == '':
+            raise ValueError('nick_and_host authorisation host cannot be empty')
 
 
 @dataclass()
 class AuthConfigAuthorisation:
-    kind: AuthorisationKind
-    nick: str
+    logged_in_as: AuthConfigAuthorisationLoggedInAs | None
+    matrix: AuthConfigAuthorisationMatrix | None
+    nick_and_host: AuthConfigAuthorisationNickAndHost | None
 
     def __post_init__(self) -> None:
-        match self.kind:
-            case AuthorisationKind.IRC:
-                if not Nick(self.nick):
-                    raise ValueError('invalid irc nick in authorisation: {}'.format(self.nick))
-            case AuthorisationKind.MATRIX:
-                if not self.nick.startswith('@') or ':' not in self.nick:
-                    raise ValueError('invalid matrix nick in authorisation: {}'.format(self.nick))
+        counter = 0
+        if self.logged_in_as is not None:
+            counter += 1
+        if self.matrix is not None:
+            counter += 1
+        if self.nick_and_host is not None:
+            counter += 1
+        if counter != 1:
+            raise ValueError('exactly one authorisation kind must be set')
 
 
 class Auth(WhoisMixin, BaseResponder[AuthConfig]):
@@ -219,16 +253,24 @@ class Auth(WhoisMixin, BaseResponder[AuthConfig]):
                             "uuid": "someperson",
                             "authorisations": [
                                 {
-                                    "kind": "irc",
-                                    "nick": "nick"
+                                    "logged_in_as": {
+                                        "nick": "nick"
+                                    }
                                 },
                                 {
-                                    "kind": "matrix",
-                                    "nick": "@nick:example.com"
+                                    "nick_and_host": {
+                                        "nick": "nick",
+                                        "host": "1.2.3.4"
+                                    }
+                                },
+                                {
+                                    "matrix": {
+                                        "username": "@nick:example.com"
+                                    }
                                 }
                             ],
                             "contact": ["nick"],
-                            groups: ["admin"]
+                            "groups": ["admin"]
                         }
                     ]
                 }
@@ -256,19 +298,28 @@ class Auth(WhoisMixin, BaseResponder[AuthConfig]):
             self.whois_schedule(Nick(msg.nickname), on_complete)
 
     def _authorisation_matches_whois(self, authorisation: AuthConfigAuthorisation, whois_data: WhoisResponse) -> bool:
-        match authorisation.kind:
-            case AuthorisationKind.IRC:
-                if whois_data.nick_identified != authorisation.nick:
-                    return False
-                return True
-            case AuthorisationKind.MATRIX:
-                if whois_data.server != _HACKINT_MATRIX_SERVER:
-                    return False
-                if whois_data.real_name != authorisation.nick:
-                    return False
-                return True
-            case _:
-                raise Exception('unknown authorisation kind: {}'.format(authorisation.kind))
+        if authorisation.logged_in_as is not None:
+            if whois_data.nick_identified != authorisation.logged_in_as.nick:
+                return False
+            return True
+
+        if authorisation.nick_and_host is not None:
+            if whois_data.nick is None:
+                return False
+            if Nick(whois_data.nick) != Nick(authorisation.nick_and_host.nick):
+                return False
+            if whois_data.host != authorisation.nick_and_host.host:
+                return False
+            return True
+
+        if authorisation.matrix is not None:
+            if whois_data.server != _HACKINT_MATRIX_SERVER:
+                return False
+            if whois_data.real_name != authorisation.matrix.nick:
+                return False
+            return True
+
+        raise Exception('unknown authorisation kind')
 
     def _emit_auth_message_in(self, msg: Message, uuid: str | None, groups: list[str]) -> None:
         auth_context = AuthContext(uuid, groups)
