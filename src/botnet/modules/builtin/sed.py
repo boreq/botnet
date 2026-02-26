@@ -59,7 +59,6 @@ def parse_message(message_text: str) -> ParsedSedCommand | None:
 
 def replace(messages: list[PersistedMessage], nick: str, a: str, b: str, flags: list[str]) -> str | None:
     for stored_msg in messages:
-        print(stored_msg, nick, a, b, flags)
         if a in stored_msg.message and stored_msg.author == nick:
             if 'g' in flags:
                 return stored_msg.message.replace(a, b)
