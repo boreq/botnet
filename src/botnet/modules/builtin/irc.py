@@ -224,7 +224,7 @@ class IRC(BaseResponder[IRCConfig]):
 
         Syntax: channel_join CHANNEL_NAME [CHANNEL_PASSWORD]
         """
-        password = args['password'][0] if 'password' in args else None
+        password = args['password'][0] if args['password'] is not None else None
         self.join(args['name'][0], password)
 
     @command('channel_part')

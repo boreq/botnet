@@ -4,12 +4,14 @@ import pytest
 
 from botnet import Message
 from botnet.config import Config
+from botnet.modules import AuthContext
 from botnet.modules import BaseResponder
 from botnet.modules.builtin.irc import IRC
 from botnet.modules.builtin.irc import Buffer
 from botnet.modules.builtin.irc import InactivityMonitor
 from botnet.signals import message_out
 
+from ...conftest import MakePrivmsgFixture
 from ...conftest import ModuleHarness
 from ...conftest import ModuleHarnessFactory
 
@@ -107,6 +109,11 @@ def test_inactivity_monitor_repeated(make_signal_trap: type) -> None:
                 assert entry['msg'] == Message(command='PING', params=['123.456'])
             assert restarter.restarted > 0
         trap.wait(check_pings)
+
+
+def test_channel_join_does_not_throw_without_password(make_privmsg: MakePrivmsgFixture, admin_context: AuthContext, tested_irc: ModuleHarness[IRC]) -> None:
+    msg = make_privmsg('.channel_join #channel', target='#channel')
+    tested_irc.receive_auth_message_in(msg, admin_context)
 
 
 def test_ignore_empty_config(tested_irc: ModuleHarness[IRC]) -> None:
