@@ -71,6 +71,8 @@ _PING_GRACE_PERIOD = timedelta(hours=2)
 _INANE_MESSAGES = [
     'what is your opinion on ed being the standard text editor?',
     'have you seen that ludicrous display on hacker news last night?',
+    'have you ordered those camping screws we talked about for the new hacker camp?',
+    'what is your favourite free side?',
 ]
 
 
