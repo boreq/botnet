@@ -31,6 +31,14 @@ def test_pester(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
         ],
     )
 
+    for nick in ['nick1', 'nick2']:
+        msg = Message(
+            prefix='%s!~user@1-2-3-4.example.com' % nick,
+            command='JOIN',
+            params=['#channel']
+        )
+        tested_vibecheck.receive_message_in(msg)
+
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
     tested_vibecheck.receive_message_in(msg)
 
@@ -57,6 +65,14 @@ def test_pester(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
 
 def test_endorsement_session(make_privmsg: MakePrivmsgFixture, tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     ctx = AuthContext('person-uuid', ['group'])
+
+    for nick in ['nick1', 'nick2']:
+        msg = Message(
+            prefix='%s!~user@1-2-3-4.example.com' % nick,
+            command='JOIN',
+            params=['#channel']
+        )
+        tested_vibecheck.receive_message_in(msg)
 
     msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1 nick2'])
     tested_vibecheck.receive_message_in(msg)
@@ -219,6 +235,14 @@ def test_healthcheck(make_privmsg: MakePrivmsgFixture, tested_vibecheck: ModuleH
             'contact': ['person3'],
         },
     ]
+
+    for nick in ['nick1', 'nick2']:
+        msg = Message(
+            prefix='%s!~user@1-2-3-4.example.com' % nick,
+            command='JOIN',
+            params=['#channel']
+        )
+        tested_vibecheck.receive_message_in(msg)
 
     tested_vibecheck.expect_message_out_signals(
         [

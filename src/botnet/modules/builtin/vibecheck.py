@@ -1,4 +1,5 @@
 import os
+import random
 import threading
 from dataclasses import asdict
 from dataclasses import dataclass
@@ -60,6 +61,17 @@ class DeferredAction:
 
 _PESTER_IF_NOT_PESTERED_FOR = 60 * 60 * 24 * 7  # [s]
 _PESTER_IF_NO_COMMAND_FOR = 60 * 60 * 24 * 1  # [s]
+
+
+_JOIN_GRACE_PERIOD = timedelta(hours=12)
+_MESSAGE_GRACE_PERIOD = timedelta(hours=24)
+_PING_GRACE_PERIOD = timedelta(hours=2)
+
+
+_INANE_MESSAGES = [
+    'what is your opinion on ed being the standard text editor?',
+    'have you seen that ludicrous display on hacker news last night?',
+]
 
 
 class NamesMixin(BaseModule):
@@ -346,7 +358,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
             self.respond(
                 msg,
                 'Everyone currently in the channel: {}'.format(
-                    ', '.join([v.for_display(auth.uuid) for v in reversed(report.persona_reports)])
+                    ', '.join([v.for_display(auth.uuid) for v in reversed(report.persona_reports.personas)])
                 )
             )
 
@@ -367,7 +379,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         with self._store as state:
             report = state.generate_report(self._now(), auth.uuid, [nick], auth_module_people_uuids)
 
-        for persona_report in report.persona_reports:
+        for persona_report in report.persona_reports.personas:
             if nick in persona_report.all_nicks:
                 self.respond(
                     msg,
@@ -394,6 +406,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         def on_names_available(names: list[Nick]) -> None:
             self._maybe_pester_people(names)
             self._mark_names_as_in_the_channel(names)
+            self._maybe_go_ballistic(names)
 
         channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
@@ -408,7 +421,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
             if report is not None:
                 for nick in [Target(Nick(nick_string)) for nick_string in person.contact]:
                     self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
-                    self.message(nick, ', '.join([v.for_display(person.uuid) for v in reversed(report.persona_reports)]))
+                    self.message(nick, ', '.join([v.for_display(person.uuid) for v in reversed(report.persona_reports.personas)]))
                     self.message(nick, self._general_instruction())
 
     def _general_instruction(self) -> str:
@@ -431,6 +444,26 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
             person for person in auth_config.people
             if config.authorised_group in person.groups
         ]
+
+    def _maybe_go_ballistic(self, names: list[Nick]) -> None:
+        with self._store as state:
+            report = PersonaReports.generate(state, names)
+
+        for persona in report.personas:
+            nick = persona.nicks_now_in_the_channel[0]
+
+            match persona.determine_enforcement_action(self._now()):
+                case EnforcementAction.PING:
+                    state.on_automated_ping(nick, self._now())
+                    self._send_inane_message(nick)
+                case EnforcementAction.NONE:
+                    continue
+
+    def _send_inane_message(self, nick: Nick) -> None:
+        config = self.get_config()
+        random_message = random.choice(_INANE_MESSAGES)
+        channel = Target(Channel(config.channel))
+        self.message(channel, f'{nick}: {random_message}')
 
 
 class Store:
@@ -523,6 +556,12 @@ class State:
                 return
             self.nick_infos[nick].on_being_in_the_channel(now)
 
+    def on_automated_ping(self, nick: Nick, now: datetime) -> None:
+        if nick not in self.nick_infos:
+            self.nick_infos[nick] = NickInfo.new_due_to_automated_ping(now)
+            return
+        self.nick_infos[nick].on_automated_ping(now)
+
     def _all_nicks_of(self, nick: Nick) -> list[Nick]:
         all_nicks = set([nick])
         for persona in self.personas:
@@ -574,6 +613,7 @@ class NickInfo:
     last_kick: None | datetime
     first_seen_in_the_channel: None | datetime
     last_seen_in_the_channel: None | datetime
+    last_automated_ping: None | datetime
     endorsements: list[str]
 
     @classmethod
@@ -587,6 +627,7 @@ class NickInfo:
             last_kick=None,
             first_seen_in_the_channel=now,
             last_seen_in_the_channel=now,
+            last_automated_ping=None,
             endorsements=[],
         )
 
@@ -601,6 +642,7 @@ class NickInfo:
             last_kick=None,
             first_seen_in_the_channel=now,
             last_seen_in_the_channel=now,
+            last_automated_ping=None,
             endorsements=[],
         )
 
@@ -615,6 +657,7 @@ class NickInfo:
             last_kick=now,
             first_seen_in_the_channel=now,
             last_seen_in_the_channel=now,
+            last_automated_ping=None,
             endorsements=[],
         )
 
@@ -629,6 +672,7 @@ class NickInfo:
             last_kick=None,
             first_seen_in_the_channel=now,
             last_seen_in_the_channel=now,
+            last_automated_ping=None,
             endorsements=[],
         )
 
@@ -643,7 +687,23 @@ class NickInfo:
             last_kick=None,
             first_seen_in_the_channel=None,
             last_seen_in_the_channel=None,
+            last_automated_ping=None,
             endorsements=[endorser_uuid],
+        )
+
+    @classmethod
+    def new_due_to_automated_ping(cls, now: datetime) -> NickInfo:
+        return cls(
+            first_message=None,
+            last_message=None,
+            first_join=None,
+            last_join=None,
+            first_kick=None,
+            last_kick=None,
+            first_seen_in_the_channel=None,
+            last_seen_in_the_channel=None,
+            last_automated_ping=now,
+            endorsements=[],
         )
 
     def on_privmsg(self, now: datetime) -> None:
@@ -675,6 +735,9 @@ class NickInfo:
             self.endorsements = [endorser for endorser in self.endorsements if endorser != unendorser_uuid]
             return True
         return False
+
+    def on_automated_ping(self, now: datetime) -> None:
+        self.last_automated_ping = now
 
 
 @dataclass
@@ -712,13 +775,23 @@ class AuthorisedPersonInfo:
 
 @dataclass
 class MinorityReport:
-    persona_reports: list[PersonaReport]
+    persona_reports: PersonaReports
     authorised_people_report: AuthorisedPeopleReport
 
     @classmethod
     def generate(cls, now: datetime, state: State, nicks: list[Nick], authorised_group_auth_uuids: set[str]) -> MinorityReport:
         authorised_people_report = AuthorisedPeopleReport.new(now, state, authorised_group_auth_uuids)
-        report = cls([], authorised_people_report)
+        persona_reports = PersonaReports.generate(state, nicks)
+        return cls(persona_reports, authorised_people_report)
+
+
+@dataclass
+class PersonaReports:
+    personas: list[PersonaReport]
+
+    @classmethod
+    def generate(cls, state: State, nicks: list[Nick]) -> PersonaReports:
+        report = cls([])
 
         for nick in nicks:
             existing = report._find_existing_persona_report(state, nick)
@@ -726,15 +799,15 @@ class MinorityReport:
                 existing.add_nick_now_in_the_channel(nick)
             else:
                 new = PersonaReport.new(state, nick)
-                report.persona_reports.append(new)
+                report.personas.append(new)
 
-        report.persona_reports.sort(key=lambda x: (len(x.endorsements), x.nicks_now_in_the_channel[0]))
+        report.personas.sort(key=lambda x: (len(x.endorsements), x.nicks_now_in_the_channel[0]))
 
         return report
 
     def _find_existing_persona_report(self, state: State, nick: Nick) -> PersonaReport | None:
         all_nicks = state._all_nicks_of(nick)
-        for persona_report in self.persona_reports:
+        for persona_report in self.personas:
             for possible_nick in all_nicks:
                 if possible_nick in persona_report.nicks_now_in_the_channel:
                     return persona_report
@@ -745,6 +818,11 @@ class Badness(Enum):
     OLD_BAD = 'old_bad'
     RECENT_BAD = 'recent_bad'
     WHATEVER = 'whatever'
+
+
+class EnforcementAction(Enum):
+    NONE = 'none'
+    PING = 'ping'
 
 
 @dataclass
@@ -762,6 +840,8 @@ class PersonaReport:
     first_seen_in_the_channel: None | datetime
     last_seen_in_the_channel: None | datetime
 
+    last_automated_ping: None | datetime
+
     @classmethod
     def new(cls, state: State, nick_now_in_the_channel: Nick) -> PersonaReport:
         r = PersonaReport(
@@ -776,6 +856,7 @@ class PersonaReport:
             last_kick=None,
             first_seen_in_the_channel=None,
             last_seen_in_the_channel=None,
+            last_automated_ping=None,
         )
 
         r.all_nicks.extend(state._all_nicks_of(nick_now_in_the_channel))
@@ -815,7 +896,26 @@ class PersonaReport:
                 if r.last_seen_in_the_channel is None or info.last_seen_in_the_channel > r.last_seen_in_the_channel:
                     r.last_seen_in_the_channel = info.last_seen_in_the_channel
 
+            if info.last_automated_ping is not None:
+                if r.last_automated_ping is None or info.last_automated_ping > r.last_automated_ping:
+                    r.last_automated_ping = info.last_automated_ping
+
         return r
+
+    def determine_enforcement_action(self, now: datetime) -> EnforcementAction:
+        if len(self.endorsements) > 0:
+            return EnforcementAction.NONE
+
+        if self.last_join is not None and (now - self.last_join) < _JOIN_GRACE_PERIOD:
+            return EnforcementAction.NONE
+
+        if self.last_message is not None and (now - self.last_message) < _MESSAGE_GRACE_PERIOD:
+            return EnforcementAction.NONE
+
+        if self.last_automated_ping is not None and (now - self.last_automated_ping) < _PING_GRACE_PERIOD:
+            return EnforcementAction.NONE
+
+        return EnforcementAction.PING
 
     def add_nick_now_in_the_channel(self, nick: Nick) -> None:
         self.nicks_now_in_the_channel.append(nick)
@@ -1005,6 +1105,7 @@ class TransportNickInfo:
     last_kick: None | str
     first_seen_in_the_channel: None | str
     last_seen_in_the_channel: None | str
+    last_automated_ping: None | str
     endorsements: list[str]
 
     @classmethod
@@ -1018,6 +1119,7 @@ class TransportNickInfo:
             last_kick=save_dt(v.last_kick),
             first_seen_in_the_channel=save_dt(v.first_seen_in_the_channel),
             last_seen_in_the_channel=save_dt(v.last_seen_in_the_channel),
+            last_automated_ping=save_dt(v.last_automated_ping),
             endorsements=v.endorsements,
         )
 
@@ -1031,6 +1133,7 @@ class TransportNickInfo:
             last_kick=load_dt(self.last_kick),
             first_seen_in_the_channel=load_dt(self.first_seen_in_the_channel),
             last_seen_in_the_channel=load_dt(self.last_seen_in_the_channel),
+            last_automated_ping=load_dt(self.last_automated_ping),
             endorsements=self.endorsements,
         )
 
