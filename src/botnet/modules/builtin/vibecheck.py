@@ -63,9 +63,9 @@ _PESTER_IF_NOT_PESTERED_FOR = 60 * 60 * 24 * 7  # [s]
 _PESTER_IF_NO_COMMAND_FOR = 60 * 60 * 24 * 1  # [s]
 
 
-_JOIN_GRACE_PERIOD = timedelta(hours=12)
+_JOIN_GRACE_PERIOD = timedelta(hours=6)
 _MESSAGE_GRACE_PERIOD = timedelta(hours=24)
-_PING_GRACE_PERIOD = timedelta(hours=2)
+_PING_GRACE_PERIOD = timedelta(hours=12)
 
 
 _INANE_MESSAGES = [
