@@ -1,12 +1,18 @@
+from dataclasses import dataclass
 from datetime import datetime
+from datetime import timedelta
 from datetime import timezone
+from typing import Optional
 
 import pytest
 
 from botnet.codes import Code
 from botnet.config import Config
 from botnet.message import Message
+from botnet.message import Nick
 from botnet.modules import AuthContext
+from botnet.modules.builtin.vibecheck import EnforcementAction
+from botnet.modules.builtin.vibecheck import PersonaReport
 from botnet.modules.builtin.vibecheck import Vibecheck
 from botnet.modules.lib import Color
 from botnet.modules.lib import colored
@@ -732,6 +738,140 @@ def test_vibecheck_nick(make_privmsg: MakePrivmsgFixture, tested_vibecheck: Modu
             },
         ],
     )
+
+
+def test_determine_enforcement_action() -> None:
+    @dataclass
+    class TestCase:
+        description: str
+        endorsements: set[str]
+        last_join: Optional[datetime]
+        last_message: Optional[datetime]
+        last_automated_ping: Optional[datetime]
+        now: datetime
+        expected: EnforcementAction
+
+    now = datetime(2026, 3, 9, 12, 0, 0, tzinfo=timezone.utc)
+
+    test_cases = [
+        TestCase(
+            description='endorsed persona is never actioned',
+            endorsements={'some-uuid'},
+            last_join=None,
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.NONE,
+        ),
+        TestCase(
+            description='no data at all results in ping',
+            endorsements=set(),
+            last_join=None,
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.PING,
+        ),
+        TestCase(
+            description='join within grace period results in none',
+            endorsements=set(),
+            last_join=now - timedelta(hours=12),
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.NONE,
+        ),
+        TestCase(
+            description='message within grace period results in none',
+            endorsements=set(),
+            last_join=None,
+            last_message=now - timedelta(hours=48),
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.NONE,
+        ),
+        TestCase(
+            description='join grace expired, no ping yet results in ping',
+            endorsements=set(),
+            last_join=now - timedelta(hours=25),
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.PING,
+        ),
+        TestCase(
+            description='join grace expired, pinged recently results in none',
+            endorsements=set(),
+            last_join=now - timedelta(hours=25),
+            last_message=None,
+            last_automated_ping=now - timedelta(hours=6),
+            now=now,
+            expected=EnforcementAction.NONE,
+        ),
+        TestCase(
+            description='join grace expired, last ping too old results in ping again',
+            endorsements=set(),
+            last_join=now - timedelta(hours=25),
+            last_message=None,
+            last_automated_ping=now - timedelta(hours=13),
+            now=now,
+            expected=EnforcementAction.PING,
+        ),
+        TestCase(
+            description='join grace expired by more than kicking threshold results in kick',
+            endorsements=set(),
+            last_join=now - timedelta(hours=24 + 24 + 1),
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.KICK,
+        ),
+        TestCase(
+            description='message grace expired, no ping yet results in ping',
+            endorsements=set(),
+            last_join=None,
+            last_message=now - timedelta(hours=73),
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.PING,
+        ),
+        TestCase(
+            description='message grace expired by more than kicking threshold results in kick',
+            endorsements=set(),
+            last_join=None,
+            last_message=now - timedelta(hours=72 + 24 + 1),
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.KICK,
+        ),
+        TestCase(
+            description='join grace expired but message grace still active results in none',
+            endorsements=set(),
+            last_join=now - timedelta(hours=25),
+            last_message=now - timedelta(hours=48),
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.NONE,
+        ),
+    ]
+
+    for tc in test_cases:
+        report = PersonaReport(
+            nicks_now_in_the_channel=[Nick('testnick')],
+            all_nicks=[Nick('testnick')],
+            endorsements=tc.endorsements,
+            first_message=None,
+            last_message=tc.last_message,
+            first_join=None,
+            last_join=tc.last_join,
+            first_kick=None,
+            last_kick=None,
+            first_seen_in_the_channel=None,
+            last_seen_in_the_channel=None,
+            last_automated_ping=tc.last_automated_ping,
+        )
+        result = report.determine_enforcement_action(tc.now)
+        assert result == tc.expected, f'Failed: {tc.description!r}: expected {tc.expected}, got {result}'
 
 
 @pytest.fixture()

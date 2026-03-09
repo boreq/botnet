@@ -63,9 +63,19 @@ _PESTER_IF_NOT_PESTERED_FOR = 60 * 60 * 24 * 7  # [s]
 _PESTER_IF_NO_COMMAND_FOR = 60 * 60 * 24 * 1  # [s]
 
 
-_JOIN_GRACE_PERIOD = timedelta(hours=6)
-_MESSAGE_GRACE_PERIOD = timedelta(hours=24)
-_PING_GRACE_PERIOD = timedelta(hours=48)
+# after a person joins the channel they have this much time before the bot does anything to them so they can introduce
+# themselves etc
+_JOIN_GRACE_PERIOD = timedelta(hours=24)
+
+# when a person sends a message in the channel they have this much time before the bot does anything to them; they are
+# presumably taking part in some kind of a conversation
+_MESSAGE_GRACE_PERIOD = timedelta(hours=72)
+
+# once any of the two grace periods elapse the bot starts pinging the person this often
+_PING_EVERY = timedelta(hours=12)
+
+# once this much time passes after the grace periods the pinging into kicking
+_TIME_AFTER_WHICH_PINGING_CHANGES_TO_KICKING = timedelta(hours=24)
 
 
 _INANE_MESSAGES = [
@@ -458,8 +468,25 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                 case EnforcementAction.PING:
                     state.on_automated_ping(nick, self._now())
                     self._send_inane_message(nick)
+                case EnforcementAction.KICK:
+                    self._kick(nick)
                 case EnforcementAction.NONE:
                     continue
+                case _:
+                    raise ValueError('unknown enforcement action')
+
+    def _kick(self, nick: Nick) -> None:
+        config = self.get_config()
+        channel = Channel(config.channel)
+        msg = Message(
+            command='KICK',
+            params=[
+                channel.s,
+                nick.s,
+                'Loitering in the space station is strictly prohibited.'
+            ]
+        )
+        message_out.send(self, msg=msg)
 
     def _send_inane_message(self, nick: Nick) -> None:
         config = self.get_config()
@@ -825,6 +852,7 @@ class Badness(Enum):
 class EnforcementAction(Enum):
     NONE = 'none'
     PING = 'ping'
+    KICK = 'kick'
 
 
 @dataclass
@@ -908,16 +936,48 @@ class PersonaReport:
         if len(self.endorsements) > 0:
             return EnforcementAction.NONE
 
-        if self.last_join is not None and (now - self.last_join) < _JOIN_GRACE_PERIOD:
+        durations_after_grace_periods = self._durations_after_grace_periods(now)
+
+        # we lack data for some reason, let's just ping them
+        if len(durations_after_grace_periods) == 0:
+            return EnforcementAction.PING
+
+        # at least one of the grace periods hasn't expired yet
+        if None in durations_after_grace_periods:
             return EnforcementAction.NONE
 
-        if self.last_message is not None and (now - self.last_message) < _MESSAGE_GRACE_PERIOD:
-            return EnforcementAction.NONE
+        non_none_durations: list[timedelta] = [d for d in durations_after_grace_periods if d is not None]
+        duration_after_grace_periods = min(non_none_durations)
 
-        if self.last_automated_ping is not None and (now - self.last_automated_ping) < _PING_GRACE_PERIOD:
-            return EnforcementAction.NONE
+        if duration_after_grace_periods > _TIME_AFTER_WHICH_PINGING_CHANGES_TO_KICKING:
+            return EnforcementAction.KICK
+        else:
+            if self.last_automated_ping is None:
+                return EnforcementAction.PING
+            else:
+                if now - self.last_automated_ping < _PING_EVERY:
+                    return EnforcementAction.NONE
+                else:
+                    return EnforcementAction.PING
 
-        return EnforcementAction.PING
+    def _durations_after_grace_periods(self, now: datetime) -> list[timedelta | None]:
+        durations: list[timedelta | None] = []
+
+        if self.last_join is not None:
+            time_passed = now - self.last_join - _JOIN_GRACE_PERIOD
+            if time_passed < timedelta(0):
+                durations.append(None)
+            else:
+                durations.append(time_passed)
+
+        if self.last_message is not None:
+            time_passed = now - self.last_message - _MESSAGE_GRACE_PERIOD
+            if time_passed < timedelta(0):
+                durations.append(None)
+            else:
+                durations.append(time_passed)
+
+        return durations
 
     def add_nick_now_in_the_channel(self, nick: Nick) -> None:
         self.nicks_now_in_the_channel.append(nick)
