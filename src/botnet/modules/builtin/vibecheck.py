@@ -65,17 +65,17 @@ _PESTER_IF_NO_COMMAND_FOR = 60 * 60 * 24 * 1  # [s]
 
 # after a person joins the channel they have this much time before the bot does anything to them so they can introduce
 # themselves etc
-_JOIN_GRACE_PERIOD = timedelta(hours=24)
+_JOIN_GRACE_PERIOD = timedelta(hours=1)
 
 # when a person sends a message in the channel they have this much time before the bot does anything to them; they are
 # presumably taking part in some kind of a conversation
 _MESSAGE_GRACE_PERIOD = timedelta(hours=72)
 
 # once any of the two grace periods elapse the bot starts pinging the person this often
-_PING_EVERY = timedelta(hours=12)
+_PING_EVERY = timedelta(hours=72)
 
-# once this much time passes after the grace periods the pinging into kicking
-_TIME_AFTER_WHICH_PINGING_CHANGES_TO_KICKING = timedelta(hours=24)
+# once this much time passes after the grace periods the bot will issue a kick
+_KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS = timedelta(hours=24)
 
 
 _INANE_MESSAGES = [
@@ -949,7 +949,7 @@ class PersonaReport:
         non_none_durations: list[timedelta] = [d for d in durations_after_grace_periods if d is not None]
         duration_after_grace_periods = min(non_none_durations)
 
-        if duration_after_grace_periods > _TIME_AFTER_WHICH_PINGING_CHANGES_TO_KICKING:
+        if duration_after_grace_periods > _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS:
             return EnforcementAction.KICK
         else:
             if self.last_automated_ping is None:
