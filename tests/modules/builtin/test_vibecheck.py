@@ -775,7 +775,7 @@ def test_determine_enforcement_action() -> None:
         TestCase(
             description='join within grace period results in none',
             endorsements=set(),
-            last_join=now - timedelta(hours=12),
+            last_join=now - timedelta(hours=0.5),
             last_message=None,
             last_automated_ping=None,
             now=now,
@@ -793,7 +793,7 @@ def test_determine_enforcement_action() -> None:
         TestCase(
             description='join grace expired, no ping yet results in ping',
             endorsements=set(),
-            last_join=now - timedelta(hours=25),
+            last_join=now - timedelta(hours=2),
             last_message=None,
             last_automated_ping=None,
             now=now,
@@ -802,7 +802,7 @@ def test_determine_enforcement_action() -> None:
         TestCase(
             description='join grace expired, pinged recently results in none',
             endorsements=set(),
-            last_join=now - timedelta(hours=25),
+            last_join=now - timedelta(hours=2),
             last_message=None,
             last_automated_ping=now - timedelta(hours=6),
             now=now,
@@ -811,16 +811,16 @@ def test_determine_enforcement_action() -> None:
         TestCase(
             description='join grace expired, last ping too old results in ping again',
             endorsements=set(),
-            last_join=now - timedelta(hours=25),
+            last_join=now - timedelta(hours=2),
             last_message=None,
-            last_automated_ping=now - timedelta(hours=13),
+            last_automated_ping=now - timedelta(hours=73),
             now=now,
             expected=EnforcementAction.PING,
         ),
         TestCase(
             description='join grace expired by more than kicking threshold results in kick',
             endorsements=set(),
-            last_join=now - timedelta(hours=24 + 24 + 1),
+            last_join=now - timedelta(hours=2 + 24),
             last_message=None,
             last_automated_ping=None,
             now=now,
