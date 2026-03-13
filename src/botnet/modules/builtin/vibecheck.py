@@ -1006,6 +1006,7 @@ class PersonaReport:
             '  Last kick: {}'.format(self._maybe_human(self.last_kick, Badness.WHATEVER, now)),
             '  First seen in the channel: {}'.format(self._maybe_human(self.first_seen_in_the_channel, Badness.RECENT_BAD, now)),
             '  Last seen in the channel: {}'.format(self._maybe_human(self.last_seen_in_the_channel, Badness.OLD_BAD, now)),
+            '  Last automated ping: {}'.format(self._maybe_human(self.last_automated_ping, Badness.WHATEVER, now)),
         ]
 
         endorsement_color = self._endorsement_color(uuid)
