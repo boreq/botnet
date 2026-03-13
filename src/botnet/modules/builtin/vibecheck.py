@@ -461,19 +461,19 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         with self._store as state:
             report = PersonaReports.generate(state, names)
 
-        for persona in report.personas:
-            nick = persona.nicks_now_in_the_channel[0]
+            for persona in report.personas:
+                nick = persona.nicks_now_in_the_channel[0]
 
-            match persona.determine_enforcement_action(self._now()):
-                case EnforcementAction.PING:
-                    state.on_automated_ping(nick, self._now())
-                    self._send_inane_message(nick)
-                case EnforcementAction.KICK:
-                    self._kick(nick)
-                case EnforcementAction.NONE:
-                    continue
-                case _:
-                    raise ValueError('unknown enforcement action')
+                match persona.determine_enforcement_action(self._now()):
+                    case EnforcementAction.PING:
+                        state.on_automated_ping(nick, self._now())
+                        self._send_inane_message(nick)
+                    case EnforcementAction.KICK:
+                        self._kick(nick)
+                    case EnforcementAction.NONE:
+                        continue
+                    case _:
+                        raise ValueError('unknown enforcement action')
 
     def _kick(self, nick: Nick) -> None:
         config = self.get_config()
@@ -940,7 +940,7 @@ class PersonaReport:
 
         # we lack data for some reason, let's just ping them
         if len(durations_after_grace_periods) == 0:
-            return EnforcementAction.PING
+            return self._ping_if_not_pinged_recently(now)
 
         # at least one of the grace periods hasn't expired yet
         if None in durations_after_grace_periods:
@@ -952,13 +952,16 @@ class PersonaReport:
         if duration_after_grace_periods > _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS:
             return EnforcementAction.KICK
         else:
-            if self.last_automated_ping is None:
-                return EnforcementAction.PING
+            return self._ping_if_not_pinged_recently(now)
+
+    def _ping_if_not_pinged_recently(self, now: datetime) -> EnforcementAction:
+        if self.last_automated_ping is None:
+            return EnforcementAction.PING
+        else:
+            if now - self.last_automated_ping < _PING_EVERY:
+                return EnforcementAction.NONE
             else:
-                if now - self.last_automated_ping < _PING_EVERY:
-                    return EnforcementAction.NONE
-                else:
-                    return EnforcementAction.PING
+                return EnforcementAction.PING
 
     def _durations_after_grace_periods(self, now: datetime) -> list[timedelta | None]:
         durations: list[timedelta | None] = []

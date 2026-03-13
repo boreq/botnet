@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
+from typing import Any
 from typing import Optional
 
 import pytest
@@ -872,6 +873,46 @@ def test_determine_enforcement_action() -> None:
         )
         result = report.determine_enforcement_action(tc.now)
         assert result == tc.expected, f'Failed: {tc.description!r}: expected {tc.expected}, got {result}'
+
+
+def test_messages_only_once(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
+    tested_vibecheck.expect_message_out_signals(
+        [
+            {
+                'msg': Message.new_from_string('NAMES #channel')
+            },
+        ],
+    )
+
+    msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', 'nick1'])
+    tested_vibecheck.receive_message_in(msg)
+
+    msg = Message(str(Code.RPL_ENDOFNAMES.value), params=['bot_nick', '#channel'])
+    tested_vibecheck.receive_message_in(msg)
+
+    tested_vibecheck.module._update()
+    tested_vibecheck.module._update()
+
+    def wait_condition(trapped: list[dict[str, Any]]) -> None:
+        first_four = [
+            {
+                'msg': Message.new_from_string('NAMES #channel')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG person :Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG person :' + colored('nick1', Color.RED) + ' (?' + colored('0', Color.RED) + ')'),
+            },
+            {
+                'msg': Message.new_from_string("PRIVMSG person :If you would like to endorse anyone then you can privately use '.endorse NICK' in this buffer. Please note that this isn't a big decision as you can easily reverse it with '.unendorse NICK'. The full report can always be recalled with '.vibecheck'. If you want to know more about a nick use '.vibecheck NICK'.")
+            },
+        ]
+        assert len(trapped) == 5
+        assert trapped[:4] == first_four
+        assert 'nick1:' in trapped[4]['msg'].to_string()
+
+    tested_vibecheck.message_out_trap.wait(wait_condition)
 
 
 @pytest.fixture()
