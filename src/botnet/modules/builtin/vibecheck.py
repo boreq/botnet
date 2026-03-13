@@ -195,6 +195,19 @@ def _is_authorised_has_uuid_and_sent_a_privmsg() -> Callable[[CommandHandler], C
     return predicates([predicate])
 
 
+def _message_is_in_the_channel() -> Callable[[CommandHandler], CommandHandler]:
+    def predicate(module: 'Vibecheck', msg: IncomingPrivateMessage, auth: AuthContext) -> bool:
+        config = module.get_config()
+
+        channel = msg.target.channel
+        if channel is not None and channel == Channel(config.channel):
+            return True
+
+        return False
+
+    return predicates([predicate])
+
+
 @dataclass()
 class VibecheckConfig:
     data: str
@@ -322,6 +335,24 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                 self.respond(msg, 'You merged {} and {}!'.format(nick1, nick2))
             else:
                 self.respond(msg, 'At least one of those nicks isn\'t in the channel!')
+
+        channel = Channel(self.get_config().channel)
+        self.request_names(channel, on_names_available)
+
+    @command('ausweiskontrolle')
+    @_message_is_in_the_channel()
+    def command_ausweiskontrolle(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
+        """Kick everyone who we don't know from the channel.
+
+        Syntax: ausweiskontrolle
+        """
+        def on_names_available(names: list[Nick]) -> None:
+            with self._store as state:
+                report = PersonaReports.generate(state, names)
+                for persona in report.personas:
+                    if len(persona.endorsements) == 0:
+                        for nick in persona.nicks_now_in_the_channel:
+                            self._kick(nick)
 
         channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
