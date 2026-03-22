@@ -922,7 +922,8 @@ def test_messages_only_once(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
         ]
         assert len(trapped) == 5
         assert trapped[:4] == first_four
-        assert 'nick1:' in trapped[4]['msg'].to_string()
+        assert 'nick1' in trapped[4]['msg'].to_string()
+        assert 'Freeside Control' in trapped[4]['msg'].to_string()
 
     tested_vibecheck.message_out_trap.wait(wait_condition)
 

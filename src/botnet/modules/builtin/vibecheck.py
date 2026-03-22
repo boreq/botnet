@@ -78,11 +78,10 @@ _PING_EVERY = timedelta(hours=72)
 _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS = timedelta(hours=24)
 
 
-_INANE_MESSAGES = [
-    'what is your opinion on ed being the standard text editor?',
-    'have you seen that ludicrous display on hacker news last night?',
-    'have you ordered those camping screws we talked about for the new hacker camp?',
-    'what is your favourite free side?',
+_FREESIDE_CONTROL_MESSAGES = [
+    'terminal guidance sequence complete',
+    'we are indicating contact',
+    'data linkup established',
 ]
 
 
@@ -498,7 +497,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                 match persona.determine_enforcement_action(self._now()):
                     case EnforcementAction.PING:
                         state.on_automated_ping(nick, self._now())
-                        self._send_inane_message(nick)
+                        self._send_freeside_control_message(nick)
                     case EnforcementAction.KICK:
                         self._kick(nick)
                     case EnforcementAction.NONE:
@@ -519,11 +518,11 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         )
         message_out.send(self, msg=msg)
 
-    def _send_inane_message(self, nick: Nick) -> None:
+    def _send_freeside_control_message(self, nick: Nick) -> None:
         config = self.get_config()
-        random_message = random.choice(_INANE_MESSAGES)
+        random_message = random.choice(_FREESIDE_CONTROL_MESSAGES)
         channel = Target(Channel(config.channel))
-        self.message(channel, f'{nick}: {random_message}')
+        self.message(channel, f'{nick}, Freeside Control, {random_message}.')
 
 
 class Store:
