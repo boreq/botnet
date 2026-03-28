@@ -59,8 +59,8 @@ class DeferredAction:
     on_names_available: Callable[[list[Nick]], None]
 
 
-_PESTER_IF_NOT_PESTERED_FOR = 60 * 60 * 24 * 7  # [s]
-_PESTER_IF_NO_COMMAND_FOR = 60 * 60 * 24 * 1  # [s]
+_PESTER_IF_NOT_PESTERED_FOR = timedelta(days=7)
+_PESTER_IF_NO_COMMAND_FOR = timedelta(days=1)
 
 
 # after a person joins the channel they have this much time before the bot does anything to them so they can introduce
@@ -820,12 +820,12 @@ class AuthorisedPersonInfo:
 
     def should_pester(self, now: datetime) -> bool:
         if self.last_pestered_at is not None:
-            seconds_since_pestering = now.timestamp() - self.last_pestered_at.timestamp()
+            seconds_since_pestering = now - self.last_pestered_at
             if seconds_since_pestering < _PESTER_IF_NOT_PESTERED_FOR:
                 return False
 
         if self.last_command_executed_at is not None:
-            seconds_since_executing_a_command = now.timestamp() - self.last_command_executed_at.timestamp()
+            seconds_since_executing_a_command = now - self.last_command_executed_at
             if seconds_since_executing_a_command < _PESTER_IF_NO_COMMAND_FOR:
                 return False
 
