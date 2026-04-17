@@ -33,9 +33,9 @@ class Icecast(BaseResponder[IcecastConfig]):
 
         "botnet": {
             "icecast": {
-                "url": "https://mixnet.dev/status-json.xsl",
+                "url": "https://example.com/status-json.xsl",
                 "channels": ["#channel"],
-                "message": "Stream is now live! Tune in at https://mixnet.dev"
+                "message": "Stream is now live! Tune in at https://example.com"
             }
         }
 
