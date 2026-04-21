@@ -59,6 +59,8 @@ class DeferredAction:
     on_names_available: Callable[[list[Nick]], None]
 
 
+_LAST_INTERACTION_BAD_THRESHOLD_DAYS = 60
+
 _PESTER_IF_NOT_PESTERED_FOR = timedelta(days=30)
 _PESTER_IF_NO_COMMAND_FOR = timedelta(days=7)
 
@@ -1121,7 +1123,7 @@ class AuthorisedPeopleReport:
         if self.median_last_interaction_days is None:
             age_median = colored('never (!)', Color.RED)
         else:
-            if self.median_last_interaction_days < 30:
+            if self.median_last_interaction_days < _LAST_INTERACTION_BAD_THRESHOLD_DAYS:
                 age_median = colored(f'in the last {self.median_last_interaction_days} days', Color.GREEN)
             else:
                 age_median = colored(f'in the last {self.median_last_interaction_days} days', Color.RED)
@@ -1129,7 +1131,7 @@ class AuthorisedPeopleReport:
         if self.max_last_interaction_days is None:
             age_max = colored('never (!)', Color.RED)
         else:
-            if self.max_last_interaction_days < 30:
+            if self.max_last_interaction_days < _LAST_INTERACTION_BAD_THRESHOLD_DAYS:
                 age_max = colored(f'in the last {self.max_last_interaction_days} days', Color.GREEN)
             else:
                 age_max = colored(f'in the last {self.max_last_interaction_days} days', Color.RED)
