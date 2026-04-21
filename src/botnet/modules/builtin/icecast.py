@@ -9,7 +9,6 @@ from ...message import Target
 from ...signals import on_exception
 from .. import BaseResponder
 
-
 _CHECK_INTERVAL_SECONDS = 30
 
 
@@ -86,4 +85,3 @@ class Icecast(BaseResponder[IcecastConfig]):
 
 
 mod = Icecast
-

@@ -328,12 +328,12 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         def on_names_available(names: list[Nick]) -> None:
             assert auth.uuid is not None
 
-            if nick1 in names and nick2 in names:
+            if nick1 in names or nick2 in names:
                 with self._store as state:
                     state.merge_personas(auth.uuid, nick1, nick2, self._now())
                 self.respond(msg, 'You merged {} and {}!'.format(nick1, nick2))
             else:
-                self.respond(msg, 'At least one of those nicks isn\'t in the channel!')
+                self.respond(msg, 'Neither of those nicks is in the channel!')
 
         channel = Channel(self.get_config().channel)
         self.request_names(channel, on_names_available)
