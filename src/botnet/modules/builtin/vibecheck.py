@@ -59,8 +59,8 @@ class DeferredAction:
     on_names_available: Callable[[list[Nick]], None]
 
 
-_PESTER_IF_NOT_PESTERED_FOR = timedelta(days=7)
-_PESTER_IF_NO_COMMAND_FOR = timedelta(days=1)
+_PESTER_IF_NOT_PESTERED_FOR = timedelta(days=30)
+_PESTER_IF_NO_COMMAND_FOR = timedelta(days=7)
 
 
 # after a person joins the channel they have this much time before the bot does anything to them so they can introduce
