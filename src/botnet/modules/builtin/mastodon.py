@@ -102,6 +102,7 @@ class Mastodon(BaseResponder[MastodonConfig]):
 
             parts = msg.text.s.split(" ", 1)
             text = parts[1].strip()
+            text += "; sent from my copilot"
             if len(text) > self.max_toot_len:
                 return
 
