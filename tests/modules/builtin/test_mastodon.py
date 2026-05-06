@@ -35,7 +35,7 @@ def test_help(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContex
 
 def test_toot(make_privmsg: MakePrivmsgFixture, unauthorised_context: AuthContext, tested_mastodon: ModuleHarness[MastodonForTest]) -> None:
     api = tested_mastodon.module.mock_api
-    api.toots['hello world; sent from my copilot'] = Toot(url='https://example.com/@user/1')
+    api.toots['hello world'] = Toot(url='https://example.com/@user/1')
 
     msg = make_privmsg('.toot hello world', nick='author', target='#channel')
     tested_mastodon.receive_message_in(msg)
