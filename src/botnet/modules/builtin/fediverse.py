@@ -1,12 +1,15 @@
 import json
 import re
+import ssl
 import threading
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
+from typing import Optional
+from urllib.error import HTTPError
+from urllib.error import URLError
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
-from urllib.error import URLError, HTTPError
-import ssl
+from urllib.request import Request
+from urllib.request import urlopen
 
 from botnet.modules import privmsg_message_handler
 
@@ -15,7 +18,6 @@ from ...message import Channel
 from ...message import IncomingPrivateMessage
 from ...signals import on_exception
 from .. import BaseResponder
-
 
 # Matches common ActivityPub status URL shapes:
 #   https://instance/@user/1234567890
@@ -264,6 +266,14 @@ class Fediverse(BaseResponder[FediverseConfig]):
         self._cache = URLCache(ttl=cfg.cache_ttl)
         self._limiter = RateLimiter(max_per_minute=cfg.rate_limit)
 
+    def _resolve(self, url: str, timeout: int) -> Optional[str]:
+        """Resolve a URL to its canonical form.
+
+        Override to supply a different resolver implementation instead of
+        performing real network requests.
+        """
+        return resolve(url, timeout=timeout)
+
     @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
         config = self.get_config()
@@ -284,7 +294,7 @@ class Fediverse(BaseResponder[FediverseConfig]):
         def resolve_and_reply() -> None:
             try:
                 canonical = self._cache.fetch(
-                    url, lambda: resolve(url, timeout=config.http_timeout)
+                    url, lambda: self._resolve(url, config.http_timeout)
                 )
                 if not canonical:
                     return
