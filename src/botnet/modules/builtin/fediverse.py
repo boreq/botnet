@@ -1,23 +1,22 @@
-import json
 import re
-import ssl
 import threading
 from dataclasses import dataclass
 from typing import Any
 from typing import Optional
-from urllib.error import HTTPError
-from urllib.error import URLError
+from typing import Protocol
 from urllib.parse import urlparse
-from urllib.request import Request
-from urllib.request import urlopen
+
+import requests
 
 from botnet.modules import privmsg_message_handler
 
 from ...config import Config
+from ...logging import Logger
 from ...message import Channel
 from ...message import IncomingPrivateMessage
 from ...signals import on_exception
 from .. import BaseResponder
+from ..lib import USER_AGENT
 
 # Matches common ActivityPub status URL shapes:
 #   https://instance/@user/1234567890
@@ -69,111 +68,95 @@ def extract_canonical_url(obj: dict[str, Any]) -> Optional[str]:
     return None
 
 
-def fetch_activitypub(
-    uri: str,
-    origin_host: str,
-    timeout: int = 10,
-    redirect_limit: int = 5,
-) -> Optional[str | dict[str, Any]]:
-    """Perform an HTTP GET requesting ActivityPub JSON-LD.
+_ACCEPT = (
+    'application/activity+json, '
+    'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'
+)
 
-    Returns:
-        - a String when a 3xx redirect crosses to a different host (that URL
-          is already the canonical answer; no further fetch needed)
-        - a dict when a 200 response contains parseable AP JSON
-        - None on failure or same-host redirect loops
-    """
-    if redirect_limit == 0:
-        return None
 
-    try:
-        # Create SSL context that verifies certificates
-        ssl_context = ssl.create_default_context()
+class Resolver(Protocol):
 
-        req = Request(uri)
-        req.add_header(
-            "Accept",
-            'application/activity+json, '
-            'application/ld+json; profile="https://www.w3.org/ns/activitystreams"',
-        )
-        req.add_header("User-Agent", "FediverseBot/1.0 (IRC link resolver)")
+    def resolve(self, url: str) -> Optional[str]:
+        ...
 
-        with urlopen(req, timeout=timeout, context=ssl_context) as response:
-            status_code = response.status
-            content_type = response.headers.get("Content-Type", "")
 
-            if status_code == 200:
-                if not any(
-                    ct in content_type
-                    for ct in ["activity+json", "ld+json", "/json"]
-                ):
-                    return None
-                body = response.read().decode("utf-8")
-                obj: dict[str, Any] = json.loads(body)
-                return obj
+class HttpResolver(Resolver):
+    """Resolves a Fediverse link to its canonical URL over HTTP."""
 
-            if status_code in (301, 302, 303, 307, 308):
-                location_header = response.headers.get("Location", "")
-                if not location_header:
-                    return None
+    def __init__(self, logger: Logger, timeout: int = 10) -> None:
+        self._logger = logger
+        self._timeout = timeout
 
-                location: str = location_header
-                if not location.startswith("http"):
-                    # Relative redirect
-                    from urllib.parse import urljoin
-
-                    location = urljoin(uri, location)
-
-                new_parsed = urlparse(location)
-                new_host = new_parsed.netloc
-
-                # Cross-host redirect: the Location IS the canonical URL
-                if new_host.lower() != origin_host.lower():
-                    return location
-
-                # Same-host redirect: follow it to get the AP JSON
-                return fetch_activitypub(
-                    location,
-                    origin_host=origin_host,
-                    timeout=timeout,
-                    redirect_limit=redirect_limit - 1,
-                )
-
+    def resolve(self, url: str) -> Optional[str]:
+        origin = urlparse(url)
+        if origin.scheme not in ("http", "https"):
             return None
 
-    except (URLError, HTTPError, json.JSONDecodeError, Exception):
-        return None
+        result = self._fetch_activitypub(url, origin_host=origin.hostname or "")
+        if result is None:
+            return None
 
+        if isinstance(result, str):
+            # Path A: a cross-host redirect gave us the URL directly
+            return result
 
-def resolve(raw_url: str, timeout: int = 10) -> Optional[str]:
-    """Fetch the ActivityPub representation and return the canonical URL.
-
-    Returns the canonical URL if it lives on a different host, else None.
-    """
-    origin = urlparse(raw_url)
-    if origin.scheme not in ("http", "https"):
-        return None
-
-    result = fetch_activitypub(raw_url, origin_host=origin.hostname or "", timeout=timeout)
-    if result is None:
-        return None
-
-    if isinstance(result, str):
-        # Path A: a cross-host redirect gave us the URL directly
-        return result
-
-    if isinstance(result, dict):
         # Path B: parse the "url" field out of the AP JSON object
         canonical = extract_canonical_url(result)
         if not isinstance(canonical, str) or not canonical:
             return None
-        canonical_parsed = urlparse(canonical)
-        canonical_host = canonical_parsed.hostname
+        canonical_host = urlparse(canonical).hostname
         if canonical_host and \
            canonical_host.lower() != (origin.hostname or "").lower():
             return canonical
 
-    return None
+        return None
+
+    def _fetch_activitypub(
+        self,
+        uri: str,
+        origin_host: str,
+    ) -> Optional[str | dict[str, Any]]:
+        """Perform an HTTP GET requesting ActivityPub JSON-LD.
+
+        Returns:
+            - a String when a 3xx redirect crosses to a different host (that
+              URL is already the canonical answer; no further fetch needed)
+            - a dict when a 200 response contains parseable AP JSON
+            - None otherwise
+        """
+        try:
+            response = requests.get(
+                uri,
+                headers={"Accept": _ACCEPT, "User-Agent": USER_AGENT},
+                timeout=self._timeout,
+                allow_redirects=False,
+            )
+        except requests.RequestException as e:
+            self._logger.warning("request to %s failed: %s", uri, e)
+            return None
+
+        status_code = response.status_code
+
+        if status_code in (301, 302, 303, 307, 308):
+            location = response.headers.get("Location", "")
+            if location and urlparse(location).netloc.lower() != origin_host.lower():
+                # Cross-host redirect: the Location IS the canonical URL.
+                return location
+            self._logger.debug(
+                "%s returned %d without a cross-host Location", uri, status_code
+            )
+            return None
+
+        if status_code == 200:
+            try:
+                obj: dict[str, Any] = response.json()
+            except ValueError as e:
+                self._logger.warning("invalid JSON from %s: %s", uri, e)
+                return None
+            return obj
+
+        self._logger.debug("%s returned unexpected status %d", uri, status_code)
+        return None
 
 
 @dataclass()
@@ -265,14 +248,15 @@ class Fediverse(BaseResponder[FediverseConfig]):
         cfg = self.get_config()
         self._cache = URLCache(ttl=cfg.cache_ttl)
         self._limiter = RateLimiter(max_per_minute=cfg.rate_limit)
+        self._resolver = self._create_resolver()
 
-    def _resolve(self, url: str, timeout: int) -> Optional[str]:
-        """Resolve a URL to its canonical form.
+    def _create_resolver(self) -> Resolver:
+        """Build the resolver used to canonicalise links.
 
-        Override to supply a different resolver implementation instead of
-        performing real network requests.
+        Override to supply a different implementation instead of performing
+        real network requests.
         """
-        return resolve(url, timeout=timeout)
+        return HttpResolver(self.logger, self.get_config().http_timeout)
 
     @privmsg_message_handler()
     def handle_privmsg(self, msg: IncomingPrivateMessage) -> None:
@@ -284,17 +268,17 @@ class Fediverse(BaseResponder[FediverseConfig]):
 
         urls = extract_urls(msg.text.s)
         for url in urls:
-            self._maybe_resolve_and_reply(config, msg, url)
+            self._maybe_resolve_and_reply(msg, url)
 
     def _maybe_resolve_and_reply(
-        self, config: FediverseConfig, msg: IncomingPrivateMessage, url: str
+        self, msg: IncomingPrivateMessage, url: str
     ) -> None:
         """Resolve a URL in a background thread and reply if canonical."""
 
         def resolve_and_reply() -> None:
             try:
                 canonical = self._cache.fetch(
-                    url, lambda: self._resolve(url, config.http_timeout)
+                    url, lambda: self._resolver.resolve(url)
                 )
                 if not canonical:
                     return

@@ -8,6 +8,7 @@ from enum import unique
 
 from .cache import BaseCache
 from .cache import MemoryCache
+from .network import USER_AGENT
 from .network import get_url
 
 
@@ -47,6 +48,7 @@ def colored(text: str, color: Color) -> str:
 __all__ = [
     'BaseCache',
     'MemoryCache',
+    'USER_AGENT',
     'get_url',
     'divide_text',
     'Color',

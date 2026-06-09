@@ -1,12 +1,16 @@
+import logging
 from typing import Any
 from typing import Optional
 
 import pytest
+import requests
 
 from botnet.config import Config
 from botnet.message import Message
 from botnet.modules.builtin.fediverse import Fediverse
+from botnet.modules.builtin.fediverse import HttpResolver
 from botnet.modules.builtin.fediverse import RateLimiter
+from botnet.modules.builtin.fediverse import Resolver
 from botnet.modules.builtin.fediverse import URLCache
 from botnet.modules.builtin.fediverse import extract_canonical_url
 from botnet.modules.builtin.fediverse import extract_urls
@@ -136,7 +140,7 @@ class FakeResolver:
         self.results: dict[str, Optional[str]] = {}
         self.calls: list[str] = []
 
-    def resolve(self, url: str, timeout: int) -> Optional[str]:
+    def resolve(self, url: str) -> Optional[str]:
         self.calls.append(url)
         return self.results.get(url)
 
@@ -146,8 +150,8 @@ class FediverseForTest(Fediverse):
         self.mock_resolver = FakeResolver()
         super().__init__(config)
 
-    def _resolve(self, url: str, timeout: int) -> Optional[str]:
-        return self.mock_resolver.resolve(url, timeout)
+    def _create_resolver(self) -> Resolver:
+        return self.mock_resolver
 
 
 def test_resolves_url_in_configured_channel(
@@ -247,6 +251,169 @@ def tested_fediverse(
     )
 
     return module_harness_factory.make(FediverseForTest, config)
+
+
+class FakeResponse:
+    def __init__(
+        self,
+        status_code: int,
+        headers: Optional[dict[str, str]] = None,
+        json_data: Any = None,
+    ) -> None:
+        self.status_code = status_code
+        self.headers = headers or {}
+        self._json_data = json_data
+
+    def json(self) -> Any:
+        if isinstance(self._json_data, Exception):
+            raise self._json_data
+        return self._json_data
+
+
+class FakeRequests:
+    """Stands in for requests.get; serves canned responses keyed by URL."""
+
+    def __init__(self, responses: dict[str, FakeResponse]) -> None:
+        self._responses = responses
+        self.calls: list[tuple[str, Any]] = []
+
+    def get(self, url: str, **kwargs: Any) -> FakeResponse:
+        self.calls.append((url, kwargs))
+        return self._responses[url]
+
+
+def make_resolver(
+    monkeypatch: pytest.MonkeyPatch, responses: dict[str, FakeResponse]
+) -> tuple[HttpResolver, FakeRequests]:
+    fake = FakeRequests(responses)
+    monkeypatch.setattr(requests, "get", fake.get)
+    resolver = HttpResolver(logging.getLogger("test"), timeout=10)
+    return resolver, fake
+
+
+class TestHttpResolver:
+    def test_cross_host_redirect_returned_not_followed(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The regression: a cross-instance link 302-redirects straight to the
+        # canonical origin URL. We must return that Location, NOT follow it.
+        url = "https://chaos.social/@julia@eepy.moe/116669649691816914"
+        canonical = "https://eepy.moe/notes/amxfssr1uhv906oo"
+        resolver, fake = make_resolver(
+            monkeypatch,
+            {url: FakeResponse(302, headers={"Location": canonical})},
+        )
+
+        assert resolver.resolve(url) == canonical
+        # Exactly one request — the redirect was not chased.
+        assert len(fake.calls) == 1
+        assert fake.calls[0][1]["allow_redirects"] is False
+
+    def test_ap_json_url_cross_host(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        url = "https://chaos.social/@robpike@hachyderm.io/123"
+        canonical = "https://hachyderm.io/@robpike/123"
+        resolver, fake = make_resolver(
+            monkeypatch,
+            {
+                url: FakeResponse(
+                    200,
+                    headers={"Content-Type": "application/activity+json"},
+                    json_data={"url": canonical},
+                )
+            },
+        )
+
+        assert resolver.resolve(url) == canonical
+
+    def test_ap_json_url_same_host_returns_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        url = "https://example.com/@user/1"
+        resolver, _ = make_resolver(
+            monkeypatch,
+            {
+                url: FakeResponse(
+                    200,
+                    headers={"Content-Type": "application/activity+json"},
+                    json_data={"url": "https://example.com/@user/1"},
+                )
+            },
+        )
+
+        assert resolver.resolve(url) is None
+
+    def test_unexpected_status_returns_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # e.g. authorized-fetch instances that 401 unsigned requests.
+        url = "https://example.com/@user/1"
+        resolver, _ = make_resolver(
+            monkeypatch, {url: FakeResponse(401)}
+        )
+
+        assert resolver.resolve(url) is None
+
+    def test_invalid_json_returns_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # A 200 with an AP content type but an unparseable body (truncated
+        # response, error page mislabelled, ...).
+        url = "https://example.com/@user/1"
+        resolver, _ = make_resolver(
+            monkeypatch,
+            {
+                url: FakeResponse(
+                    200,
+                    headers={"Content-Type": "application/activity+json"},
+                    json_data=ValueError("not json"),
+                )
+            },
+        )
+
+        assert resolver.resolve(url) is None
+
+    def test_redirect_without_location_returns_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        url = "https://example.com/@user/1"
+        resolver, fake = make_resolver(
+            monkeypatch, {url: FakeResponse(302, headers={})}
+        )
+
+        assert resolver.resolve(url) is None
+        assert len(fake.calls) == 1  # no Location -> no recursion
+
+    def test_request_exception_returns_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def boom(url: str, **kwargs: Any) -> FakeResponse:
+            raise requests.ConnectionError("nope")
+
+        monkeypatch.setattr(requests, "get", boom)
+        resolver = HttpResolver(logging.getLogger("test"), timeout=10)
+
+        assert resolver.resolve("https://example.com/@user/1") is None
+
+    def test_same_host_redirect_returns_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        url = "https://example.com/@user/1"
+        resolver, fake = make_resolver(
+            monkeypatch,
+            {url: FakeResponse(302, headers={"Location": url})},
+        )
+
+        assert resolver.resolve(url) is None
+        assert len(fake.calls) == 1  # not followed
+
+    def test_non_http_scheme_returns_none(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        resolver, fake = make_resolver(monkeypatch, {})
+        assert resolver.resolve("ftp://example.com/@user/1") is None
+        assert fake.calls == []
 
 
 class TestURLCache:

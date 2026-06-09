@@ -5,9 +5,7 @@
 
 import requests
 
-# User agent used while performing requests (429 status codes can be encountered
-# when using the default user agent)
-_uagent = 'Mozilla/5.0 (X11; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0'
+USER_AGENT = 'botnet/1.0 (IRC bot; +https://github.com/boreq/botnet)'
 
 
 def get_url(*args, **kwargs) -> requests.Response:  # type: ignore
@@ -22,6 +20,6 @@ def get_url(*args, **kwargs) -> requests.Response:  # type: ignore
 
     if 'headers' not in kwargs:
         kwargs['headers'] = {}
-    kwargs['headers']['User-Agent'] = _uagent
+    kwargs['headers']['User-Agent'] = USER_AGENT
 
     return requests.request(method, *args, **kwargs)
