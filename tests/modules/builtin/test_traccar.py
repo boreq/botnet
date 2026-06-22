@@ -111,7 +111,7 @@ def test_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar: ModuleHar
     tested_traccar.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :Currently at: Nice Geofence Name (confidence is high, I repeat, confidence is high)')
+                'msg': Message.new_from_string('PRIVMSG #channel :Currently at: Nice Geofence Name (confidence is high, I repeat, confidence is high) http://bboxfinder.com/#9.94954,19.99623,10.04024,20.08773')
             },
         ],
     )
@@ -155,7 +155,7 @@ def test_not_in_geofence(make_privmsg: MakePrivmsgFixture, tested_traccar: Modul
     tested_traccar.expect_message_out_signals(
         [
             {
-                'msg': Message.new_from_string('PRIVMSG #channel :The eagle has left the nest, over.')
+                'msg': Message.new_from_string('PRIVMSG #channel :The eagle has left the nest, over (confidence is high, I repeat, confidence is high) http://bboxfinder.com/#9.94954,19.99623,10.04024,20.08773')
             },
         ],
     )

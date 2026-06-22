@@ -1,5 +1,6 @@
+from datetime import datetime
+from datetime import timedelta
 from typing import Union
-from datetime import datetime, timedelta
 
 def human(
     subject: Union[datetime, timedelta, int, float],

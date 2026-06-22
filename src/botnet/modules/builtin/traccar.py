@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 
 import dacite
 import requests
+import utm
 
 from botnet.modules import privmsg_message_handler
 
@@ -49,6 +50,30 @@ class Geofence:
 _dacite_config = dacite.Config(type_hooks={
     datetime: datetime.fromisoformat
 })
+
+# Grid cell size in meters the position is snapped to before sharing, to
+# anonymise it to roughly a 10km UTM square.
+_GRID_CELL_METERS = 10000
+
+
+def _grid_bbox_link(lat: float, lon: float) -> str | None:
+    cell = _GRID_CELL_METERS
+    try:
+        easting, northing, zone_number, zone_letter = utm.from_latlon(lat, lon)
+        e0 = (easting // cell) * cell
+        n0 = (northing // cell) * cell
+        corners = [
+            utm.to_latlon(e0 + de, n0 + dn, zone_number, zone_letter)
+            for de in (0, cell)
+            for dn in (0, cell)
+        ]
+    except utm.OutOfRangeError:
+        return None
+    lats = [c[0] for c in corners]
+    lons = [c[1] for c in corners]
+    return 'http://bboxfinder.com/#{:.5f},{:.5f},{:.5f},{:.5f}'.format(
+        min(lats), min(lons), max(lats), max(lons),
+    )
 
 
 class TraccarAPI(Protocol):
@@ -269,6 +294,8 @@ class Traccar(BaseResponder[TraccarConfig]):
 
         geofences = api.geofences()
 
+        grid_link = _grid_bbox_link(position.latitude, position.longitude)
+
         sanitized_geofences = []
         for geofence_id in position.geofenceIds if position.geofenceIds is not None else []:
             geofence = self._find_geofence(geofences, geofence_id)
@@ -276,13 +303,10 @@ class Traccar(BaseResponder[TraccarConfig]):
                 if geofence.name in sanitized_geofence_names:
                     sanitized_geofences.append(sanitized_geofence_names[geofence.name])
 
-        if len(sanitized_geofences) == 0:
-            if position.speed > 30:
-                self.respond(msg, 'The eagle has left the nest and is moving at speed, over.')
-                return
-
-            self.respond(msg, 'The eagle has left the nest, over.')
-            return
+        if len(sanitized_geofences) > 0:
+            location = 'Currently at: {}'.format(', '.join(sanitized_geofences))
+        else:
+            location = 'The eagle has left the nest, over'
 
         states = self._states(position)
         if len(states) > 0:
@@ -290,7 +314,8 @@ class Traccar(BaseResponder[TraccarConfig]):
         else:
             state = ''
 
-        self.respond(msg, 'Currently at: {} ({}){}'.format(', '.join(sanitized_geofences), self._confidence(position), state))
+        link = ' {}'.format(grid_link) if grid_link is not None else ''
+        self.respond(msg, '{} ({}){}{}'.format(location, self._confidence(position), state, link))
 
     def _respond_with_battery(self, msg: IncomingPrivateMessage, instance: str, token: str, device_name: str) -> None:
         api = self._create_api(instance, token)

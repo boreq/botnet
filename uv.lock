@@ -58,6 +58,7 @@ dependencies = [
     { name = "protobuf" },
     { name = "requests" },
     { name = "requests-oauthlib" },
+    { name = "utm" },
 ]
 
 [package.dev-dependencies]
@@ -78,11 +79,12 @@ requires-dist = [
     { name = "dacite", specifier = "==1.9.2" },
     { name = "markov", git = "https://github.com/boreq/markov" },
     { name = "mastodon-py", specifier = "==2.1.1" },
-    { name = "prometheus-client", specifier = "==0.17.*" },
+    { name = "prometheus-client", specifier = "==0.17.1" },
     { name = "protobuf", specifier = ">=3.0" },
     { name = "requests", specifier = "==2.32.*" },
     { name = "requests", specifier = ">=2.12" },
     { name = "requests-oauthlib", specifier = ">=0.7.0" },
+    { name = "utm", specifier = "==0.8.1" },
 ]
 
 [package.metadata.requires-dev]
@@ -526,4 +528,13 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
+]
+
+[[package]]
+name = "utm"
+version = "0.8.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/76/c4/f7662574e0d8c883cea257a59efdc2dbb21f19f4a78e7c54be570d740f24/utm-0.8.1.tar.gz", hash = "sha256:634d5b6221570ddc6a1e94afa5c51bae92bcead811ddc5c9bc0a20b847c2dafa", size = 13128, upload-time = "2025-03-06T11:40:56.022Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3b/a4/0698f3e5c397442ec9323a537e48cc63b846288b6878d38efd04e91005e3/utm-0.8.1-py3-none-any.whl", hash = "sha256:e3d5e224082af138e40851dcaad08d7f99da1cc4b5c413a7de34eabee35f434a", size = 8613, upload-time = "2025-03-06T11:40:54.273Z" },
 ]
