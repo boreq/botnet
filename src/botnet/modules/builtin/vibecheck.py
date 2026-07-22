@@ -79,6 +79,14 @@ _PING_EVERY = timedelta(hours=72)
 # once this much time passes after the grace periods the bot will issue a kick
 _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS = timedelta(hours=24)
 
+# how many endorsements a persona needs before the bot leaves them alone
+_REQUIRED_ENDORSEMENTS = 2
+
+# personas who interacted (joined, spoke, or were seen in the channel) before this cut-off are grandfathered in and only
+# need this many endorsements, so tightening the requirement does not retroactively punish people already around
+_GRANDFATHERED_REQUIRED_ENDORSEMENTS = 1
+_GRANDFATHERED_IF_INTERACTION_BEFORE = datetime(2026, 7, 22, tzinfo=timezone.utc)
+
 
 _FREESIDE_CONTROL_MESSAGES = [
     'terminal guidance sequence complete',
@@ -351,7 +359,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
             with self._store as state:
                 report = PersonaReports.generate(state, names)
                 for persona in report.personas:
-                    if len(persona.endorsements) == 0:
+                    if len(persona.endorsements) < persona.required_endorsements():
                         for nick in persona.nicks_now_in_the_channel:
                             self._kick(nick)
 
@@ -964,8 +972,17 @@ class PersonaReport:
 
         return r
 
+    def is_grandfathered(self) -> bool:
+        interactions = [self.first_message, self.first_join, self.first_seen_in_the_channel]
+        return any(dt is not None and dt < _GRANDFATHERED_IF_INTERACTION_BEFORE for dt in interactions)
+
+    def required_endorsements(self) -> int:
+        if self.is_grandfathered():
+            return _GRANDFATHERED_REQUIRED_ENDORSEMENTS
+        return _REQUIRED_ENDORSEMENTS
+
     def determine_enforcement_action(self, now: datetime) -> EnforcementAction:
-        if len(self.endorsements) > 0:
+        if len(self.endorsements) >= self.required_endorsements():
             return EnforcementAction.NONE
 
         durations_after_grace_periods = self._durations_after_grace_periods(now)

@@ -763,17 +763,59 @@ def test_determine_enforcement_action() -> None:
         last_automated_ping: Optional[datetime]
         now: datetime
         expected: EnforcementAction
+        first_join: Optional[datetime] = None
+        first_message: Optional[datetime] = None
+        first_seen_in_the_channel: Optional[datetime] = None
 
     now = datetime(2026, 3, 9, 12, 0, 0, tzinfo=timezone.utc)
 
     test_cases = [
         TestCase(
-            description='endorsed persona is never actioned',
+            description='persona with two endorsements is never actioned',
+            endorsements={'some-uuid', 'other-uuid'},
+            last_join=None,
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            expected=EnforcementAction.NONE,
+        ),
+        TestCase(
+            description='single endorsement is not enough and results in ping',
             endorsements={'some-uuid'},
             last_join=None,
             last_message=None,
             last_automated_ping=None,
             now=now,
+            expected=EnforcementAction.PING,
+        ),
+        TestCase(
+            description='grandfathered persona needs only a single endorsement to be left alone',
+            endorsements={'some-uuid'},
+            last_join=now - timedelta(hours=2 + 24),
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            first_join=datetime(2025, 1, 1, tzinfo=timezone.utc),
+            expected=EnforcementAction.NONE,
+        ),
+        TestCase(
+            description='grandfathered persona with no endorsements is still actioned',
+            endorsements=set(),
+            last_join=now - timedelta(hours=2 + 24),
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            first_join=datetime(2025, 1, 1, tzinfo=timezone.utc),
+            expected=EnforcementAction.KICK,
+        ),
+        TestCase(
+            description='persona seen in the channel before the cut-off is grandfathered on a single endorsement',
+            endorsements={'some-uuid'},
+            last_join=now - timedelta(hours=2 + 24),
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            first_seen_in_the_channel=datetime(2025, 1, 1, tzinfo=timezone.utc),
             expected=EnforcementAction.NONE,
         ),
         TestCase(
@@ -873,13 +915,13 @@ def test_determine_enforcement_action() -> None:
             nicks_now_in_the_channel=[Nick('testnick')],
             all_nicks=[Nick('testnick')],
             endorsements=tc.endorsements,
-            first_message=None,
+            first_message=tc.first_message,
             last_message=tc.last_message,
-            first_join=None,
+            first_join=tc.first_join,
             last_join=tc.last_join,
             first_kick=None,
             last_kick=None,
-            first_seen_in_the_channel=None,
+            first_seen_in_the_channel=tc.first_seen_in_the_channel,
             last_seen_in_the_channel=None,
             last_automated_ping=tc.last_automated_ping,
         )
