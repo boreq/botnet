@@ -1038,8 +1038,8 @@ class PersonaReport:
         endorsed = uuid in self.endorsements
         nicks = '/'.join([v.s for v in self.nicks_now_in_the_channel])
         nicks = colored(nicks, self._endorsement_color(uuid))
-        if len(self.endorsements) == 0:
-            warning_no_endorsements = colored('0', Color.RED)
+        if len(self.endorsements) < self.required_endorsements():
+            warning_no_endorsements = colored(str(len(self.endorsements)), Color.RED)
         else:
             warning_no_endorsements = ''
         return '{} ({}{})'.format(nicks, '^' if endorsed else '?', warning_no_endorsements)
@@ -1076,7 +1076,7 @@ class PersonaReport:
         if uuid in self.endorsements:
             return Color.GREEN
         else:
-            if len(self.endorsements) == 0:
+            if len(self.endorsements) < self.required_endorsements():
                 return Color.RED
             else:
                 return Color.YELLOW
