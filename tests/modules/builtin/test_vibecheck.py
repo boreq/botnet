@@ -929,6 +929,34 @@ def test_determine_enforcement_action() -> None:
         assert result == tc.expected, f'Failed: {tc.description!r}: expected {tc.expected}, got {result}'
 
 
+def test_for_display_reflects_required_endorsements() -> None:
+    cutoff = datetime(2026, 7, 22, tzinfo=timezone.utc)
+
+    def make_report(endorsements: set[str], first_join: Optional[datetime]) -> PersonaReport:
+        return PersonaReport(
+            nicks_now_in_the_channel=[Nick('testnick')],
+            all_nicks=[Nick('testnick')],
+            endorsements=endorsements,
+            first_message=None,
+            last_message=None,
+            first_join=first_join,
+            last_join=None,
+            first_kick=None,
+            last_kick=None,
+            first_seen_in_the_channel=None,
+            last_seen_in_the_channel=None,
+            last_automated_ping=None,
+        )
+
+    # a new persona with a single endorsement is still below the required two, so it is flagged in red
+    report = make_report({'endorser-uuid'}, first_join=None)
+    assert report.for_display('viewer-uuid') == colored('testnick', Color.RED) + ' (?' + colored('1', Color.RED) + ')'
+
+    # a grandfathered persona only needs one endorsement, so the same single endorsement clears the warning
+    report = make_report({'endorser-uuid'}, first_join=cutoff - timedelta(days=1))
+    assert report.for_display('viewer-uuid') == colored('testnick', Color.YELLOW) + ' (?)'
+
+
 def test_messages_only_once(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
     tested_vibecheck.expect_message_out_signals(
         [
