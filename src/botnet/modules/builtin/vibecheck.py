@@ -85,7 +85,7 @@ _REQUIRED_ENDORSEMENTS = 2
 # personas who interacted (joined, spoke, or were seen in the channel) before this cut-off are grandfathered in and only
 # need this many endorsements, so tightening the requirement does not retroactively punish people already around
 _GRANDFATHERED_REQUIRED_ENDORSEMENTS = 1
-_GRANDFATHERED_IF_INTERACTION_BEFORE = datetime(2026, 7, 22, tzinfo=timezone.utc)
+_GRANDFATHERED_IF_INTERACTION_BEFORE = datetime(2026, 7, 15, tzinfo=timezone.utc)
 
 
 _FREESIDE_CONTROL_MESSAGES = [

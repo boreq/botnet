@@ -930,7 +930,7 @@ def test_determine_enforcement_action() -> None:
 
 
 def test_for_display_reflects_required_endorsements() -> None:
-    cutoff = datetime(2026, 7, 22, tzinfo=timezone.utc)
+    cutoff = datetime(2026, 7, 15, tzinfo=timezone.utc)
 
     def make_report(endorsements: set[str], first_join: Optional[datetime]) -> PersonaReport:
         return PersonaReport(
