@@ -647,6 +647,12 @@ def test_vibecheck_nick(make_privmsg: MakePrivmsgFixture, tested_vibecheck: Modu
                 'msg': Message.new_from_string('PRIVMSG nick :  Last automated ping: ' + colored('unknown', Color.YELLOW)),
             },
             {
+                'msg': Message.new_from_string('PRIVMSG nick :  Will be pinged: 2 years ago'),
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG nick :  Will be kicked: 2 years ago'),
+            },
+            {
                 'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by you.', Color.RED)),
             },
             {
@@ -697,6 +703,12 @@ def test_vibecheck_nick(make_privmsg: MakePrivmsgFixture, tested_vibecheck: Modu
                 'msg': Message.new_from_string('PRIVMSG nick :  Last automated ping: ' + colored('unknown', Color.YELLOW)),
             },
             {
+                'msg': Message.new_from_string('PRIVMSG nick :  Will be pinged: 2 years ago'),
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG nick :  Will be kicked: 2 years ago'),
+            },
+            {
                 'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by you.', Color.RED)),
             },
             {
@@ -745,6 +757,12 @@ def test_vibecheck_nick(make_privmsg: MakePrivmsgFixture, tested_vibecheck: Modu
             },
             {
                 'msg': Message.new_from_string('PRIVMSG nick :  Last automated ping: ' + colored('unknown', Color.YELLOW)),
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG nick :  Will be pinged: 2 years ago'),
+            },
+            {
+                'msg': Message.new_from_string('PRIVMSG nick :  Will be kicked: 2 years ago'),
             },
             {
                 'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by you.', Color.RED)),
