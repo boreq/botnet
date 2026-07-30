@@ -978,6 +978,46 @@ def test_enforcement_decision() -> None:
         assert result == tc.expected, f'Failed: {tc.description!r}: expected {tc.expected}, got {result}'
 
 
+def _seed_nick_seen_in_channel(harness: ModuleHarness[Vibecheck], nick: str, seen_ago: timedelta) -> None:
+    msg = Message(str(Code.RPL_NAMREPLY.value), params=['bot_nick', '@', '#channel', nick])
+    harness.receive_message_in(msg)
+    msg = Message(str(Code.RPL_ENDOFNAMES.value), params=['bot_nick', '#channel'])
+    harness.receive_message_in(msg)
+
+    with harness.module._store as state:
+        state.nick_infos[Nick(nick)] = NickInfo.new_due_to_being_in_the_channel(harness.module._now() - seen_ago)
+
+
+def test_warns_control_group_when_kick_is_within_24h(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
+    # seen 30h ago: the seen grace period (24h) elapsed 6h ago, so the kick is scheduled ~18h out — within 24h
+    _seed_nick_seen_in_channel(tested_vibecheck, 'nick1', timedelta(hours=30))
+
+    tested_vibecheck.module._update()
+
+    def wait_condition(trapped: list[dict[str, Any]]) -> None:
+        warnings = [t for t in trapped if 'scheduled to be kicked' in t['msg'].to_string()]
+        assert len(warnings) == 1
+        # the warning is a private message addressed to the control group's contact
+        assert warnings[0]['msg'].params[0] == 'person'
+        assert 'nick1' in warnings[0]['msg'].to_string()
+        # it tells them the exact command to run to keep the persona
+        assert '.endorse nick1' in warnings[0]['msg'].to_string()
+
+    tested_vibecheck.message_out_trap.wait(wait_condition)
+
+
+def test_does_not_warn_control_group_when_kick_is_far_off(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
+    # seen only 1h ago: still inside the seen grace period, so the kick is more than 24h away and no warning is due
+    _seed_nick_seen_in_channel(tested_vibecheck, 'nick1', timedelta(hours=1))
+
+    tested_vibecheck.module._update()
+
+    def wait_condition(trapped: list[dict[str, Any]]) -> None:
+        assert not any('scheduled to be kicked' in t['msg'].to_string() for t in trapped)
+
+    tested_vibecheck.message_out_trap.wait(wait_condition)
+
+
 def test_for_display_reflects_required_endorsements() -> None:
     cutoff = datetime(2026, 7, 15, tzinfo=timezone.utc)
 
@@ -1060,10 +1100,14 @@ def test_messages_only_once(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
                 'msg': Message.new_from_string("PRIVMSG person :If you would like to endorse anyone then you can privately use '.endorse NICK' in this buffer. Please note that this isn't a big decision as you can easily reverse it with '.unendorse NICK'. The full report can always be recalled with '.vibecheck'. If you want to know more about a nick use '.vibecheck NICK'.")
             },
         ]
-        assert len(trapped) == 5
+        # despite two _update() calls each one-off action happens exactly once: the pester, the Freeside ping and the
+        # control group kick warning are all throttled on the second pass
+        assert len(trapped) == 6
         assert trapped[:4] == first_four
         assert 'nick1' in trapped[4]['msg'].to_string()
         assert 'Freeside Control' in trapped[4]['msg'].to_string()
+        assert 'nick1' in trapped[5]['msg'].to_string()
+        assert 'scheduled to be kicked' in trapped[5]['msg'].to_string()
 
     tested_vibecheck.message_out_trap.wait(wait_condition)
 

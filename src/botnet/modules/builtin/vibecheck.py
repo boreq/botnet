@@ -85,6 +85,12 @@ _PING_EVERY = timedelta(hours=72)
 # once this much time passes after the grace periods the bot will issue a kick
 _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS = timedelta(hours=24)
 
+# once a persona's scheduled kick is this close the bot warns the control group so they get a last chance to endorse
+_WARN_CONTROL_GROUP_IF_KICK_WITHIN = timedelta(hours=24)
+
+# a given persona is only warned about to the control group this often, to avoid flooding them
+_WARN_CONTROL_GROUP_ABOUT_KICK_EVERY = timedelta(hours=24)
+
 # how many endorsements a persona needs before the bot leaves them alone
 _REQUIRED_ENDORSEMENTS = 2
 
@@ -515,6 +521,11 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                     state.on_automated_ping(nick, now)
                     self._send_freeside_control_message(nick)
 
+                if persona.should_warn_control_group_about_kick(now, decision):
+                    assert decision.kick_at is not None
+                    state.on_control_group_kick_warning(nick, now)
+                    self._warn_control_group_about_pending_kick(persona, decision.kick_at)
+
     def _kick(self, nick: Nick) -> None:
         config = self.get_config()
         channel = Channel(config.channel)
@@ -533,6 +544,21 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         random_message = random.choice(_FREESIDE_CONTROL_MESSAGES)
         channel = Target(Channel(config.channel))
         self.message(channel, f'{nick}, Freeside Control, {random_message}.')
+
+    def _warn_control_group_about_pending_kick(self, persona: PersonaReport, kick_at: datetime) -> None:
+        nicks = ', '.join([nick.s for nick in persona.nicks_now_in_the_channel])
+        endorse_target = persona.nicks_now_in_the_channel[0].s
+        command_prefix = self.get_command_prefix()
+
+        def with_group(group: AuthorisedGroup) -> None:
+            group.message_all(
+                'Heads up: {} is still unendorsed and is scheduled to be kicked {} unless someone endorses them '
+                "first. If you would like to keep them you can privately use '{}endorse {}' in this buffer.".format(
+                    nicks, human(kick_at, precision=1), command_prefix, endorse_target
+                )
+            )
+
+        with_group_signal.send(self, group_uuid=self.get_config().authorised_group, with_group=with_group)
 
 
 class Store:
@@ -631,6 +657,12 @@ class State:
             return
         self.nick_infos[nick].on_automated_ping(now)
 
+    def on_control_group_kick_warning(self, nick: Nick, now: datetime) -> None:
+        if nick not in self.nick_infos:
+            self.nick_infos[nick] = NickInfo.new_due_to_control_group_kick_warning(now)
+            return
+        self.nick_infos[nick].on_control_group_kick_warning(now)
+
     def _all_nicks_of(self, nick: Nick) -> list[Nick]:
         all_nicks = set([nick])
         for persona in self.personas:
@@ -684,6 +716,8 @@ class NickInfo:
     last_seen_in_the_channel: None | datetime
     last_automated_ping: None | datetime
     endorsements: list[str]
+    # last time the control group was warned that this nick is scheduled to be kicked; used to throttle those warnings
+    last_control_group_kick_warning: None | datetime = None
 
     @classmethod
     def new_due_to_privmsg(cls, now: datetime) -> NickInfo:
@@ -775,6 +809,22 @@ class NickInfo:
             endorsements=[],
         )
 
+    @classmethod
+    def new_due_to_control_group_kick_warning(cls, now: datetime) -> NickInfo:
+        return cls(
+            first_message=None,
+            last_message=None,
+            first_join=None,
+            last_join=None,
+            first_kick=None,
+            last_kick=None,
+            first_seen_in_the_channel=None,
+            last_seen_in_the_channel=None,
+            last_automated_ping=None,
+            endorsements=[],
+            last_control_group_kick_warning=now,
+        )
+
     def on_privmsg(self, now: datetime) -> None:
         if self.first_message is None:
             self.first_message = now
@@ -807,6 +857,9 @@ class NickInfo:
 
     def on_automated_ping(self, now: datetime) -> None:
         self.last_automated_ping = now
+
+    def on_control_group_kick_warning(self, now: datetime) -> None:
+        self.last_control_group_kick_warning = now
 
 
 @dataclass
@@ -918,6 +971,8 @@ class PersonaReport:
 
     last_automated_ping: None | datetime
 
+    last_control_group_kick_warning: None | datetime = None
+
     @classmethod
     def new(cls, state: State, nick_now_in_the_channel: Nick) -> PersonaReport:
         r = PersonaReport(
@@ -976,6 +1031,10 @@ class PersonaReport:
                 if r.last_automated_ping is None or info.last_automated_ping > r.last_automated_ping:
                     r.last_automated_ping = info.last_automated_ping
 
+            if info.last_control_group_kick_warning is not None:
+                if r.last_control_group_kick_warning is None or info.last_control_group_kick_warning > r.last_control_group_kick_warning:
+                    r.last_control_group_kick_warning = info.last_control_group_kick_warning
+
         return r
 
     def is_grandfathered(self) -> bool:
@@ -1008,6 +1067,19 @@ class PersonaReport:
             ping_at=max(active_at, ping_gate),
             kick_at=active_at + _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS,
         )
+
+    def should_warn_control_group_about_kick(self, now: datetime, decision: EnforcementDecision) -> bool:
+        if decision.kick_at is None:
+            return False
+        # only warn while the kick is imminent but still pending: scheduled within the warning window and not yet due
+        # (once it is due the persona is kicked instead of warned)
+        if not (decision.kick_at - _WARN_CONTROL_GROUP_IF_KICK_WITHIN <= now < decision.kick_at):
+            return False
+        # throttle: don't warn about the same persona more often than the configured interval
+        if self.last_control_group_kick_warning is not None:
+            if now < self.last_control_group_kick_warning + _WARN_CONTROL_GROUP_ABOUT_KICK_EVERY:
+                return False
+        return True
 
     def _grace_endpoints(self) -> list[datetime]:
         endpoints: list[datetime] = []
@@ -1217,6 +1289,7 @@ class TransportNickInfo:
     last_seen_in_the_channel: None | str
     last_automated_ping: None | str
     endorsements: list[str]
+    last_control_group_kick_warning: None | str = None
 
     @classmethod
     def create(cls, v: NickInfo) -> TransportNickInfo:
@@ -1231,6 +1304,7 @@ class TransportNickInfo:
             last_seen_in_the_channel=save_dt(v.last_seen_in_the_channel),
             last_automated_ping=save_dt(v.last_automated_ping),
             endorsements=v.endorsements,
+            last_control_group_kick_warning=save_dt(v.last_control_group_kick_warning),
         )
 
     def to(self) -> NickInfo:
@@ -1245,6 +1319,7 @@ class TransportNickInfo:
             last_seen_in_the_channel=load_dt(self.last_seen_in_the_channel),
             last_automated_ping=load_dt(self.last_automated_ping),
             endorsements=self.endorsements,
+            last_control_group_kick_warning=load_dt(self.last_control_group_kick_warning),
         )
 
 
