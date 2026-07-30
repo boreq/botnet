@@ -36,6 +36,8 @@ from ...message import Nick
 from ...message import Target
 from ...signals import message_out
 from ...signals import on_exception
+from ...signals import with_group as with_group_signal
+from ...signals import with_user as with_user_signal
 from .. import Args
 from .. import AuthContext
 from .. import BaseModule
@@ -49,8 +51,8 @@ from .. import reply_handler
 from ..lib import Color
 from ..lib import MemoryCache
 from ..lib import colored
-from .auth import AuthConfig
-from .auth import AuthConfigPerson
+from .auth import AuthorisedGroup
+from .auth import AuthorisedUser
 
 
 @dataclass
@@ -152,7 +154,7 @@ class NamesMixin(BaseModule):
                 names.remove(msg.old_nick)
             names.append(msg.new_nick)
 
-    def request_names(self, channel: Channel, on_names_available: Callable[[list[Nick]], None]) -> None:
+    def request_nicks(self, channel: Channel, on_names_available: Callable[[list[Nick]], None]) -> None:
         """Schedules an action to be completed when the names for the channel
         are available.
 
@@ -302,7 +304,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                     self.respond(msg, 'There is no {} in the channel.'.format(nick))
 
         channel = Channel(self.get_config().channel)
-        self.request_names(channel, on_names_available)
+        self.request_nicks(channel, on_names_available)
 
     @command('unendorse')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
@@ -346,7 +348,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                 self.respond(msg, 'Neither of those nicks is in the channel!')
 
         channel = Channel(self.get_config().channel)
-        self.request_names(channel, on_names_available)
+        self.request_nicks(channel, on_names_available)
 
     @command('ausweiskontrolle')
     @_message_is_in_the_channel()
@@ -364,7 +366,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
                             self._kick(nick)
 
         channel = Channel(self.get_config().channel)
-        self.request_names(channel, on_names_available)
+        self.request_nicks(channel, on_names_available)
 
     @kick_message_handler()
     def handler_kick(self, msg: IncomingKick) -> None:
@@ -396,52 +398,50 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         self._t.join()
 
     def _vibecheck(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
-        def on_names_available(names: list[Nick]) -> None:
-            assert auth.uuid is not None
+        assert auth.uuid is not None
+        uuid = auth.uuid
 
-            config = self.get_config()
+        def with_nicks_in_channel(nicks: list[Nick]) -> None:
+            def with_group(group: AuthorisedGroup) -> None:
+                with self._store as state:
+                    report = state.generate_report(
+                        self._now(), uuid, nicks, set(person.uuid for person in group.people)
+                    )
 
-            auth_module_people = self._peek_auth_module_people(config)
-            auth_module_people_uuids = set([person.uuid for person in auth_module_people])
-
-            with self._store as state:
-                report = state.generate_report(self._now(), auth.uuid, names, auth_module_people_uuids)
-
-            self.respond(
-                msg,
-                'Everyone currently in the channel: {}'.format(
-                    ', '.join([v.for_display(auth.uuid) for v in reversed(report.persona_reports.personas)])
+                self.respond(
+                    msg,
+                    'Everyone currently in the channel: {}'.format(
+                        ', '.join([v.for_display(uuid) for v in reversed(report.persona_reports.personas)])
+                    )
                 )
-            )
+                self.respond(msg, self._general_instruction())
+                self.respond(msg, f'Transparency: {report.authorised_people_report.for_display()}')
 
-            self.respond(msg, self._general_instruction())
-            self.respond(msg, f'Transparency: {report.authorised_people_report.for_display()}')
+            with_group_signal.send(self, group_uuid=self.get_config().authorised_group, with_group=with_group)
 
         channel = Channel(self.get_config().channel)
-        self.request_names(channel, on_names_available)
+        self.request_nicks(channel, with_nicks_in_channel)
 
     def _vibecheck_nick(self, msg: IncomingPrivateMessage, auth: AuthContext, nick: Nick) -> None:
         assert auth.uuid is not None
+        uuid = auth.uuid
 
-        config = self.get_config()
-
-        auth_module_people = self._peek_auth_module_people(config)
-        auth_module_people_uuids = set([person.uuid for person in auth_module_people])
-
-        with self._store as state:
-            report = state.generate_report(self._now(), auth.uuid, [nick], auth_module_people_uuids)
-
-        for persona_report in report.persona_reports.personas:
-            if nick in persona_report.all_nicks:
-                self.respond(
-                    msg,
-                    persona_report.for_display(auth.uuid)
+        def with_group(group: AuthorisedGroup) -> None:
+            with self._store as state:
+                report = state.generate_report(
+                    self._now(), uuid, [nick], set(person.uuid for person in group.people)
                 )
 
-                for line in persona_report.for_detailed_display(auth.uuid, self._now()):
-                    self.respond(msg, line)
+            for persona_report in report.persona_reports.personas:
+                if nick in persona_report.all_nicks:
+                    self.respond(msg, persona_report.for_display(uuid))
 
-                break
+                    for line in persona_report.for_detailed_display(uuid, self._now()):
+                        self.respond(msg, line)
+
+                    break
+
+        with_group_signal.send(self, group_uuid=self.get_config().authorised_group, with_group=with_group)
 
     def _run(self) -> None:
         while not self._stop_event.is_set():
@@ -461,20 +461,26 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
             self._maybe_go_ballistic(names)
 
         channel = Channel(self.get_config().channel)
-        self.request_names(channel, on_names_available)
+        self.request_nicks(channel, on_names_available)
 
     def _maybe_pester_people(self, names: list[Nick]) -> None:
-        config = self.get_config()
-        auth_module_people = self._peek_auth_module_people(config)
-        auth_module_people_uuids = set([person.uuid for person in auth_module_people])
-        for person in auth_module_people:
-            with self._store as state:
-                report = state.generate_pestering_report(self._now(), person.uuid, names, auth_module_people_uuids)
-            if report is not None:
-                for nick in [Target(Nick(nick_string)) for nick_string in person.contact]:
-                    self.message(nick, 'Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
-                    self.message(nick, ', '.join([v.for_display(person.uuid) for v in reversed(report.persona_reports.personas)]))
-                    self.message(nick, self._general_instruction())
+        def with_group(group: AuthorisedGroup) -> None:
+            for person in group.people:
+                with self._store as state:
+                    report = state.generate_pestering_report(
+                        self._now(), person.uuid, names, set(p.uuid for p in group.people)
+                    )
+                if report is not None:
+                    self._pester_person(person.uuid, report)
+
+        with_group_signal.send(self, group_uuid=self.get_config().authorised_group, with_group=with_group)
+
+    def _pester_person(self, uuid: str, report: MinorityReport) -> None:
+        def with_user(user: AuthorisedUser) -> None:
+            user.message('Skybird, this is Dropkick with a red dash alpha message in two parts. Break. Break. Stand by to copy the list of people who are currently in the channel:')
+            user.message(', '.join([v.for_display(uuid) for v in reversed(report.persona_reports.personas)]))
+            user.message(self._general_instruction())
+        with_user_signal.send(self, user_uuid=uuid, with_user=with_user)
 
     def _general_instruction(self) -> str:
         command_prefix = self.get_command_prefix()
@@ -489,13 +495,6 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
     def _mark_names_as_in_the_channel(self, names: list[Nick]) -> None:
         with self._store as state:
             state.mark_as_being_in_the_channel(names, self._now())
-
-    def _peek_auth_module_people(self, config: VibecheckConfig) -> list[AuthConfigPerson]:
-        auth_config = self.peek_loaded_config_for_module('botnet', 'auth', AuthConfig)
-        return [
-            person for person in auth_config.people
-            if config.authorised_group in person.groups
-        ]
 
     def _maybe_go_ballistic(self, names: list[Nick]) -> None:
         with self._store as state:

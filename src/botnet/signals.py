@@ -29,6 +29,15 @@ message_out = _signals.signal('message-out')
 # kwargs: Exception e
 on_exception = _signals.signal('on-exception')
 
+# Ask the auth module for a group's members and perform actions on them.
+# kwargs: str group_uuid, auth.WithGroupClosure with_group
+with_group = _signals.signal('with-auth-group')
+
+# Ask the auth module to resolve a user's live authorisation (via WHOIS) and
+# perform actions on it.
+# kwargs: str user_uuid, auth.WithUserClosure with_user
+with_user = _signals.signal('with-auth-user')
+
 # Send this signal to load a module
 # kwargs: str name
 module_load = _signals.signal('module-load')

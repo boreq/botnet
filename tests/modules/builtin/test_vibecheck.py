@@ -3,6 +3,7 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from typing import Any
+from typing import Callable
 from typing import Optional
 
 import pytest
@@ -18,6 +19,7 @@ from botnet.modules.builtin.vibecheck import Vibecheck
 from botnet.modules.lib import Color
 from botnet.modules.lib import colored
 
+from ...conftest import FakeAuthResponder
 from ...conftest import MakePrivmsgFixture
 from ...conftest import ModuleHarness
 from ...conftest import ModuleHarnessFactory
@@ -999,7 +1001,11 @@ def test_messages_only_once(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
 
 
 @pytest.fixture()
-def tested_vibecheck(module_harness_factory: ModuleHarnessFactory, tmp_file: str) -> ModuleHarness[VibecheckForTest]:
+def tested_vibecheck(
+    module_harness_factory: ModuleHarnessFactory,
+    fake_auth_responder: Callable[[Config], FakeAuthResponder],
+    tmp_file: str,
+) -> ModuleHarness[VibecheckForTest]:
     with open(tmp_file, 'w') as f:
         f.write('{ "authorised_people_infos": {}, "personas": [], "nick_infos": {} }')
 
@@ -1032,6 +1038,8 @@ def tested_vibecheck(module_harness_factory: ModuleHarnessFactory, tmp_file: str
             },
         }
     )
+
+    fake_auth_responder(config)
 
     m = module_harness_factory.make(VibecheckForTest, config)
     m.module.start()

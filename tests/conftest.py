@@ -2,6 +2,7 @@ import logging
 import os
 import tempfile
 import time
+from enum import Enum
 from typing import Any
 from typing import Callable
 from typing import Generic
@@ -9,12 +10,19 @@ from typing import Optional
 from typing import Protocol
 from typing import TypeVar
 
+import dacite
 import pytest
 
 from botnet import BaseModule
 from botnet.config import Config
 from botnet.message import Message
+from botnet.message import Nick
+from botnet.message import Target
 from botnet.modules import AuthContext
+from botnet.modules.builtin.auth import AuthConfig
+from botnet.modules.builtin.auth import AuthorisedGroup
+from botnet.modules.builtin.auth import AuthorisedUser
+from botnet.modules.lib import divide_text
 from botnet.signals import _request_list_commands
 from botnet.signals import auth_message_in
 from botnet.signals import clear_state
@@ -28,6 +36,8 @@ from botnet.signals import module_loaded
 from botnet.signals import module_unload
 from botnet.signals import module_unloaded
 from botnet.signals import on_exception
+from botnet.signals import with_group as with_group_signal
+from botnet.signals import with_user as with_user_signal
 
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 log_level = logging.DEBUG
@@ -121,6 +131,71 @@ class Trap(object):
 @pytest.fixture()
 def make_signal_trap() -> type[Trap]:
     return Trap
+
+
+_BREAK_PRIVMSG_EVERY = 400
+
+
+class FakeAuthResponder:
+    """Test double for the Auth module's `with_group` / `with_user` signal
+    handlers.
+
+    Unlike the real Auth module it deliberately does NOT subscribe to
+    `message_in`, so it never floods `message_out` with the WHOIS traffic the
+    real module would emit — that keeps the strict `message_out` assertions in
+    module tests focused on the module under test. It also treats every
+    configured contact as currently authorised (no live WHOIS check), so tests
+    can exercise the happy path without simulating a WHOIS handshake.
+
+    The group members and contacts come straight from the `botnet.auth` section
+    of the provided config, mirroring what the real Auth module reads.
+    """
+
+    def __init__(self, config: Config) -> None:
+        self._config = config
+        with_group_signal.connect(self.on_with_group)
+        with_user_signal.connect(self.on_with_user)
+
+    def disconnect(self) -> None:
+        with_group_signal.disconnect(self.on_with_group)
+        with_user_signal.disconnect(self.on_with_user)
+
+    def _people(self) -> list[Any]:
+        # parse the config live on every call so tests that mutate the auth
+        # people after construction (as the real Auth module would observe them)
+        # are reflected here
+        auth_config = dacite.from_dict(
+            data_class=AuthConfig,
+            data=self._config['module_config']['botnet']['auth'],
+            config=dacite.Config(cast=[Enum], strict=True),
+        )
+        return auth_config.people
+
+    def _send(self, target: Target, text: str) -> None:
+        for part in divide_text(text, _BREAK_PRIVMSG_EVERY):
+            message_out.send(self, msg=Message(command='PRIVMSG', params=[str(target), part]))
+
+    def on_with_group(self, sender: object, group_uuid: str, with_group: Any) -> None:
+        members = [person for person in self._people() if group_uuid in person.groups]
+        with_group(AuthorisedGroup(group_uuid, members, self._send))
+
+    def on_with_user(self, sender: object, user_uuid: str, with_user: Any) -> None:
+        for person in self._people():
+            if person.uuid == user_uuid:
+                for contact in person.contact:
+                    with_user(AuthorisedUser(Nick(contact), AuthContext(person.uuid, person.groups), self._send))
+                return
+
+
+@pytest.fixture()
+def fake_auth_responder(request: pytest.FixtureRequest) -> Callable[[Config], FakeAuthResponder]:
+    """Wires a FakeAuthResponder to the auth signals and tears it down after the
+    test so its receivers do not leak into other tests."""
+    def f(config: Config) -> FakeAuthResponder:
+        responder = FakeAuthResponder(config)
+        request.addfinalizer(responder.disconnect)
+        return responder
+    return f
 
 
 MODULE = TypeVar('MODULE', bound=BaseModule)

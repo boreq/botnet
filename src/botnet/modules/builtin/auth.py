@@ -11,6 +11,7 @@ from ...message import IncomingPart
 from ...message import IncomingQuit
 from ...message import Message
 from ...message import Nick
+from ...message import Target
 from ...modules import kick_message_handler
 from ...modules import message_handler
 from ...modules import part_message_handler
@@ -18,6 +19,8 @@ from ...modules import quit_message_handler
 from ...modules import reply_handler
 from ...signals import auth_message_in
 from ...signals import message_out
+from ...signals import with_group as with_group_signal
+from ...signals import with_user as with_user_signal
 from .. import AuthContext
 from .. import BaseResponder
 from ..base import BaseModule
@@ -237,6 +240,53 @@ class AuthConfigAuthorisation:
             raise ValueError('exactly one authorisation kind must be set')
 
 
+class AuthorisedUser:
+    """Handle passed to a `with_user` closure.
+
+    Carries the live authorisation resolved for a single nick (via WHOIS) and
+    knows how to message it. `message` is a no-op unless the nick is currently
+    authorised, so a caller cannot accidentally leak a message to an
+    unauthenticated nick.
+    """
+
+    def __init__(self, nick: Nick, auth: AuthContext, send: Callable[[Target, str], None]) -> None:
+        self.nick = nick
+        self.auth = auth
+        self._send = send
+
+    def message(self, text: str) -> None:
+        """Message this nick, but only if it is currently authorised."""
+        if self.auth.uuid is not None:
+            self._send(Target(self.nick), text)
+
+
+class AuthorisedGroup:
+    """Handle passed to a `with_group` closure.
+
+    Carries the configured members of a group and knows how to message their
+    contacts. Membership comes from config, so this reflects who is *configured*
+    in the group, not who is currently online or identified.
+    """
+
+    def __init__(self, group: str, people: list[AuthConfigPerson], send: Callable[[Target, str], None]) -> None:
+        self.group = group
+        self.people = people
+        self._send = send
+
+    def message_all(self, text: str) -> None:
+        """Message every configured contact of every member of the group."""
+        for person in self.people:
+            for contact in person.contact:
+                self._send(Target(Nick(contact)), text)
+
+
+# Closure invoked by the `with_group` signal with an AuthorisedGroup handle.
+WithGroupClosure = Callable[[AuthorisedGroup], None]
+
+# Closure invoked by the `with_user` signal with an AuthorisedUser handle.
+WithUserClosure = Callable[[AuthorisedUser], None]
+
+
 class Auth(WhoisMixin, BaseResponder[AuthConfig]):
     """Resends messages coming in on `message_in` on `auth_message_in` after
     attaching authorisation-related context to them.
@@ -283,19 +333,57 @@ class Auth(WhoisMixin, BaseResponder[AuthConfig]):
     config_name = 'auth'
     config_class = AuthConfig
 
+    def __init__(self, config: Config) -> None:
+        super().__init__(config)
+        with_group_signal.connect(self.on_with_group)
+        with_user_signal.connect(self.on_with_user)
+
     @message_handler()
     def handle_msg(self, msg: Message) -> None:
         def on_complete(whois_data: WhoisResponse) -> None:
-            config = self.get_config()
-            for person in config.people:
-                for authorisation in person.authorisations:
-                    if self._authorisation_matches_whois(authorisation, whois_data):
-                        self._emit_auth_message_in(msg, person.uuid, person.groups)
-                        return
-            self._emit_auth_message_in(msg, None, [])
+            auth = self._auth_context_for_whois(whois_data)
+            self._emit_auth_message_in(msg, auth.uuid, auth.groups)
 
         if msg.nickname is not None:
             self.whois_schedule(Nick(msg.nickname), on_complete)
+
+    def on_with_group(self, sender: object, group_uuid: str, with_group: WithGroupClosure) -> None:
+        """Handler for the `with_group` signal. Resolves the configured members
+        of the group and hands the caller an AuthorisedGroup to act on them.
+        """
+        people = [person for person in self.get_config().people if group_uuid in person.groups]
+        with_group(AuthorisedGroup(group_uuid, people, self.message))
+
+    def on_with_user(self, sender: object, user_uuid: str, with_user: WithUserClosure) -> None:
+        """Handler for the `with_user` signal. WHOIS-resolves the live
+        authorisation of each of the user's contact nicks and hands the caller
+        an AuthorisedUser per contact so it can act only on authorised ones.
+        """
+        for person in self.get_config().people:
+            if person.uuid == user_uuid:
+                for contact in person.contact:
+                    nick = Nick(contact)
+                    self.whois_schedule(nick, self._resolve_user(person, nick, with_user))
+                return
+
+    def _resolve_user(self, person: AuthConfigPerson, nick: Nick, with_user: WithUserClosure) -> Callable[[WhoisResponse], None]:
+        def on_complete(whois_data: WhoisResponse) -> None:
+            # confirm this specific contact nick is currently identified as this
+            # person (any one of their authorisations is enough); only then is
+            # the AuthorisedUser authorised and messageable
+            if any(self._authorisation_matches_whois(a, whois_data) for a in person.authorisations):
+                auth = AuthContext(person.uuid, person.groups)
+            else:
+                auth = AuthContext(None, [])
+            with_user(AuthorisedUser(nick, auth, self.message))
+        return on_complete
+
+    def _auth_context_for_whois(self, whois_data: WhoisResponse) -> AuthContext:
+        for person in self.get_config().people:
+            for authorisation in person.authorisations:
+                if self._authorisation_matches_whois(authorisation, whois_data):
+                    return AuthContext(person.uuid, person.groups)
+        return AuthContext(None, [])
 
     def _authorisation_matches_whois(self, authorisation: AuthConfigAuthorisation, whois_data: WhoisResponse) -> bool:
         if authorisation.logged_in_as is not None:
