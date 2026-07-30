@@ -600,7 +600,7 @@ def test_vibecheck_nick(make_privmsg: MakePrivmsgFixture, tested_vibecheck: Modu
                 'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by you.', Color.RED)),
             },
             {
-                'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by anyone.', Color.RED)),
+                'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by enough people.', Color.RED)),
             },
         ],
     )
@@ -656,7 +656,7 @@ def test_vibecheck_nick(make_privmsg: MakePrivmsgFixture, tested_vibecheck: Modu
                 'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by you.', Color.RED)),
             },
             {
-                'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by anyone.', Color.RED)),
+                'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by enough people.', Color.RED)),
             },
         ],
     )
@@ -712,7 +712,7 @@ def test_vibecheck_nick(make_privmsg: MakePrivmsgFixture, tested_vibecheck: Modu
                 'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by you.', Color.RED)),
             },
             {
-                'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by anyone.', Color.RED)),
+                'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by enough people.', Color.RED)),
             },
         ],
     )
@@ -768,7 +768,7 @@ def test_vibecheck_nick(make_privmsg: MakePrivmsgFixture, tested_vibecheck: Modu
                 'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by you.', Color.RED)),
             },
             {
-                'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by anyone.', Color.RED)),
+                'msg': Message.new_from_string('PRIVMSG nick :' + colored('  Was NOT endorsed by enough people.', Color.RED)),
             },
         ],
     )
