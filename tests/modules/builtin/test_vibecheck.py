@@ -1000,6 +1000,7 @@ def test_warns_control_group_when_kick_is_within_24h(tested_vibecheck: ModuleHar
         # the warning is a private message addressed to the control group's contact
         assert warnings[0]['msg'].params[0] == 'person'
         assert 'nick1' in warnings[0]['msg'].to_string()
+        assert 'unless enough people endorse them' in warnings[0]['msg'].to_string()
         # it tells them the exact command to run to keep the persona
         assert '.endorse nick1' in warnings[0]['msg'].to_string()
 

@@ -552,8 +552,8 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
 
         def with_group(group: AuthorisedGroup) -> None:
             group.message_all(
-                'Heads up: {} is still unendorsed and is scheduled to be kicked {} unless someone endorses them '
-                "first. If you would like to keep them you can privately use '{}endorse {}' in this buffer.".format(
+                'Heads up: {} is still unendorsed and is scheduled to be kicked {} unless enough people endorse '
+                "them. If you would like to keep them you can privately use '{}endorse {}' in this buffer.".format(
                     nicks, human(kick_at, precision=1), command_prefix, endorse_target
                 )
             )
