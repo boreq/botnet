@@ -75,6 +75,10 @@ _JOIN_GRACE_PERIOD = timedelta(hours=1)
 # presumably taking part in some kind of a conversation
 _MESSAGE_GRACE_PERIOD = timedelta(hours=72)
 
+# a person we only ever saw sitting in the channel (no join or message on record, e.g. we missed their join) gets this
+# much time counted from when we first saw them; this guarantees every present persona has at least one grace period
+_SEEN_IN_CHANNEL_GRACE_PERIOD = timedelta(hours=24)
+
 # once any of the two grace periods elapse the bot starts pinging the person this often
 _PING_EVERY = timedelta(hours=72)
 
@@ -500,19 +504,16 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         with self._store as state:
             report = PersonaReports.generate(state, names)
 
+            now = self._now()
             for persona in report.personas:
                 nick = persona.nicks_now_in_the_channel[0]
 
-                match persona.determine_enforcement_action(self._now()):
-                    case EnforcementAction.PING:
-                        state.on_automated_ping(nick, self._now())
-                        self._send_freeside_control_message(nick)
-                    case EnforcementAction.KICK:
-                        self._kick(nick)
-                    case EnforcementAction.NONE:
-                        continue
-                    case _:
-                        raise ValueError('unknown enforcement action')
+                decision = persona.enforcement_decision(now)
+                if decision.should_kick(now):
+                    self._kick(nick)
+                elif decision.should_ping(now):
+                    state.on_automated_ping(nick, now)
+                    self._send_freeside_control_message(nick)
 
     def _kick(self, nick: Nick) -> None:
         config = self.get_config()
@@ -888,10 +889,16 @@ class Badness(Enum):
     WHATEVER = 'whatever'
 
 
-class EnforcementAction(Enum):
-    NONE = 'none'
-    PING = 'ping'
-    KICK = 'kick'
+@dataclass
+class EnforcementDecision:
+    ping_at: None | datetime
+    kick_at: None | datetime
+
+    def should_ping(self, now: datetime) -> bool:
+        return not self.should_kick(now) and self.ping_at is not None and now >= self.ping_at
+
+    def should_kick(self, now: datetime) -> bool:
+        return self.kick_at is not None and now >= self.kick_at
 
 
 @dataclass
@@ -980,55 +987,37 @@ class PersonaReport:
             return _GRANDFATHERED_REQUIRED_ENDORSEMENTS
         return _REQUIRED_ENDORSEMENTS
 
-    def determine_enforcement_action(self, now: datetime) -> EnforcementAction:
+    def enforcement_decision(self, now: datetime) -> EnforcementDecision:
         if len(self.endorsements) >= self.required_endorsements():
-            return EnforcementAction.NONE
+            return EnforcementDecision(ping_at=None, kick_at=None)
 
-        durations_after_grace_periods = self._durations_after_grace_periods(now)
-
-        # we lack data for some reason, let's just ping them
-        if len(durations_after_grace_periods) == 0:
-            return self._ping_if_not_pinged_recently(now)
-
-        # at least one of the grace periods hasn't expired yet
-        if None in durations_after_grace_periods:
-            return EnforcementAction.NONE
-
-        non_none_durations: list[timedelta] = [d for d in durations_after_grace_periods if d is not None]
-        duration_after_grace_periods = min(non_none_durations)
-
-        if duration_after_grace_periods > _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS:
-            return EnforcementAction.KICK
-        else:
-            return self._ping_if_not_pinged_recently(now)
-
-    def _ping_if_not_pinged_recently(self, now: datetime) -> EnforcementAction:
         if self.last_automated_ping is None:
-            return EnforcementAction.PING
+            ping_gate = now
         else:
-            if now - self.last_automated_ping < _PING_EVERY:
-                return EnforcementAction.NONE
-            else:
-                return EnforcementAction.PING
+            ping_gate = self.last_automated_ping + _PING_EVERY
 
-    def _durations_after_grace_periods(self, now: datetime) -> list[timedelta | None]:
-        durations: list[timedelta | None] = []
+        grace_endpoints = self._grace_endpoints()
+        if not grace_endpoints:
+            raise ValueError(
+                'a persona with no grace period endpoints cannot be enforced upon; a persona present in the channel '
+                'should always have first_seen_in_the_channel set because presence is marked before enforcement runs'
+            )
 
+        active_at = max(grace_endpoints)
+        return EnforcementDecision(
+            ping_at=max(active_at, ping_gate),
+            kick_at=active_at + _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS,
+        )
+
+    def _grace_endpoints(self) -> list[datetime]:
+        endpoints: list[datetime] = []
         if self.last_join is not None:
-            time_passed = now - self.last_join - _JOIN_GRACE_PERIOD
-            if time_passed < timedelta(0):
-                durations.append(None)
-            else:
-                durations.append(time_passed)
-
+            endpoints.append(self.last_join + _JOIN_GRACE_PERIOD)
         if self.last_message is not None:
-            time_passed = now - self.last_message - _MESSAGE_GRACE_PERIOD
-            if time_passed < timedelta(0):
-                durations.append(None)
-            else:
-                durations.append(time_passed)
-
-        return durations
+            endpoints.append(self.last_message + _MESSAGE_GRACE_PERIOD)
+        if self.first_seen_in_the_channel is not None:
+            endpoints.append(self.first_seen_in_the_channel + _SEEN_IN_CHANNEL_GRACE_PERIOD)
+        return endpoints
 
     def add_nick_now_in_the_channel(self, nick: Nick) -> None:
         self.nicks_now_in_the_channel.append(nick)
@@ -1056,6 +1045,13 @@ class PersonaReport:
             '  Last seen in the channel: {}'.format(self._maybe_human(self.last_seen_in_the_channel, Badness.OLD_BAD, now)),
             '  Last automated ping: {}'.format(self._maybe_human(self.last_automated_ping, Badness.WHATEVER, now)),
         ]
+
+        if self._grace_endpoints():
+            decision = self.enforcement_decision(now)
+            if decision.ping_at is not None:
+                info.append('  Will be pinged: {}'.format(human(decision.ping_at, precision=1)))
+            if decision.kick_at is not None:
+                info.append('  Will be kicked: {}'.format(human(decision.kick_at, precision=1)))
 
         endorsement_color = self._endorsement_color(uuid)
 

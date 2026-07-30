@@ -13,7 +13,7 @@ from botnet.config import Config
 from botnet.message import Message
 from botnet.message import Nick
 from botnet.modules import AuthContext
-from botnet.modules.builtin.vibecheck import EnforcementAction
+from botnet.modules.builtin.vibecheck import NickInfo
 from botnet.modules.builtin.vibecheck import PersonaReport
 from botnet.modules.builtin.vibecheck import State
 from botnet.modules.builtin.vibecheck import Vibecheck
@@ -756,7 +756,7 @@ def test_vibecheck_nick(make_privmsg: MakePrivmsgFixture, tested_vibecheck: Modu
     )
 
 
-def test_determine_enforcement_action() -> None:
+def test_enforcement_decision() -> None:
     @dataclass
     class TestCase:
         description: str
@@ -765,12 +765,12 @@ def test_determine_enforcement_action() -> None:
         last_message: Optional[datetime]
         last_automated_ping: Optional[datetime]
         now: datetime
-        expected: EnforcementAction
+        expected: str
         first_join: Optional[datetime] = None
         first_message: Optional[datetime] = None
         first_seen_in_the_channel: Optional[datetime] = None
 
-    now = datetime(2026, 3, 9, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 8, 9, 12, 0, 0, tzinfo=timezone.utc)
 
     test_cases = [
         TestCase(
@@ -780,7 +780,7 @@ def test_determine_enforcement_action() -> None:
             last_message=None,
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.NONE,
+            expected='none',
         ),
         TestCase(
             description='single endorsement is not enough and results in ping',
@@ -789,7 +789,8 @@ def test_determine_enforcement_action() -> None:
             last_message=None,
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.PING,
+            first_seen_in_the_channel=now - timedelta(hours=25),
+            expected='ping',
         ),
         TestCase(
             description='grandfathered persona needs only a single endorsement to be left alone',
@@ -799,7 +800,7 @@ def test_determine_enforcement_action() -> None:
             last_automated_ping=None,
             now=now,
             first_join=datetime(2025, 1, 1, tzinfo=timezone.utc),
-            expected=EnforcementAction.NONE,
+            expected='none',
         ),
         TestCase(
             description='grandfathered persona with no endorsements is still actioned',
@@ -809,7 +810,7 @@ def test_determine_enforcement_action() -> None:
             last_automated_ping=None,
             now=now,
             first_join=datetime(2025, 1, 1, tzinfo=timezone.utc),
-            expected=EnforcementAction.KICK,
+            expected='kick',
         ),
         TestCase(
             description='persona seen in the channel before the cut-off is grandfathered on a single endorsement',
@@ -819,16 +820,37 @@ def test_determine_enforcement_action() -> None:
             last_automated_ping=None,
             now=now,
             first_seen_in_the_channel=datetime(2025, 1, 1, tzinfo=timezone.utc),
-            expected=EnforcementAction.NONE,
+            expected='none',
         ),
         TestCase(
-            description='no data at all results in ping',
+            description='only ever seen in the channel, within seen grace period, results in none',
             endorsements=set(),
             last_join=None,
             last_message=None,
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.PING,
+            first_seen_in_the_channel=now - timedelta(hours=0.5),
+            expected='none',
+        ),
+        TestCase(
+            description='only ever seen in the channel, seen grace expired, results in ping',
+            endorsements=set(),
+            last_join=None,
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            first_seen_in_the_channel=now - timedelta(hours=25),
+            expected='ping',
+        ),
+        TestCase(
+            description='only ever seen in the channel, seen grace expired past kicking threshold, results in kick',
+            endorsements=set(),
+            last_join=None,
+            last_message=None,
+            last_automated_ping=None,
+            now=now,
+            first_seen_in_the_channel=now - timedelta(hours=24 + 24 + 1),
+            expected='kick',
         ),
         TestCase(
             description='join within grace period results in none',
@@ -837,7 +859,7 @@ def test_determine_enforcement_action() -> None:
             last_message=None,
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.NONE,
+            expected='none',
         ),
         TestCase(
             description='message within grace period results in none',
@@ -846,7 +868,7 @@ def test_determine_enforcement_action() -> None:
             last_message=now - timedelta(hours=48),
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.NONE,
+            expected='none',
         ),
         TestCase(
             description='join grace expired, no ping yet results in ping',
@@ -855,7 +877,7 @@ def test_determine_enforcement_action() -> None:
             last_message=None,
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.PING,
+            expected='ping',
         ),
         TestCase(
             description='join grace expired, pinged recently results in none',
@@ -864,7 +886,7 @@ def test_determine_enforcement_action() -> None:
             last_message=None,
             last_automated_ping=now - timedelta(hours=6),
             now=now,
-            expected=EnforcementAction.NONE,
+            expected='none',
         ),
         TestCase(
             description='join grace expired, last ping too old results in ping again',
@@ -873,7 +895,7 @@ def test_determine_enforcement_action() -> None:
             last_message=None,
             last_automated_ping=now - timedelta(hours=73),
             now=now,
-            expected=EnforcementAction.PING,
+            expected='ping',
         ),
         TestCase(
             description='join grace expired by more than kicking threshold results in kick',
@@ -882,7 +904,7 @@ def test_determine_enforcement_action() -> None:
             last_message=None,
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.KICK,
+            expected='kick',
         ),
         TestCase(
             description='message grace expired, no ping yet results in ping',
@@ -891,7 +913,7 @@ def test_determine_enforcement_action() -> None:
             last_message=now - timedelta(hours=73),
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.PING,
+            expected='ping',
         ),
         TestCase(
             description='message grace expired by more than kicking threshold results in kick',
@@ -900,7 +922,7 @@ def test_determine_enforcement_action() -> None:
             last_message=now - timedelta(hours=72 + 24 + 1),
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.KICK,
+            expected='kick',
         ),
         TestCase(
             description='join grace expired but message grace still active results in none',
@@ -909,7 +931,7 @@ def test_determine_enforcement_action() -> None:
             last_message=now - timedelta(hours=48),
             last_automated_ping=None,
             now=now,
-            expected=EnforcementAction.NONE,
+            expected='none',
         ),
     ]
 
@@ -928,7 +950,13 @@ def test_determine_enforcement_action() -> None:
             last_seen_in_the_channel=None,
             last_automated_ping=tc.last_automated_ping,
         )
-        result = report.determine_enforcement_action(tc.now)
+        decision = report.enforcement_decision(tc.now)
+        if decision.should_kick(tc.now):
+            result = 'kick'
+        elif decision.should_ping(tc.now):
+            result = 'ping'
+        else:
+            result = 'none'
         assert result == tc.expected, f'Failed: {tc.description!r}: expected {tc.expected}, got {result}'
 
 
@@ -988,6 +1016,13 @@ def test_messages_only_once(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:
 
     msg = Message(str(Code.RPL_ENDOFNAMES.value), params=['bot_nick', '#channel'])
     tested_vibecheck.receive_message_in(msg)
+
+    # pretend we first saw nick1 long enough ago that the seen-in-channel grace period has elapsed but the kick
+    # threshold has not, so enforcement wants to ping them
+    with tested_vibecheck.module._store as state:
+        state.nick_infos[Nick('nick1')] = NickInfo.new_due_to_being_in_the_channel(
+            tested_vibecheck.module._now() - timedelta(hours=36)
+        )
 
     tested_vibecheck.module._update()
     tested_vibecheck.module._update()
