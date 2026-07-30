@@ -1061,9 +1061,9 @@ class PersonaReport:
             info.append(colored('  Was NOT endorsed by you.', endorsement_color))
 
         if len(self.endorsements) >= self.required_endorsements():
-            info.append(colored('  Was endorsed by enough people.', endorsement_color))
+            info.append(colored('  Was endorsed by enough people.', Color.GREEN))
         else:
-            info.append(colored('  Was NOT endorsed by enough people.', endorsement_color))
+            info.append(colored('  Was NOT endorsed by enough people.', Color.RED))
 
         return info
 
