@@ -15,6 +15,7 @@ from botnet.message import Nick
 from botnet.modules import AuthContext
 from botnet.modules.builtin.vibecheck import EnforcementAction
 from botnet.modules.builtin.vibecheck import PersonaReport
+from botnet.modules.builtin.vibecheck import State
 from botnet.modules.builtin.vibecheck import Vibecheck
 from botnet.modules.lib import Color
 from botnet.modules.lib import colored
@@ -957,6 +958,20 @@ def test_for_display_reflects_required_endorsements() -> None:
     # a grandfathered persona only needs one endorsement, so the same single endorsement clears the warning
     report = make_report({'endorser-uuid'}, first_join=cutoff - timedelta(days=1))
     assert report.for_display('viewer-uuid') == colored('testnick', Color.YELLOW) + ' (?)'
+
+
+def test_mark_as_being_in_the_channel_records_every_new_nick() -> None:
+    # a NAMES reply carries every member at once; each previously unknown nick must get a first_seen_in_the_channel
+    # timestamp, otherwise grandfathering (which reads that field) silently skips everyone after the first new nick
+    now = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    state = State(authorised_people_infos={}, personas=[], nick_infos={})
+
+    nicks = [Nick('alice'), Nick('bob'), Nick('carol')]
+    state.mark_as_being_in_the_channel(nicks, now)
+
+    for nick in nicks:
+        assert nick in state.nick_infos
+        assert state.nick_infos[nick].first_seen_in_the_channel == now
 
 
 def test_messages_only_once(tested_vibecheck: ModuleHarness[Vibecheck]) -> None:

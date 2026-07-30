@@ -621,7 +621,7 @@ class State:
         for nick in nicks:
             if nick not in self.nick_infos:
                 self.nick_infos[nick] = NickInfo.new_due_to_being_in_the_channel(now)
-                return
+                continue
             self.nick_infos[nick].on_being_in_the_channel(now)
 
     def on_automated_ping(self, nick: Nick, now: datetime) -> None:
