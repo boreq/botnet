@@ -79,9 +79,6 @@ _MESSAGE_GRACE_PERIOD = timedelta(hours=72)
 # much time counted from when we first saw them; this guarantees every present persona has at least one grace period
 _SEEN_IN_CHANNEL_GRACE_PERIOD = timedelta(hours=24)
 
-# once any of the two grace periods elapse the bot starts pinging the person this often
-_PING_EVERY = timedelta(hours=72)
-
 # once this much time passes after the grace periods the bot will issue a kick
 _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS = timedelta(hours=24)
 
@@ -1050,11 +1047,6 @@ class PersonaReport:
         if len(self.endorsements) >= self.required_endorsements():
             return EnforcementDecision(ping_at=None, kick_at=None)
 
-        if self.last_automated_ping is None:
-            ping_gate = now
-        else:
-            ping_gate = self.last_automated_ping + _PING_EVERY
-
         grace_endpoints = self._grace_endpoints()
         if not grace_endpoints:
             raise ValueError(
@@ -1064,7 +1056,7 @@ class PersonaReport:
 
         active_at = max(grace_endpoints)
         return EnforcementDecision(
-            ping_at=max(active_at, ping_gate),
+            ping_at=None if self.last_automated_ping is not None else active_at,
             kick_at=active_at + _KICK_ONCE_ELAPSED_AFTER_GRACE_PERIODS,
         )
 

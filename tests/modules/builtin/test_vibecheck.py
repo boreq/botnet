@@ -907,13 +907,13 @@ def test_enforcement_decision() -> None:
             expected='none',
         ),
         TestCase(
-            description='join grace expired, last ping too old results in ping again',
+            description='join grace expired, pinged a long time ago is never pinged again',
             endorsements=set(),
             last_join=now - timedelta(hours=2),
             last_message=None,
             last_automated_ping=now - timedelta(hours=73),
             now=now,
-            expected='ping',
+            expected='none',
         ),
         TestCase(
             description='join grace expired by more than kicking threshold results in kick',
