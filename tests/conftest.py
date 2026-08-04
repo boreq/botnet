@@ -175,9 +175,14 @@ class FakeAuthResponder:
         for part in divide_text(text, _BREAK_PRIVMSG_EVERY):
             message_out.send(self, msg=Message(command='PRIVMSG', params=[str(target), part]))
 
+    def _message_person(self, person: Any, text: str) -> None:
+        for contact in person.contact:
+            user = AuthorisedUser(Nick(contact), AuthContext(person.uuid, person.groups), self._send)
+            user.message(text)
+
     def on_with_group(self, sender: object, group_uuid: str, with_group: Any) -> None:
         members = [person for person in self._people() if group_uuid in person.groups]
-        with_group(AuthorisedGroup(group_uuid, members, self._send))
+        with_group(AuthorisedGroup(group_uuid, members, self._message_person))
 
     def on_with_user(self, sender: object, user_uuid: str, with_user: Any) -> None:
         for person in self._people():

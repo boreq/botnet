@@ -241,13 +241,7 @@ class AuthConfigAuthorisation:
 
 
 class AuthorisedUser:
-    """Handle passed to a `with_user` closure.
-
-    Carries the live authorisation resolved for a single nick (via WHOIS) and
-    knows how to message it. `message` is a no-op unless the nick is currently
-    authorised, so a caller cannot accidentally leak a message to an
-    unauthenticated nick.
-    """
+    """Handle passed to a `with_user` closure."""
 
     def __init__(self, nick: Nick, auth: AuthContext, send: Callable[[Target, str], None]) -> None:
         self.nick = nick
@@ -255,35 +249,27 @@ class AuthorisedUser:
         self._send = send
 
     def message(self, text: str) -> None:
-        """Message this nick, but only if it is currently authorised."""
+        """Messages this nick only if it is currently authorised."""
         if self.auth.uuid is not None:
             self._send(Target(self.nick), text)
 
 
 class AuthorisedGroup:
-    """Handle passed to a `with_group` closure.
+    """Handle passed to a `with_group` closure."""
 
-    Carries the configured members of a group and knows how to message their
-    contacts. Membership comes from config, so this reflects who is *configured*
-    in the group, not who is currently online or identified.
-    """
-
-    def __init__(self, group: str, people: list[AuthConfigPerson], send: Callable[[Target, str], None]) -> None:
+    def __init__(self, group: str, people: list[AuthConfigPerson], message_person: Callable[[AuthConfigPerson, str], None]) -> None:
         self.group = group
         self.people = people
-        self._send = send
+        self._message_person = message_person
 
     def message_all(self, text: str) -> None:
-        """Message every configured contact of every member of the group."""
+        """Messages the members of the group on their authorised nicks only."""
         for person in self.people:
-            for contact in person.contact:
-                self._send(Target(Nick(contact)), text)
+            self._message_person(person, text)
 
 
-# Closure invoked by the `with_group` signal with an AuthorisedGroup handle.
 WithGroupClosure = Callable[[AuthorisedGroup], None]
 
-# Closure invoked by the `with_user` signal with an AuthorisedUser handle.
 WithUserClosure = Callable[[AuthorisedUser], None]
 
 
@@ -348,29 +334,27 @@ class Auth(WhoisMixin, BaseResponder[AuthConfig]):
             self.whois_schedule(Nick(msg.nickname), on_complete)
 
     def on_with_group(self, sender: object, group_uuid: str, with_group: WithGroupClosure) -> None:
-        """Handler for the `with_group` signal. Resolves the configured members
-        of the group and hands the caller an AuthorisedGroup to act on them.
-        """
+        """Handler for the `with_group` signal."""
         people = [person for person in self.get_config().people if group_uuid in person.groups]
-        with_group(AuthorisedGroup(group_uuid, people, self.message))
+        with_group(AuthorisedGroup(group_uuid, people, self._message_person))
 
     def on_with_user(self, sender: object, user_uuid: str, with_user: WithUserClosure) -> None:
-        """Handler for the `with_user` signal. WHOIS-resolves the live
-        authorisation of each of the user's contact nicks and hands the caller
-        an AuthorisedUser per contact so it can act only on authorised ones.
-        """
+        """Handler for the `with_user` signal."""
         for person in self.get_config().people:
             if person.uuid == user_uuid:
-                for contact in person.contact:
-                    nick = Nick(contact)
-                    self.whois_schedule(nick, self._resolve_user(person, nick, with_user))
+                self._with_person_contacts(person, with_user)
                 return
+
+    def _with_person_contacts(self, person: AuthConfigPerson, with_user: WithUserClosure) -> None:
+        for contact in person.contact:
+            nick = Nick(contact)
+            self.whois_schedule(nick, self._resolve_user(person, nick, with_user))
+
+    def _message_person(self, person: AuthConfigPerson, text: str) -> None:
+        self._with_person_contacts(person, lambda user: user.message(text))
 
     def _resolve_user(self, person: AuthConfigPerson, nick: Nick, with_user: WithUserClosure) -> Callable[[WhoisResponse], None]:
         def on_complete(whois_data: WhoisResponse) -> None:
-            # confirm this specific contact nick is currently identified as this
-            # person (any one of their authorisations is enough); only then is
-            # the AuthorisedUser authorised and messageable
             if any(self._authorisation_matches_whois(a, whois_data) for a in person.authorisations):
                 auth = AuthContext(person.uuid, person.groups)
             else:

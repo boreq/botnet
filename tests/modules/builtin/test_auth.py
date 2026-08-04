@@ -8,7 +8,11 @@ from botnet.message import Message
 from botnet.message import Nick
 from botnet.modules import AuthContext
 from botnet.modules.builtin.auth import Auth
+from botnet.modules.builtin.auth import AuthorisedGroup
+from botnet.modules.builtin.auth import AuthorisedUser
 from botnet.modules.builtin.auth import WhoisResponse
+from botnet.signals import with_group as with_group_signal
+from botnet.signals import with_user as with_user_signal
 from tests.conftest import ModuleHarnessFactory
 
 from ...conftest import ModuleHarness
@@ -344,6 +348,190 @@ def test_cache_invalidation(subtests: pytest.Subtests, make_tested_auth: Callabl
                 )
 
             tested_auth.stop()
+
+
+def _whois_response(nick: str, logged_in_as: str | None) -> list[str]:
+    messages = [
+        f':vindobona.hackint.org 311 target_nick {nick} ~user hackint/user/username * :real name',
+        f':vindobona.hackint.org 312 target_nick {nick} palermo.hackint.org :The HackINT irc network',
+    ]
+    if logged_in_as is not None:
+        messages.append(f':vindobona.hackint.org 330 target_nick {nick} {logged_in_as} :is logged in as')
+    messages.append(f':vindobona.hackint.org 318 target_nick {nick} :End of /WHOIS list.')
+    return messages
+
+
+def test_with_group_provides_the_members_configured_in_the_group(
+    make_tested_auth_with_group: Callable[[], ModuleHarness[Auth]],
+) -> None:
+    tested_auth = make_tested_auth_with_group()
+
+    groups: list[AuthorisedGroup] = []
+    with_group_signal.send(None, group_uuid='admins', with_group=groups.append)
+
+    # the closure runs synchronously, membership comes straight from the config
+    assert len(groups) == 1
+    assert groups[0].group == 'admins'
+    assert [person.uuid for person in groups[0].people] == ['alice_uuid', 'bob_uuid']
+
+    tested_auth.stop()
+
+
+def test_with_group_messages_only_the_contacts_which_are_identified(
+    make_tested_auth_with_group: Callable[[], ModuleHarness[Auth]],
+) -> None:
+    tested_auth = make_tested_auth_with_group()
+
+    groups: list[AuthorisedGroup] = []
+    with_group_signal.send(None, group_uuid='admins', with_group=groups.append)
+    groups[0].message_all('hello')
+
+    # nothing is sent before the identity of every contact nick is established
+    tested_auth.expect_message_out_signals(
+        [
+            {'msg': Message.new_from_string('WHOIS alice')},
+            {'msg': Message.new_from_string('WHOIS alice_mobile')},
+            {'msg': Message.new_from_string('WHOIS bob')},
+        ],
+    )
+    tested_auth.reset_message_out_signals()
+
+    whois_responses = [
+        # alice is identified on this nick
+        *_whois_response('alice', 'alice_account'),
+        # someone else is currently holding this nick of hers
+        *_whois_response('alice_mobile', 'mallory_account'),
+        # bob is identified on this nick
+        *_whois_response('bob', 'bob_account'),
+    ]
+    for message_string in whois_responses:
+        tested_auth.receive_message_in(Message.new_from_string(message_string))
+
+    tested_auth.expect_message_out_signals(
+        [
+            {'msg': Message.new_from_string('PRIVMSG alice :hello')},
+            {'msg': Message.new_from_string('PRIVMSG bob :hello')},
+        ],
+    )
+
+    tested_auth.stop()
+
+
+def test_with_group_sends_nothing_if_nobody_is_identified(
+    make_tested_auth_with_group: Callable[[], ModuleHarness[Auth]],
+) -> None:
+    tested_auth = make_tested_auth_with_group()
+
+    groups: list[AuthorisedGroup] = []
+    with_group_signal.send(None, group_uuid='admins', with_group=groups.append)
+    groups[0].message_all('hello')
+
+    whois_responses = [
+        *_whois_response('alice', None),
+        *_whois_response('alice_mobile', None),
+        *_whois_response('bob', 'someone_else'),
+    ]
+    for message_string in whois_responses:
+        tested_auth.receive_message_in(Message.new_from_string(message_string))
+
+    # the whois lookups are the only thing which was ever sent
+    tested_auth.expect_message_out_signals(
+        [
+            {'msg': Message.new_from_string('WHOIS alice')},
+            {'msg': Message.new_from_string('WHOIS alice_mobile')},
+            {'msg': Message.new_from_string('WHOIS bob')},
+        ],
+    )
+
+    tested_auth.stop()
+
+
+def test_with_user_messages_only_the_contacts_which_are_identified(
+    make_tested_auth_with_group: Callable[[], ModuleHarness[Auth]],
+) -> None:
+    tested_auth = make_tested_auth_with_group()
+
+    def with_user(user: AuthorisedUser) -> None:
+        user.message('hello')
+
+    with_user_signal.send(None, user_uuid='alice_uuid', with_user=with_user)
+
+    tested_auth.expect_message_out_signals(
+        [
+            {'msg': Message.new_from_string('WHOIS alice')},
+            {'msg': Message.new_from_string('WHOIS alice_mobile')},
+        ],
+    )
+    tested_auth.reset_message_out_signals()
+
+    whois_responses = [
+        *_whois_response('alice', 'alice_account'),
+        *_whois_response('alice_mobile', 'mallory_account'),
+    ]
+    for message_string in whois_responses:
+        tested_auth.receive_message_in(Message.new_from_string(message_string))
+
+    tested_auth.expect_message_out_signals(
+        [
+            {'msg': Message.new_from_string('PRIVMSG alice :hello')},
+        ],
+    )
+
+    tested_auth.stop()
+
+
+@pytest.fixture()
+def make_tested_auth_with_group(module_harness_factory: ModuleHarnessFactory) -> Callable[[], ModuleHarness[Auth]]:
+    config = Config(
+        {
+            'module_config': {
+                'botnet': {
+                    'auth': {
+                        'people': [
+                            {
+                                'uuid': 'alice_uuid',
+                                'authorisations': [
+                                    {
+                                        'logged_in_as': {
+                                            'nick': 'alice_account',
+                                        }
+                                    },
+                                ],
+                                'groups': ['admins'],
+                                'contact': ['alice', 'alice_mobile'],
+                            },
+                            {
+                                'uuid': 'bob_uuid',
+                                'authorisations': [
+                                    {
+                                        'logged_in_as': {
+                                            'nick': 'bob_account',
+                                        }
+                                    },
+                                ],
+                                'groups': ['admins'],
+                                'contact': ['bob'],
+                            },
+                            {
+                                'uuid': 'carol_uuid',
+                                'authorisations': [
+                                    {
+                                        'logged_in_as': {
+                                            'nick': 'carol_account',
+                                        }
+                                    },
+                                ],
+                                'groups': ['others'],
+                                'contact': ['carol'],
+                            },
+                        ],
+                    },
+                },
+            },
+        }
+    )
+
+    return lambda: module_harness_factory.make(Auth, config)
 
 
 @pytest.fixture()
