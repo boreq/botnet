@@ -270,10 +270,10 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
         super().__init__(config)
         self._store = Store(lambda: self.get_config().data)
         self._stop_event = threading.Event()
-        self._t = threading.Thread(target=self._run)
+        self._thread = threading.Thread(target=self._run, daemon=True)
 
     def start(self) -> None:
-        self._t.start()
+        self._thread.start()
 
     @command('vibecheck')
     @_is_authorised_has_uuid_and_sent_a_privmsg()
@@ -402,7 +402,7 @@ class Vibecheck(NamesMixin, BaseResponder[VibecheckConfig]):
     def stop(self) -> None:
         super().stop()
         self._stop_event.set()
-        self._t.join()
+        self._thread.join()
 
     def _vibecheck(self, msg: IncomingPrivateMessage, auth: AuthContext) -> None:
         assert auth.uuid is not None

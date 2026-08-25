@@ -48,7 +48,7 @@ class Icecast(BaseResponder[IcecastConfig]):
         super().__init__(config)
         self._status = StreamStatus.OFFLINE
         self._stop_event = threading.Event()
-        self._thread = threading.Thread(target=self._run)
+        self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
 
     def stop(self) -> None:

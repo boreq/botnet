@@ -214,7 +214,7 @@ class IRC(BaseResponder[IRCConfig]):
         message_out.connect(self.on_message_out)
         self.restart_event = threading.Event()
         self.stop_event = threading.Event()
-        self.t = threading.Thread(target=self.run)
+        self._thread = threading.Thread(target=self.run, daemon=True)
 
     @command('channel_join')
     @only_admins()
@@ -292,7 +292,7 @@ class IRC(BaseResponder[IRCConfig]):
         self.send(pong.to_string())
 
     def start(self) -> None:
-        self.t.start()
+        self._thread.start()
 
     def stop(self) -> None:
         """To stop correctly it is necessary to disconnect from the server
@@ -301,7 +301,7 @@ class IRC(BaseResponder[IRCConfig]):
         super().stop()
         self.disconnect()
         self.stop_event.set()
-        self.t.join()
+        self._thread.join()
 
     def restart(self) -> None:
         """Makes the module reconnect to the irc server."""

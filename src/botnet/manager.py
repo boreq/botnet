@@ -58,7 +58,12 @@ class Manager:
         self.logger.debug('Stop')
         with self.wrappers_lock:
             for wrapper in self.module_wrappers:
-                wrapper.stop()
+                try:
+                    wrapper.stop()
+                except Exception:
+                    # One module which fails to stop must not prevent the
+                    # remaining modules from stopping.
+                    self.logger.exception('Stopping module %s failed', wrapper.name)
             self.stop_event.set()
 
     def on_request_list_commands(self, sender: object, msg: IncomingPrivateMessage, auth: AuthContext) -> None:

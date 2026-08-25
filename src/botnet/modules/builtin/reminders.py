@@ -147,13 +147,13 @@ class Reminders(BaseResponder[RemindersConfig]):
         super().__init__(config)
         self.store = RemindersStore(lambda: self.get_config().reminder_data)
         self.stop_event = threading.Event()
-        self.t = threading.Thread(target=self.run)
-        self.t.start()
+        self._thread = threading.Thread(target=self.run, daemon=True)
+        self._thread.start()
 
     def stop(self) -> None:
         super().stop()
         self.stop_event.set()
-        self.t.join()
+        self._thread.join()
 
     @command('in')
     @parse_command([('message', '+')])
