@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:alpine
+FROM ghcr.io/astral-sh/uv:python3.15-alpine
 RUN apk add --no-cache git
 WORKDIR /botnet
 ADD . .
