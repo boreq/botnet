@@ -173,7 +173,11 @@ def test_nick(subtests: pytest.Subtests) -> None:
         ),
         TestCase(
             nick='0nick',
-            error='nick \'0nick\' is invalid',
+            error=None,
+        ),
+        TestCase(
+            nick='7b9AAAAEB',
+            error=None,
         ),
     ]
 

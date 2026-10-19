@@ -133,7 +133,7 @@ class Message:
             return prefix, None
 
 
-_NICK_REGEX = re.compile(r"^[a-zA-Z\[\]\\`_^{}][a-zA-Z0-9\[\]\\`_^{}|-]{0,31}$")
+_NICK_REGEX = re.compile(r"^[a-zA-Z0-9\[\]\\`_^{}][a-zA-Z0-9\[\]\\`_^{}|-]{0,31}$")
 
 
 class Nick:
